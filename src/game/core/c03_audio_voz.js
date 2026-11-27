@@ -115,6 +115,9 @@ export class GameAudio {
     this.ctx = null;
     this.master = null;
     this.noiseBuffer = null;
+    // C2 (r129): el banco de voz llega EXTERNO (assets/audio/voz_*.json);
+    // cuando aterrice, recarga en caliente la megafonía.
+    try { window.addEventListener('pp-voz-lista', () => this.reloadVoice()); } catch (e) { /* */ }
     // r62 · MUESTRAS SFX REALES: AudioBuffers decodificados de
     // PP_SFX_REALES_B64 (UNA sola vez — el buffer sirve para CUALQUIER
     // contexto, mismo invariante que _musicBuf). Hasta que estén, los
@@ -419,6 +422,7 @@ export class GameAudio {
       return;
     }
     this.musicWanted = w;
+    if (w) this._menuReq = false;   // r149 · F-A1: una petición fresca del menú sustituye a la recuerda del salón
     if (w) this.startMusic(); else this.stopMusic();
   }
 
@@ -674,7 +678,7 @@ export class GameAudio {
     const cambioUrl = w && url !== this._hallUrl;
     this._hallUrl = w ? url : this._hallUrl;
     this.hallWanted = w;
-    if (!w) { this.stopHallMusic(); return; }
+    if (!w) { this._menuReq = false; this.stopHallMusic(); return; }   // r149 · F-A1: fuera del salón la recuerda expira
     if (this.hallMute) { this.stopHallMusic(); return; }   // icono: apagada
     if (this.hallPlaying && !cambioUrl) return;            // ya suena la suya
     if (this.hallPlaying && cambioUrl) this.stopHallMusic();  // salón nuevo
@@ -739,7 +743,10 @@ export class GameAudio {
       if (this.hallPlaying) return;
       // INVARIANTE UNA MELODÍA (sentido SALÓN→menú): la pista del salón
       // manda — la del menú se retira ELLA (mismo patrón BSO v2.124).
-      if (this.musicPlaying) this.setMusicWanted(false);
+      // r149 · F-A1: la petición del menú se RECUERDA (no se destruye) —
+      // el icono de mute de la pared la necesita para devolver el aire
+      // (setHallMute); antes este consumo dejaba esa rama MUERTA.
+      if (this.musicPlaying) { this._menuReq = this.musicWanted; this.setMusicWanted(false); }
       if (!this._hallBufs[this._hallUrl]) { this._loadHallMusic(); return; }
       const src = this.ctx.createBufferSource();
       src.buffer = this._hallBufs[this._hallUrl];
@@ -786,8 +793,14 @@ export class GameAudio {
     try { localStorage.setItem('pp_hallmus', this.hallMute ? '1' : '0'); } catch { /* */ }
     if (this.hallMute) {
       this.stopHallMusic();
-      // el aire vuelve al menú SOLO si él ya lo había pedido (musicWanted)
-      if (this.musicWanted && this.musicOn && !this.musicPlaying) this.startMusic();
+      // r149 · F-A1: el aire vuelve al menú si él lo había pedido — por la
+      // petición viva (musicWanted) o por la RECUERDA del salón (_menuReq,
+      // consumida por startHallMusic). setMusicWanted(true) RE-ARMA el flag
+      // y nace su aire; startMusic() a secas no bastaría (exige musicWanted).
+      if ((this.musicWanted || this._menuReq) && this.musicOn && !this.musicPlaying) {
+        this._menuReq = false;
+        this.setMusicWanted(true);
+      }
     } else if (this.hallWanted) {
       this.startHallMusic();   // retira la del menú por el camino (prioridad)
     }

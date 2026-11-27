@@ -7857,3 +7857,1989 @@ trabajo» — push, release, limpieza y reintento del E2E del worker)**:
     registro_limpieza_r113.md · propuesta: download/Propuesta_limpieza_repositorio_r113.docx.
   · NO ejecutado (quedó para el dueño): opción B de F2 (borrar 33,3 MB duplicados del backup), opción
     C de F3 (borrar capturas ~40 MB), reescritura de historia (alto riesgo, no propuesta).
+
+**14 · OPCIONES B Y C EJECUTADAS (aprobación «adelante con las opciones B y C»)**:
+  · B (7457874): deduplicación de fuentes/dueno/backup_2026-11-17/ — 7 duplicados byte-exactos
+    fuera (5,5 MB) con gemelo verificado por hash: arcano.mp3/candado.png/suelo.jpg → public/assets/hall,
+    fondo.jpg/frente.jpg/techo.jpg → public/assets/partido, zombi_victory.mp3 → fuentes/dueno/variantes.
+    El índice de gemelos (635 hashes) incluía el CONTENIDO de los 5 ZIPs fuente vía zipfile y
+    EXCLUYÓ scripts/archivo/ a propósito: B corrió antes que C para que ninguna copia única del
+    dueño dependiera de una captura que C iba a borrar. ÚNICOS conservados (6,6 MB): Mando.glb,
+    Mapa.png, Melodia.mp3 y palas.png (render distinto al de hall — verificado).
+    Nota: el backup en disco son 11 ficheros (12 MB); los 93 trackeados restantes ya no estaban
+    en disco desde antes de r113 y siguen recuperables vía tag r113-pre-limpieza.
+  · C (c43f746): 274 ficheros (147,6 MB) fuera — scripts/archivo/capturas/ (82 f, 20,5 MB, 11
+    paquetes de captura/arte de era) y era_legacy visuales/logs (192 f, 127,1 MB: capturas QA,
+    mapas clown, renders, logs). TODO el código de era_legacy (.py/.mjs/.js/.json) intacto.
+  · Verificación: golden byte-exacto vs tag ✓ y golden de la casa coincide ✓ en ambos commits ·
+    smoke test_fisica rc=0 ✓ · push 2c158eb..c43f746 → main.
+  · Entorno: download/ fue reciclada entre turnos (se perdieron registro y propuesta) → ambos
+    regenerados desde los scripts persistidos (ejecuta_BC_r113.py, gen_propuesta_r113.js +
+    patch_pie_r113.py). La propuesta regenerada es el documento histórico del plan; el estado
+    vivo de la ejecución vive en download/registro_limpieza_r113.md y en las secciones 13-14.
+  · Pendiente sin aprobar: reescritura de historia del remoto (alto riesgo; requiere bundle previo).
+
+**15 · r128 · CORRECCIONES DE LA AUDITORÍA r120 — OLA 1 + OLA 2** (análisis completo: download/analisis_crazypp_r120.pdf;
+  aplicación en modo directo sobre el árbol vivo. El dueño autorizó commit+push (PAT de GitHub, usado en memoria,
+  sin tocar ficheros) y el deploy del worker de telemetría con el token de Cloudflare: wrangler.toml queda con el
+  database_id real (24ee07a2…, D1 viva con 969 eventos) y la CLAVE se inyecta como SECRET — nunca en el repo.):
+  · D1 · puertas al repo vivo: qa_version.py y qa_rendimiento.py con CPP_RAIZ (era upload/, el espejo reciclado);
+    la aguja del hub pasa a DINÁMICA (el sello de release se extrae de la propia página — el pin V3.6.157 de r66
+    daba rojo falso desde la r67). bump_version.py y mod_fase2_analizar/generar.mjs restaurados a scripts/ (sobrevivían
+    en era_legacy). VERSION.json alineada al árbol vivo: golden nuevo 7640cb6e… · 12.523.280 B · manifests vivos
+    (magia 32 · locura 23 · estacion_orbital 16 — los pins 33/27/17 describían un árbol del bot que el repo no tiene).
+  · A1 (CRÍTICO): el CLAIM forjado ya no gana puntos. Ventana de verificación de 600 ms en el receptor
+    (NetLink._holdClaim/_resolverHeld): el árbitro local tiene la primera oportunidad; al confirmarse el punto local
+    se confronta el ganador (ack + resync si difieren) y al vencer la ventana se aplica el claim (cruces ghost, r122).
+    claimPlausible() PURA en c09b (rallyId dentro de applied+1..+2, ganador válido, cadencia 250 ms): lo imposible no
+    se aplica nunca y el host responde con resync. Claims legacy sin rallyId (pre-r82) y duplicados siguen por el
+    camino clásico; el resync y teardown limpian los claims en espera (_limpiaHeld). Verificado en Node: 22 OK
+    (scripts/test_r128_claims.mjs, NUEVO).
+  · A3: genCode() con crypto.getRandomValues (se mantienen 5 símbolos: la UI valida ^[A-Z0-9]{5}$).
+  · B1: el PUT del ranking mundial comprueba res.ok — un 429/404/5xx ya no se informa al jugador como «publicado».
+  · E1: watchdog de arranque en 04_boot.html (a los 15 s sin __PP_GAME muestra panel con causa y RECARGAR, ES/EN)
+    + three.js VENDADO a public/vendor/three (three.module.js + GLTFLoader + RoomEnvironment + BufferGeometryUtils,
+    4 ficheros · 1,46 MB, imports relativos verificados) + importmap relativo ./vendor/three/… (adiós al CDN único
+    sin red de seguridad) + build_zip.py lleva el vendor COMPLETO en los 4 ZIPs.
+  · E2: Storage.setItem detecta QuotaExceededError → toast una vez por sesión (window.__ppPwaToast) + evento
+    storage_lleno (catálogo v14) y RE-LANZA: los saves que tragaban el error siguen igual, el jugador deja de
+    perder progreso en silencio. Claves i18n storage_lleno en es/en.
+  · E6: valle_neon fuera de championships.json (v30) — adiós al 404 doble de cada arranque.
+  · F1: receptor local (/api/telemetria) exige ?clave= en ?resumen y ?eventos CUANDO TELE_CLAVE está en el entorno
+    (paridad con DELETE r112/H18 y con el worker). qa_telemetria y el panel /telemetria (nueva caja «TELE_CLAVE
+    local») envían la clave; sin env, lectura abierta de desarrollo documentada.
+  · F2: worker-tele: throttle de POST en memoria del isolate (global 2000/min + por sid 300/min, SIN leer cabeceras
+    cf-* — la política PII no admite excepciones) + [triggers] cron diario 04:37 UTC con scheduled() que purga
+    >30 días (adiós a la cuota D1 agotable, incidente «error 1101»). ACTIVAR con wrangler deploy (dueño).
+  · F3: ChampLoader valida el manifest en runtime: id coherente con la carpeta + version numérica; un manifest roto
+    queda VISIBLE como «incompatible» (contrato ya existente) sin romper el núcleo.
+  · F4: Caddyfile con lista blanca (XTransformPort=3004) — adiós al reverse_proxy a cualquier puerto local (SSRF).
+  · D3: mini-services/live-service/index.ts tipado (hosting/watching: string|null) — tsc sin errores reales
+    (solo quedan los 3 del andamio muerto src/lib/game, pendiente ola 3).
+  · Puertas tras r128: qa_version 31 OK · 0 FALLOS (antes 26/5) · qa_rendimiento 14 OK · 0 FALLOS (presupuesto.json
+    refrescado tras cambio intencional) · test_fisica 12 · 0 · c05 17 OK · test_red_nucleo 60 OK · test_r128_claims
+    22 OK · 0 FALLOS · qa_telemetria 129 OK · 3 FALLOS AMBIENTALES (DELETE ×2 y harness E2E TURN piden
+    TELE_CLAVE/credenciales en el entorno del servidor — no son código) · regresión en vivo del juego real: boot
+    9,5 s SwiftShader, 0 pageerrors, 40 draw calls, heap 91,7 MB estable, partido jugado.
+  · Agujas del QA re-ancladas a la realidad del código (deriva PRE-EXISTENTE, cazada por la auditoría): catálogo
+    dinámico — +net_qos (se emitía desde r82 sin estar en el catálogo), +storage_lleno, +boot_timeout (v14) y el
+    escaneo cubre 04_boot.html; vr_ping por d2 (el pin exigía el formato inline viejo); perfil Quest 3 al valor
+    vivo del dueño (1.25×/0.45 — el pin r96 1.40×/0.35 daba rojo falso); sid del bloque B del QA FRESCO por
+    ejecución (el residuo acumulado con DELETE cerrada hacía fallar agregación en la 2ª corrida; limpieza de 54
+    eventos sintéticos en el almacén local).
+  · Pendiente de esta ronda (documentado, no tocado): PAGES-VERSION.txt no existe (2×404 cosméticos del selfcheck,
+    tolerados por diseño); el harness TURN local necesita credenciales; ola 3 del plan (payload separado, broker
+    propio, sandbox UGC, poda de dependencias/andamio) espera decisión del dueño.
+
+## 16 · r129 · ola 3 del plan (auditoría r120): C2 · C1 · A2 · F3b · G3-G4 · G6
+
+El dueño dio el «vamos» y la ola 3 completa entró en un rondo, en el orden del informe,
+cada pieza con sus puertas en verde antes de sellar la siguiente.
+
+· C2 · RECURSOS FUERA DEL HTML: los ~9,6 MB de base64 (GLB pala/pistola, voz es/en,
+  música, mandos del tutorial, 63 assets de poderes, 24 iconos de menú, carteles, logo,
+  portada, botones) salieron del artefacto a public/assets/externos/ + voz_*.json.
+  game.html: 12.523.280 → 2.626.578 B (−79%). Boot vivo ~1,7-2,1 s (el casco ya no
+  descarga 12,5 MB antes de pintar). Degradación elegante en cada loader: pala procedural,
+  voz/música mudas, tutorial sin GLB funcional; guardia de contexto (http/https) en el
+  banco de voz — en Node un fetch relativo colgaba el event loop de los arneses. ZIPs
+  autocontenidos intactos (build_zip copia public/assets) y SW cacheFirst para /assets/.
+  SFX r62 (58 KB) y vendor PeerJS se quedan embebidos a propósito. El banco de voz viaja
+  como JSON (mismo pipeline atob→decodeAudioData) y recarga en caliente (pp-voz-lista →
+  reloadVoice).
+· C1 · SOLVER ACOTADO: (1) _aplicaDisparo reutiliza la velocidad decidida (recálculo solo
+  si la bola viva se desvió > 5 cm del intercepto — la tolerancia del solver es 1,5 cm);
+  (3) caché LRU de 96 entradas en computeShotVelocityReal (clave 1 cm/0,01 s/0,1 spin,
+  SIEMPRE se devuelve un clon — los llamadores mutan). Bench +solverFresh64 (64 solves
+  11-18 ms) y +solverHot64 (6.400 hits ~7 ms, ~88×). DIFERIDOS con razón documentada:
+  (2) presupuesto por frame y (4) imán fuera del subpaso — el golden de física protege
+  ese orden y el informe los marca de mayor a menor. Golden intacto: test_fisica 12 +
+  c05 17 · 0 desviaciones · qa_r119_dirigida 26 OK.
+· A2 · BROKER DESMONTABLE: NetLink._signalOpts() lee globalThis.PP_SIGNAL_ENDPOINT
+  (URL → {host,port,path,secure}; sin ella, cloud de PeerJS como siempre). mini-services/
+  peer-server (peer ^1.5, mismo protocolo) + ruta Caddy fija /peerjs/* → :3005 + LEEME.
+  Registro vivo de salas en el worker (GET ?salas=1: presencia con código, sólo salas
+  vis='pub', TTL del latido 90 s). test_r129_signal 7 OK · test_local 100 OK (+4; los 6
+  fallos ICE/TURN son ambientales y preexisten en HEAD — creds Realtime ausentes).
+· F3b · UGC CON CONTRATO VERIFICADO: el champloader valida en runtime el contrato
+  completo del schema (title.es, description.es, rival{id,name,kind}, storage, assets) y
+  degrada a «incompatible» con el motivo visible; los 7 manifests del dueño lo cumplen.
+  Puerta nueva qa_ugc_guardia.py (135 OK): manifests completos + sin eval/new Function/
+  document.cookie/document.write/serviceWorker/indexedDB/XMLHttpRequest/WebAssembly +
+  sin fetch/import con URL absoluta (todo el UGC legítimo carga por URLs RELATIVAS). El
+  sandbox duro (iframe/postMessage) exige el contrato 2 del SDK — c11 ya rechaza
+  contract > 1 con aviso, la migración puede ser gradual.
+· G3-G4 · PODA: src/lib/game (1.818 líneas de segunda física/IA) + page.tsx +
+  PingPongCanvas.tsx fuera (inalcanzables: / reescribe a game.html); 46 de 48 ui fuera
+  (viven toast+toaster); 4 .pre_r83 fuera (G1-G2); package-lock.json fuera (toolchain
+  bun); .env y db/custom.db fuera del índice de git (siguen en disco); paquete renombrado
+  crazypp; 57 de 67 dependencias fuera (quedan next/react/react-dom/@radix-ui/react-toast/
+  cva/clsx/lucide-react/tailwind-merge + prisma/@prisma/client del hook db:push);
+  three → devDependencies (los arneses QA) · +acorn declarado. bun.lock regenerado.
+  next build OK con sólo las rutas vivas. Los 3 errores TS que D3 dejaba «pendiente ola
+  3» vivían en ese andamio — fuera, el árbol de tipos queda limpio.
+· G6 · ASSETS COMPARTIDOS: /assets/championships/ con pistol.glb (antes ×3 · −5,9 MB),
+  cartel superpoder (×4) y reloj.png (×2) byte-exactos; risas_forajido.mp3 (= risas.mp3,
+  7 refs reescritas) y el bso.wav huérfano provisional de halloween fuera (su música es
+  melodia.mp3 — el manifest lo documentaba). Call-sites a ../../assets/championships/
+  (module-relative, Pages base incluida). NO se toca _plantilla (autocontenida para
+  terceros), valle_neon (retirado) ni los dobles internos de estacion (estados de
+  expresión del rival). build_zip.py: lista orbital sin pistol/superpower + guardia
+  byte-exacta de compartidos + ligera sin assets/championships + tokens risas.mp3 +
+  hashes G6 en VERSION.txt. Validaciones completas del empaquetado en verde (adopción
+  SDK2-5 · música · PowerSign · rival/cartel · identidad 3.6.210 · staging íntegro).
+· Worker DESPLEGADO EN PRODUCCIÓN (el dueño dio token fresco en r129): deploy_worker.py con
+  paso 7b NUEVO — la CLAVE se fija por el endpoint de secrets porque keep_bindings
+  preservaba la CLAVE vieja pisando la nueva (cazado por el E2E del propio deploy: 403 con
+  clave). E2E completo en producción: latido · 403 sin clave · POST 204 · resumen con
+  clave · DELETE por sid · latido restaurado · cron 37 4 * * * activo y verificado por
+  GET · /api/salas vivo ({ok,total,salas}). CLAVE nueva de lectura en scripts/worker-tele/
+  .clave-produccion (600, gitignored — el juego no la usa).
+· Puertas tras r129: qa_version 31 OK · qa_rendimiento 16 OK (+solverFresh64/solverHot64
+  en el presupuesto; game.html y boot_ms con baseline nueva tras --update) ·
+  qa_ugc_guardia 135 OK · test_fisica 12 · c05 17 · red_nucleo 60 · r119_dirigida 26 ·
+  r129_signal 7 · test_local 100 (6 ambientales preexistentes) · regresión viva ola 3
+  10 OK (boot 1,9 s · 24 iconos · voz · música · pala · portada · heap 69 MB · 0
+  pageerrors).
+· Nota de higiene del histórico: el reciclado del sandbox dejó los commits de paquete
+  (17d1f1f/f5014aa/0503742/4ce7c4e) con parte del contenido pendiente en el árbol; el
+  commit 0535f00 consolidó TODO (git add -A sobre árbol limpio). HEAD es completo y
+  coherente; los stats de los commits intermedios no reflejan el paquete del mensaje —
+  el histórico queda así, sin reescritura.
+· PUSH Y PAGES EN VIVO (con token fresco del dueño): rebase --onto origin/main limpio
+  (3 conflictos de identidad resueltos con el árbol verificado; el diff final vs el árbol
+  pre-rebase fue solo scripts/archivo/era_legacy que GitHub ya no tenía) → push
+  03e8a63..e619eb0 FAST-FORWARD, sin force en main. Pages: deploy_pages ensambla 609
+  ficheros · smoke verde · el push de la rama pages dispara la build (7f26015c) y el sitio
+  vivo sirve V3.6.210-SDK6 con 86 peticiones OK · 0 fallos de red · 0 pageerrors; chequeo
+  explícito de assets compartidos/externos en vivo byte-exacto (pistol.glb 2.942.640 B).
+  Respaldo anti-rollback al día (main → proyecto). Lección de flags: --backup NO empuja
+  la rama pages — el push de pages es --push (o manual, como aquí).
+
+
+## 17 · r129 · cierre del ciclo: CLAVE confirmada · punto «lobby» verificado (no construido) · era v36210 y RELEASE v3.6.210-SDK6
+
+Fecha: 2026-11-23 · tras el §16 (worker + push + Pages vivos), con el token del dueño en la mano.
+
+· CLAVE de telemetría CONFIRMADA: la que dio el dueño coincide byte a byte con
+  scripts/worker-tele/.clave-produccion y autentica contra producción (resumen
+  ok:true · total=1036 · sesionesUnicas=278). Nada que rotar en el worker.
+
+· CORRECCIÓN de la ronda anterior (punto «3»): «/api/salas sin consumidor cliente»
+  era UN ERROR DE LECTURA. El lobby de salas ya existía: r74·FASE 169 — latidos
+  cada 20 s a /api/presencia con {pid,n,v,st,code,mj,vis}, sondeo de lista cada
+  6 s con el menú multi abierto y publicas() filtrando st=sala + code + vis=pub
+  (c09c_red_social.js). El ?salas=1 de A2 NO es la fuente del lobby: es el REGISTRO
+  VIVO para el panel y descubrimiento de emergencia si el broker cae — y lee la
+  MISMA tabla presencia (TTL 90 s, GROUP BY code, LIMIT 30). El total=0 que vi era
+  correcto: nadie hosteaba en ese momento.
+· E2E SALAS EN PRODUCCIÓN (script nuevo scripts/e2e_salas_produccion.py): 5/5 OK
+  contra el worker real — latido con sala pública aceptado · ?salas=1 la ve
+  (haceSeg=1) · presencia?lista=1 la ve con st/vis/code correctos · baja {bye:1}
+  aceptada · tras la baja el registro queda limpio (total=0). La cadena completa
+  presencia → registro → lobby → baja queda probada por primera vez en producción.
+
+· PUNTO 4 · deploy_pages.py: aviso nuevo si --backup va sin --push («--backup sin
+  --push NO publica la rama pages») — la lección del §16, ahora en el propio
+  script. Y el cuerpo del Release ya no miente tamaños: COMPLETO ~186 MB ·
+  ligera ~58 MB (el vendor va completo desde r128·E1) · CLOUDFLARE ~186 MB.
+
+· PUNTO 2 · ERA release-v36210 + RELEASE v3.6.210-SDK6 (el hub
+  src/app/descargas/page.tsx ya apuntaba a v36210-sdk6 desde las rondas r129):
+  - scripts/release-v36210/ era nueva (soporte copiado de la 36209: server.mjs,
+    package.json, leemes, mock_host, voz-alerta + build_zip.py adaptado: rutas
+    SRC/STAGE, VER, guardias de identidad, nombres de zip, narrativa del
+    VERSION.txt — que aún contaba la historia FASE 185-186 de la 209 — y
+    v36209-sdk6 añadido al rechazo de la guardia del hub).
+  - build_zip verde: 4 ZIPs con unzip -t limpio — COMPLETO 185.807.440 B ·
+    ligera 57.647.302 B (sin championships/ ni assets/championships, G6) ·
+    CLOUDFLARE 185.791.569 B (chequeo anti-TypeScript/package.json limpio) ·
+    SOLO 6.688 B; page.tsx dentro del COMPLETO con 6 menciones 3.6.210 ·
+    reactor_impulso 9 imágenes · nucleo_gravedad_lp.glb dentro · VERSION.txt con
+    hashes SHA256 y narrativa r129 (golden 18cd52f1 = sha de fisica_golden.json).
+  - deploy_pages --release --backup (segundo plano): smoke verde otra vez (87
+    peticiones · 0 fallos de red · 0 pageerrors) · tag v3.6.210-SDK6 (forzado,
+    apunta a 45c9a72) · Release creado y VERIFICADO POR API: 4 assets byte-exactos
+    a los locales · respaldo main→proyecto al día. La rama pages local avanza a
+    513498f93 (sin --push: el remoto queda en 7f26015c, mismo contenido).
+  - https://github.com/FranJavierDavila/CrazyPP/releases/tag/v3.6.210-SDK6
+
+
+## 18 · r130 · AUDITORÍA DE RED MULTIJUGADOR: 4 bugs reales cazados, corregidos y sellados con arnés propio
+
+Fecha: 2026-11-23 · petición del dueño: «revisa todo lo relativo al desempeño de las partidas
+en red — la bola al empezar una nueva partida no se asigna correctamente y fallos de
+sincronización; con pocas posibilidades de probar me cuesta detectar los errores».
+
+· EL HALLAZGO QUE LO CAMBIA TODO: las baterías (smoke, QA, tests) corren con la red
+  OFFLINE — `NetLink.frame()` sale en `if (!this.online) return;` y TODO el camino de
+  partida real (pose, eventos, FSM, claims) nunca se había ejecutado en pruebas. El
+  arnés nuevo (scripts/test_r130_multipartida.mjs) levanta DOS NetLink REALES en Node
+  (fuente del Quest) enfrentados por un bus con latencia, con Rules reales de c06 y
+  PPNET real: por primera vez el ciclo COMPLETO de una partida corre en pruebas.
+
+· BUG 1 · TDZ EN frame() (CRÍTICO · introducido en el rebase d706efa del 2026-11-21):
+  el watchdog de silencio (r112·H3) leía `now` ANTES de su declaración. Oculto con los
+  canales mudos (el cortocircuito && no evaluaba `now`), en partida REAL el primer
+  paquete recibido ponía _lastFastAt/_lastRelAt y el siguiente frame() moría con
+  ReferenceError — la red dejaba de EMITIR (pose, eventos, sync) y la partida quedaba
+  zombi: «fallos de sincronización». La 3.6.210 en producción estaba rota para online.
+  FIX: la declaración izada al arranque de frame().
+
+· BUG 2 · DOBLE MSTART AL EMPEZAR PARTIDA NUEVA (el bug EXACTO del dueño): el enlace
+  auto-arranca la partida al completarse el handshake (_v2MaybeStart envía mstart) Y el
+  arranque diferido (el dueño pulsó «empezar» durante la subida → _netStartWhenReady →
+  onNetV2Ready → startOnlineMatch) enviaba un SEGUNDO mstart: dos resetMatch encadenados
+  en el invitado con la bola y el saque re-anclados a mitad de cuenta atrás — «la bola al
+  empezar una nueva partida no se asigna correctamente; yo tenía que sacar y la bola la
+  tenía el rival». FIX doble: (a) _v2MaybeStart NO envía el auto-mstart si el juego ya
+  pidió arranque; (b) startOnlineMatch (c12) se autobloquea con NetLink.mstartReciente()
+  (la guardia r75 del 'r', ahora también para el botón).
+
+· BUG 3 · setServeHeld COMPARABA UN BOOLEANO CON EL STRING 'player': los 4 llamadores de
+  c12 pasan `rules.server === 'player'` (booleano) y el método hacía
+  `serverLocal === 'player'` → setHeld(false) SIEMPRE: la bola quedaba HELD del RIVAL en
+  los DOS extremos (nadie tenía su propia bola); sólo el resync (setHeld directo,
+  booleano correcto) corría al invitado. FIX: tolera booleano y string (mio = true o
+  'player').
+
+· BUG 4 · EL LIBRO DE RECLAMOS SOBREVIVÍA A LA PARTIDA NUEVA: MatchSync.applied sólo lo
+  reiniciaba onResync (que aplica el INVITADO). El rally 1 de la revancha colisionaba con
+  el rally 1 del partido anterior (r=1 ≤ applied=47 del anterior): los claims caían por
+  el camino «duplicado» SIN confrontación — si los extremos discrepaban, la divergencia
+  era INVISIBLE (sin dispute, sin resync del host) hasta que rallySeq superaba al applied
+  viejo. FIX: NetLink.resetLibro() (onResync + _limpiaHeld + cadencia a cero) llamado
+  desde onNetMatchStart de c12 — el único punto por el que pasan TODOS los arranques
+  (auto, diferido, 'r', mstart recibido).
+
+· EL ARNÉS (scripts/test_r130_multipartida.mjs · 34 comprobaciones verdes): handshake
+  hello2/tick2/tock2 → v2 ok · reloj del invitado anclado (offset ≤ 2·latencia+60 ms ·
+  RTT ≈ 2·latencia) · auto-arranque con UN solo mstart · sacador espejo · bola HELD del
+  sacador en su extremo y oculta para el rival · el botón durante la cuenta atrás NO
+  duplica · rallye de PROTOCOLO con el árbitro REAL de c06 decidiendo (toss → HIT →
+  HANDOFF por la red → el que recibe no devuelve → doble bote → el punto lo canta
+  handleEvents en ambos extremos y los claims convergen) · rotación del sacador espejo
+  por gameOpener · revancha con el libro reiniciado y el claim confrontado · resync del
+  host curando divergencia forzada · guarda anti doble revancha · applySync v1 espejado.
+  Lección del arnés: el bus debe entregar ArrayBuffer (decodePacket hace new DataView) y
+  los golpes propios son SIEMPRE 'player' en cada extremo (el remoto es 'ai').
+
+· VERSIÓN: bump 3.6.210-SDK6 → 3.6.211-SDK6 (sellos c00/badge/hub/sw.js · golden nuevo
+  e4235e7b5c7b9f52 · game.html 2.635.712 B · byte-exacto contra GOLDEN_SHA256.txt).
+
+· BATERÍA (todo verde): qa_version 31 · red_nucleo 60 · r128_claims 22 · r129_signal 7 ·
+  r130_multipartida 34 · test_fisica 12 (golden intacto — la red no toca física) ·
+  qa_ugc_guardia 135 · qa_rendimiento 16.
+
+· DESPLIEGUE: deploy_pages con smoke verde (87 peticiones · 0 fallos de red · 0
+  pageerrors · sellos sw/game 3.6.211-SDK6) · push pages 7f26015→fcaeb27 (forzado,
+  historia aplastada) y main 75a3751→e82d09d · verificación VIVA: el sitio sirve
+  crazypp-v3.6.211-SDK6 (sw.js) y game.html VERSION 3.6.211-SDK6 · el caché del SW
+  del dueño muere solo al arrancar la 3.6.211 (identidad nueva).
+
+
+## 19 · r130·2 · SEGUNDA PASADA DEL MULTIJUGADOR: bug #5 (auto-reinicio del 'over' en online) y arnés 34→60
+
+Fecha: 2026-11-23 · petición del dueño: «otra revisión a fondo a la opción de
+multijugador — la quiero 100% libre de fallos».
+
+· LECTURA PROFUNDA DEL RESTO DE c09 (no auditado en §18): sala PeerJS
+  (hostRoom/joinRoom con guardias de re-entrada y watchdog de unión de 15 s ·
+  rechazo de un segundo rival con conexión viva r122 · reintento de código
+  ocupado ×4) · ICE (oferta/respuesta sólo-invitado sin glare · candidatos en
+  cola hasta la descripción remota r81 · reinicio de ICE real r37 · diagnóstico
+  del camino LAN/srflx/relay r125) · túnel de emergencia r82 (entrada 11 s ·
+  salida automática si el ICE directo abre · adaptativo 30↔60 Hz por salud) ·
+  pausa/reanudación por visibilidad (régimen 60 s) · acks y retransmisión
+  (ack SOLO avanza r37b · seq u16-safe r37b · pérdida en ventana viva r36) ·
+  emisión de pose (cuaternión visual r102 · bit4=pala-izquierda r110 ·
+  lateralidad física bit8 · GIGANTE/mega bit16) · recepción (guardia de
+  HANDOFF atrasado r112·H2 · frescura de pose ±150 ms r121 · clamp del spin
+  al cable r48). VEREDICTO: limpia — todas las guardias históricas en su sitio.
+
+· BUG #5 · EL AUTO-REINICIO DEL 'OVER' EN ONLINE (cazado por el arnés nuevo):
+  rules.update(dt) corría en online SIN guardia de estado — a los 8 s de
+  'over' hacía startMatch(mode) en CADA extremo: (1) divergencia de abridor —
+  firstServer vuelve a 'player' LOCAL en ambos: los DOS creen sacar → dos
+  bolas HELD («yo tenía que sacar y la bola la tenía el rival» OTRA VEZ, ahora
+  en el idle tras el partido); (2) state queda 'serve' → la guardia del 'r' de
+  revancha (enMarcha) IGNORA el pedido → partida fantasma atascada. FIX en
+  c12:19148: en online el 'over' NO corre update (sólo un mstart lo mueve);
+  el juego local conserva su reinicio automático intacto.
+
+· EL ARNÉS CRECE 34 → 60 (scripts/test_r130_multipartida.mjs):
+  · POSE REAL en TODOS los escenarios: el juego falso lleva cámara+grips → el
+    canal fast emite pose 60 Hz, el JitterBuf se llena y el validador §12
+    juzga TAMBIÉN la distancia pala↔golpe (HIT_NEAR_PAD 0,85 m) — la pala del
+    golpeador se coloca EN la bola antes de cada strike.
+  · CANAL FAST ADVERSO: 30% pérdida · 15% duplicados · ±25 ms reordenación —
+    el punto converge igual (HIT/HANDOFF retransmiten por _pend hasta ack;
+    el dedupe _seenEv traga los duplicados; el reliable nunca se pierde).
+  · PARTIDA COMPLETA: mejor de 3 con marcadores pre-sembrados — rotación ITTF
+    entre juegos (el abridor alterna), gameNo 1→2→3, serie 2-1 y 'over' en
+    ambos extremos. El fin de juego/serie vive en rules.update (c06:489) — el
+    falso ahora corre el árbitro REAL con la misma guardia del fix.
+  · DUELOS online: md viaja en el mstart (el arranque diferido NO duplica con
+    _netStartWhenReady), _dlReset en ambos y el poder ('pow') llega al rival.
+  · PAUSA/REANUDACIÓN por visor oculto (spec §10) y RESYNC-REQ a mitad de
+    partida (el receptor pide la verdad del anfitrión y se cura en un RTT).
+  · WATCHDOG DE SILENCIO: rival muerto sin cierre → el ANFITRIÓN cae a los
+    12 s; el INVITADO aguanta ~30 s POR DISEÑO (r112: reintentos de ICE a los
+    5 y 15 s con régimen de silencio 25 s) — ambos terminan con onNetEnded,
+    sin partida zombi.
+  · CANDADO DEL BUG #5: 'over' 9,5 s en online sigue 'over' y el marcador de
+    serie intacto (el auto-reinicio local no dispara).
+  Lecciones del arnés: el bus debe entregar ArrayBuffer (decodePacket hace
+  new DataView de un TypedArray lanza y el escudo r123 lo traga como paquete
+  caído — canal fast MUERTO silencioso); los golpes propios son SIEMPRE
+  'player' en cada extremo (el remoto es 'ai'); y los botes del saque/rallye
+  deben alimentar al árbitro DESPUÉS de que el HIT aterrice (el handleEvents
+  exige state==='rally').
+
+· VERSIÓN: bump 3.6.211-SDK6 → 3.6.212-SDK6 (sellos c00/badge/hub/sw.js ·
+  golden 614d464680b3038b · game.html 2.636.415 B · byte-exacto).
+
+· BATERÍA (todo verde): qa_version 31 · red_nucleo 60 · r128_claims 22 ·
+  r129_signal 7 · r130_multipartida 60 · test_fisica 12 (golden intacto) ·
+  qa_ugc_guardia 135 · qa_rendimiento 16.
+
+· DESPLIEGUE: deploy_pages con smoke verde (87 peticiones · 0 fallos de red · 0
+  pageerrors · sellos sw/game 3.6.212-SDK6) · push pages fcaeb27→40c2289 (forzado,
+  historia aplastada) y main 47f8416→455bd26 · verificación VIVA: el sitio sirve
+  crazypp-v3.6.212-SDK6 (sw.js) y game.html VERSION 3.6.212-SDK6.
+
+
+## 20 · r130·3 · TERCERA PASADA (confirmación): bugs #6/#7/#8 cazados por la adversidad y el ciclo de vida
+
+Fecha: 2026-11-23 · petición del dueño: confirmar «ya no conozco ningún
+defecto abierto» con verificación, no con afirmación.
+
+· BASELINE: repo limpio en 6124ad9 · 3.6.212-SDK6 sellado y VIVO · batería
+  re-ejecutada (31+60+22+7+12+135+16) — todo verde antes de tocar nada.
+
+· BUG #6 · FUGA DE SESIÓN (ciclo de vida, la clase NO cubierta por las dos
+  pasadas anteriores): startV2 re-inicializa casi todo en cada sesión nueva,
+  pero _mstartAt, _lastIceTry y _lastRemoteHitT sobrevivían al teardown:
+  — _mstartAt → la guardia del 'r' (c09:660) y mstartReciente() (c12:1429)
+    suprimían el arranque de la SESIÓN 2 durante 8 s tras el último mstart
+    de la sesión 1 («creo la sala nueva, le doy a jugar y no pasa nada»).
+  — _lastIceTry → reinicioVivo dejaba el régimen de silencio en 25 s los
+    primeros 15 s de la sesión nueva (un rival muerto de verdad tardaba el
+    doble en detectarse).
+  FIX: los tres sellos a cero en el bloque de init de startV2. CANDADO: el
+  escenario O del arnés — colgar y jugar OTRA sesión sobre LOS MISMOS
+  objetos NetLink (el juego real reutiliza la instancia), con asertos de
+  sellos a cero y del mstart de la sesión 2 llegando al invitado. Para
+  ejercitarlo el arnés estrenó mock de RTCPeerConnection (startV2 real,
+  no el atajo por _v2ChannelsUp).
+
+· BUG #7 · RESYNC EN RALLYE VIVO ENVENENA LAS GUARDIAS (cazado por el
+  escenario M adverso: pérdida 30-55%, duplicados, reordenación ±25 ms):
+  la cadena rechaza-HIT-por-pose-vieja → resync del anfitrión CON st='rally'
+  → _applyResync anclaba _appliedRally = rs para un rallye AÚN NO RESUELTO
+  → la detección local del punto (netGuard) Y el CLAIM/forcePoint del
+  anfitrión quedaban bloqueados PARA SIEMPRE en el invitado → divergencia
+  real de marcador (H 9-8 · G 7-9, reproducida y trazada). FIX: el sello de
+  «aplicado» SOLO cuando el rallye viaja resuelto (st ≠ 'rally'); el
+  re-anclaje del rallySeq (correlativo del validador) se mantiene SIEMPRE.
+
+· BUG #8 · LIBRO DE RECLAMOS DIVERGENTE TRA'S RESYNC (run 5 del estrés):
+  con veredictos divergentes bajo pérdida extrema, el resync del anfitrión
+  impone autoridad y el marcador CONVERGE (diseño correcto, verificado en
+  traza), pero _applyResync → onResync() dejaba MatchSync.applied a −1 en
+  el invitado: el libro divergía del anfitrión sin tocar el marcador
+  (divergencia invisible, la clase exacta que el r130 selló al empezar
+  partida). FIX: el resync viaja con aw (el ganador aplicado, perspectiva
+  anfitrión) y el aplicador re-ancla applied/appliedW cuando el rallye viaja
+  resuelto. Tolerante con builds viejos (aw ausente → appliedW=null).
+
+· ESTRÉS FINAL: 6/6 runs adversos (pérdida 55% · duplicados 25% · ±25 ms)
+  en verde con los DOS NetLink reales — el doble de duro que el 30% de los
+  runs de la pasada anterior. Los reencuentros bajo adversidad ya no solo
+  convergen en marcador: convergen TAMBIÉN en el libro de reclamos.
+
+· VERSIÓN: bump 3.6.212-SDK6 → 3.6.213-SDK6 · golden re-sellado dos veces
+  (tras #7 y tras #8: a3053c2bf1c9f124) · game.html 2.639.244 B.
+
+· BATERÍA (todo verde): qa_version 31 · red_nucleo 60 · r128_claims 22 ·
+  r129_signal 7 · r130_multipartida 66 (+ estrés 6×66 adverso) · test_fisica
+  12 (golden intacto) · qa_ugc_guardia 135 · qa_rendimiento 16.
+
+· DESPLIEGUE: deploy_pages con smoke verde (87 peticiones · 0 fallos de red · 0
+  pageerrors) · push pages 40c2289→52c8025 (forzado, historia aplastada) y main
+  6124ad9→5d6a874 · verificación VIVA: sw.js crazypp-v3.6.213-SDK6 · game.html
+  VERSION 3.6.213-SDK6 · los TRES fixes (#6/#7/#8) presentes en el fichero
+  SERVIDO (grep) · la delta de 2 bytes entre el sello del repo y el vivo es la
+  normalización de rutas del prefijo /CrazyPP/ (deploy re-ensambla desde git
+  archive HEAD — por diseño desde siempre).
+
+
+## 21 · r130·4 · CUARTA PASADA (confirmación): bug #9 — carrera asíncrona del pc; capas de señalización y menú limpias
+
+Fecha: 2026-11-23 · petición del dueño: re-confirmar el camino de red.
+
+· BASELINE: repo limpio en 6be96e5 · 3.6.213-SDK6 sellado y VIVO · batería
+  completa re-ejecutada ANTES de tocar nada — todo verde.
+
+· BUG #9 · CARRERA ASÍNCRONA DEL PC (la clase que ninguna pasada anterior
+  había estresado: los vuelos async que despiertan DESPUÉS del teardown):
+  _v2Offer() y _v2RemoteDesc() creaban el RTCPeerConnection DESPUÉS de un
+  `await NetLink.ICE_ASYNC()` (fetch REAL a /api/ice, hasta 1-3 s con la
+  caché fría). Un teardown en esa ventana (cancelar la sala, salir del
+  menú) dejaba `this._pc = pc` asignado DESPUÉS de la limpieza:
+  — un RTCPeerConnection VIVO filtrado (agente ICE + asignación TURN sin
+    cerrar), repetible en cada intento;
+  — y el `catch` llamaba _v2Fail sobre la sesión ya muerta (o sobre la
+    SIGUIENTE): mensaje de «compatibilidad» fantasma y posible degradación
+    de una sesión nueva por el error de una vieja.
+  FIX: sello de sesión — _v2T0 lo re-estampa cada startV2 y AHORA también
+  teardown lo pone a 0; los cuatro vuelos (_v2Offer ×2 guardias, _v2Remote
+  Desc ×3 + rama pc-ajena) comprueban el sello tras CADA await: si cambió,
+  abortan cerrando SU pc (y sin tocar el _pc de la sesión nueva). Los
+  catch sólo degradan si el sello es el de la sesión viva y v2==='pending'.
+  Un guardia extra (`!sesion`) cubre el caso desc-POST-teardown (sesion
+  capturada ya a 0).
+
+· CANDADO: escenario P del arnés — 4 variantes de la carrera con el mock
+  RTC instrumentado (contador de cierres + retardo controlable en ICE y
+  createOffer/setLocal/setRemote): P1 cancelación pre-ICE (nada se crea),
+  P2 cancelación EN PLENA OFERTA (el pc huérfano se cierra — antes quedaba
+  filtrado), P3 sdp en vuelo + teardown (sin pc creado), P4 fallo de sdp
+  sobre sesión muerta (SIN _v2Fail fantasma), P5 la sesión siguiente sobre
+  los mismos objetos sigue sana. ARNÉS: 66 → 72 escenarios, todo verde.
+
+· AUDITORÍAS SIN HALLAZGOS (limpias): capa de ERRORES PeerJS (reintento de
+  unavailable-id ×4 con código nuevo; peer-unavailable → mensaje claro de
+  sala no encontrada; network/server-error/socket-error → mensaje de
+  lobby; sin ruido si status='online'; conn.on('error') → onPeerGone) y
+  capa de MENÚ/SALAS (guardias de re-entrada v2.24 en hostRoom —
+  creating/waiting— y joinRoom —joining/online—; el listado público exige
+  status off/error; las invitaciones del panel social pasan por la misma
+  guardia; el chip de sala no existe durante un flujo activo).
+
+· VERSIÓN: bump 3.6.213-SDK6 → 3.6.214-SDK6 · golden re-sellado por el
+  propio bump (BYTE-EXACTO en el re-ensamblado). NOTA DE PROCESO: el
+  primer deploy se ABORTÓ SOLO (la guardia del builder detectó que HEAD
+  aún era 3.6.213 — ensambla desde git archive HEAD) → commit primero,
+  deploy después: la guardia funcionó como debe.
+
+· BATERÍA (todo verde): qa_version 31 · red_nucleo 60 · r128_claims 22 ·
+  r129_signal 7 · r130_multipartida 72 · test_fisica 12 (golden intacto) ·
+  qa_ugc_guardia 135 · qa_rendimiento 16.
+
+· DESPLIEGUE: smoke verde (87 peticiones · 0 fallos de red · 0 pageerrors)
+  · pages → 4798f9b0f (forzado, historia aplastada).
+
+
+## 22 · r130·5 · QUINTA PASADA (confirmación): voz y social limpias; bug #10 en el worker del listado público
+
+Fecha: 2026-11-24 · petición del dueño: re-confirmar el camino de red.
+
+· BASELINE: árbol 3.6.214-SDK6 (vivo desde la ronda anterior) · batería verde
+  (qa_version 31 · red_nucleo 60 · r129_signal 7 · r130_multipartida 72).
+
+· AUDITORÍAS SIN HALLAZGOS (limpias, primera lectura línea a línea en 5
+  rondas): ① CICLO DE VIDA DE VOZ — wireCall/initVoice/initVoiceWithCap/
+  toggleMic/silentStream: el teardown CIERRA la MediaConnection, para los
+  tracks del micro, anula remoteAudio.srcObject y cierra el AudioContext
+  del stream silencioso (r122 ya presente); el elemento de audio remoto se
+  REUTILIZA entre sesiones (uno solo, sin acumulación); el answer tardío
+  tras teardown está blindado y una llamada cerrada no puede emitir stream.
+  ② RED SOCIAL (c09c, 391 líneas) — latido 20 s con anti-solape _pend*,
+  polls con AbortController y timeouts 6-8 s, latido inmediato al cambiar
+  de estado, sendBeacon en pagehide, degradación OFF silenciosa sin
+  endpoint, invitaciones consumidas por joinRoom (guardias v2.24 dentro),
+  vis privado por defecto.
+
+· BUG #10 · LISTADO PÚBLICO CON CADÁVERES (worker, /api/presencia?lista=1):
+  el CONTEO filtraba por TTL en SQL (exacto), pero el SELECT del LISTADO no
+  (`ORDER BY t DESC LIMIT 30` sin WHERE) — un latido muerto (salida sin
+  bye: crash/kill del navegador) seguía apareciendo en «Partidas
+  disponibles» como sala viva hasta que la purga muestreada (1 de cada 20
+  peticiones, r111-b) pasara por allí: sala fantasma hasta ~3-4 min; al
+  unirse se recibía «sala no encontrada» (recuperable, pero feo).
+  FIX: WHERE t >= ahora-PRESENCIA_TTL en el SELECT del listado — una línea
+  en el SERVIDOR: los clientes YA desplegados se corrigen solos, sin
+  actualizar el juego (por eso NO toca golden ni bump de versión).
+
+· CANDADO: test_local A3 — 3 checks nuevos que reutilizan la fila caducada
+  que ya insertaba A2: la lista SIN s-viejo (t-100 s), la sala viva ABC23
+  presente, conteo TTL intacto. RESULTADO: 103 OK · 6 FALLOS — los 6 son
+  los AMBIENTALES documentados (P3/P4/P5/P10: credenciales TURN de
+  Cloudflare ausentes en el sandbox; ya constaban en §19/§20). Sin mis
+  ediciones el mismo test marca 6 FALLOS idénticos: cero regresiones, y el
+  filtro repara de paso 4 checks que dependían de filas muertas.
+
+· DESPLIEGUE: NO EJECUTADO — el worker NO está en producción todavía:
+  deploy_worker.py exige CF_API_TOKEN (env) y el sandbox reciclado lo
+  perdió (tampoco está scripts/worker-tele/.clave-produccion). El fix está
+  COMMITTEADO en main y verificado localmente; el deploy queda pendiente
+  de re-exportar el token (export CF_API_TOKEN=... && python3 -I
+  scripts/deploy_worker.py). El juego en pages NO cambió (no hay deploy de
+  pages; sigue 3.6.214-SDK6 · pages 4798f9b).
+
+
+## 23 · r131 · SEXTA PASADA (código no auditado): mapa del protocolo completo; bug #11 — eco de modo en supervivencia online
+
+Fecha: 2026-11-24 · petición del dueño: detectar código NO auditado en el
+multijugador.
+
+· MÉTODO (inverso a las 5 pasadas anteriores): inventario de TODO el
+  código que toca red (c09 2841 · c09b 954 · c09c 391 · c08 2929 · c10 113
+  líneas) y cruce MENSAJE a MENSAJE del protocolo: 16 claves enviadas
+  ('sdp','ice','f2','hello2','tick2','tock2','ready2','mstart','claim',
+  'ack','resync','resync-req','pause','resume','mend','v2off','hallv',
+  'p','h','r','m','pow','bye') contra sus handlers de recepción (c09:587
+  enrutado temprano + switch 1285-1477) y contra los escenarios del arnés.
+
+· COBERTURA PREVIA (5 pasadas): mstart/claim/ack/resync/resync-req/pausa/
+  resume/watchdog (test_red_nucleo 60 + multipartida) · handshake y sdp/
+  ice/f2 (r129 + escenario P) · 'h' espejo v1 y 'r' revancha con guardia
+  r75 (multipartida) · 'pow' duelos (multipartida) · 'mend' ELO (pass 3) ·
+  'bye' (hangup) · 'hallv' leído (r23/r38, cosmético).
+
+· EL HUECO DETECTADO: 'm' (sendMode, SUPERVIVENCIA online, c12:7256/7264)
+  — SIN ningún escenario y con un defecto REAL:
+  BUG #11 · ECO DE MODO: el 'm' sólo viaja del que PIDE. El invitado que
+  pedía SUPERVIVENCIA enviaba 'm' → el anfitrión llamaba switchMode en
+  LOCAL y no devolvía NADA → el invitado se quedaba en PARTIDO: cartel,
+  voz y modo divergían entre extremos (el sync sombra arrastraba el
+  marcador pero this.mode/cartel/audio nunca alineaban). El fix FASE 144
+  (v3.6.142) arregló el camino INVERSO (anfitrión pide → invitado refleja)
+  pero dejó este medio hecho. switchMode además retorna temprano
+  (mode===mode), así que ni un re-intento del invitado lo arreglaba.
+
+· FIX: ECO — cuando el ANFITRIÓN recibe 'm' válido, tras switchMode envía
+  sendMode(d.md): el invitado lo procesa por su rama espejo existente
+  (FASE 144). Sin bucle posible: el invitado no re-envía y la guardia
+  mode===mode filtra los repetidos. La rama md='match' del anfitrión
+  (hoy sin emisor) queda simétrica por el mismo eco.
+
+· CANDADO (rojo→verde probado): escenario R del arnés con stub switchMode
+  que replica la guardia real de c12 — R1 invitado pide: anfitrión cambia
+  E invitado refleja (SIN fix: R1 fallaba con el invitado en []) · R2 sin
+  bucle tras tick extra · R3 anfitrión pide: espejo directo sin doble ·
+  R4 pedido redundante: cero switches (guard). ARNÉS: 72 → 78 escenarios.
+
+· VERSIÓN/DESPLIEGUE: bump 3.6.214 → 3.6.215-SDK6 · golden re-sellado ·
+  batería verde (31+60+22+7+78+12+135+16) · smoke 0 fallos · pages →
+  1cec436fb. El deploy del WORKER (bug #10 de §22) sigue PENDIENTE del
+  CF_API_TOKEN del dueño.
+
+· NOTA DE PROCESO (r131): el push INTERNO de deploy_pages.py no llegó en
+  esta sesión (reportó 1cec436fb pero el ref remoto seguía en 4798f9b) —
+  push manual del ref con el PAT del repo → pages en 1cec436fb · verificado
+  EN VIVO: CACHE crazypp-v3.6.215-SDK6 · VERSION 3.6.215-SDK6 · FIX #11 y
+  el eco presentes en el fichero servido.
+
+
+## 24 · r132 · SÉPTIMA PASADA (FUZZING del protocolo): entradas hostiles; bug #12 — saneo de la frontera del cable
+
+Fecha: 2026-11-24 · petición del dueño: «hasta no encontrar ningún bug».
+
+· MÉTODO (el flanco que 6 pasadas no habían estresado): ENTRADAS HOSTILES
+  — 31 mutaciones malformadas de los 16 mensajes del protocolo (campos
+  ausentes, tipos incorrectos, arrays cortos, NaN, strings, gigantes,
+  binario truncado, k desconocido, no-objetos, re-handshake hostil) +
+  ráfaga de 200 golpeos corruptos, contra UNA SESIÓN VIVA, verificando
+  invariantes: bola finita en ambos extremos, sesión online, cola drenada,
+  sin excepciones dentro de onData.
+
+· ROJO (hallazgos): ① 12a — un 'h' con p/v malformados NaN-iza la bola del
+  INVITADO (el camino directo 636-645 y applyBallStream v1 escribían sin
+  validar; en física real un NaN de pos/vel es PERMANENTE: la bola muere
+  sin recuperación — la clase histórica «bola desaparece»). ② 12b — la
+  cola _pendingHits del anfitrión aceptaba basura sin gate (el drain real
+  drena cada frame vía c12.animate; el gate evita encolar corruptos).
+  ③ 12c — un hello2 hostil/corrupto en un enlace v2 VIVO llamaba _v2Fail y
+  degradaba la partida en marcha a v1 cosmético (el hello2 es UNO por
+  sesión: startV2 resetea _helloDone → la re-entrada O queda intacta).
+  ④ mstart con sa no finito → countdown con NaN (descartado ahora).
+
+· VERDE (31 mutaciones que YA aguantaban, evidencia de robustez previa):
+  applySync con basura (el núcleo c09b valida), claims desconocidos/NaN
+  (validador §12 r128), ack sin seq/-1/1e12, resync/resync-req vacíos, pow
+  desconocido, hallv basura (saneo r23), mend vacío, sdp/ice malformados
+  (_v2RemoteDesc con token de sesión del fix #9), f2 truncado (escudo
+  r123/F1), k desconocido y no-objetos (guardia 588).
+
+· FIXES #12: helper estático NetLink.arrOk(a,n) (Array.isArray + longitud +
+  finitos) y gates en la FRONTERA: 'h' (push del host y aplicación del
+  invitado; el cambio de owner se PRESERVA — es semántico), 'p'
+  (pad≥7 finitos, b.p/b.v, eventos filtrados), drain del anfitrión
+  (defensa en profundidad), mstart sa !isFinite → descartado, hello2 con
+  guardia de estado (_helloDone && v2==='ok' → ignorar). El golpeo
+  legítimo SIEMPRE lleva p/v (sendHit los manda incondicionalmente): cero
+  cambio en el flujo sano.
+
+· CANDADO: escenario F del arnés (10 checks, rojo→verde probado: post-
+  ráfaga bola G null/NaN → finita; cola 200 → 0; hello2 v2=fail → ok).
+  ARNÉS: 78 → 88 escenarios.
+
+· PROCESO: el push interno de deploy_pages.py VOLVIÓ a fallar en silencio
+  (remoto seguía en 1cec436) — push manual del ref con el PAT (2ª vez;
+  candidato a revisión del script). VERIFICACIÓN VIVA tras el deploy:
+  CACHE crazypp-v3.6.216-SDK6 · FIX #12 y arrOk en el fichero servido.
+  El deploy del WORKER (bug #10 de §22) sigue PENDIENTE del CF_API_TOKEN.
+
+
+## 25 · r133 · OCTAVA PASADA (SOAK caótico + superficie c12): hallazgos 12d/12e — resync y v2off saneados
+
+Fecha: 2026-11-24 · petición del dueño: «hasta no encontrar ningún bug».
+
+· PARTE 1 · SUPERFICIE DE RED DE c12 (lo único aún sin lectura
+  sistemática): 39 puntos de contacto auditados — startOnlineMatch/onNet
+  MatchStart (guardias r130/r75, sellado de modo md, firstServer por
+  perspectiva, resync de auto-curación 700 ms) · onNetEnded/ELO (try,
+  cleanup completo: _netStart, skins, _dlReset, hall) · countdown (el NaN
+  de startAt quedó inalcanzable con el fix #12) · v2Paused/nFrozen ·
+  drainNetwork/syncServeOwner/applyBallStream/collectEvents en el frame ·
+  duelos (id desconocido ignorado, ancla bloquea). RESULTADO: sin defecto
+  nuevo; una nota menor (el timer de resync 700 ms no se limpia en
+  onNetEnded; su guardia net.online lo neutraliza).
+
+· PARTE 2 · SOAK CAÓTICO (escenario S — la dimensión que faltaba: tráfico
+  válido PROLONGADO bajo caos aleatorio): 5 tramos de ~3 s con pérdida
+  5-30%, duplicación 0-20%, jitter 0-45 ms MUTANTES por tramo + inyecciones
+  hostiles esporádicas (hello2/v2off/resync basura/h NaN/claim basura/
+  mstart NaN/f2 truncado/no-objetos) + ciclo pausa/reanudación por tramo;
+  invariantes por tramo: bola finita ambos extremos, colas acotadas,
+  enlace v2 vivo, estados coherentes.
+
+· HALLAZGOS (12d/12e, rojo→verde probado en el propio soak):
+  12d · v2off recibido llamaba _v2Fail SIN guardia de estado — un v2off
+    corrupto/hostil degradaba a v1 una partida EN MARCHA (el fuzzer de la
+    7ª no lo inyectaba). FIX: sólo honra v2off en v2='pending' (handshake);
+    en vivo lo ignora (el watchdog se ocupa de un rival muerto de verdad).
+  12e · _applyResync aplicaba st/sa/sp/sv/fs EN CRUDO — un resync corrupto
+    dejaba rules.state=undefined y marcador con strings/NaN en el invitado
+    (el soak lo capturó en t3/t4: el juego del invitado quedaba errático).
+    FIX: whitelist de estado (serve/rally/point/over) + numOk (finito, entero,
+    ≥0) para sa/sp/tp/gp/ga/gn + sv/fs ∈ {player,ai}; el resync corrupto se
+    RECHAZA entero y el siguiente legítimo re-ancla.
+  · NOTA DE ARNÉS (no es bug del juego): startV2 RESETEA _fast/_rel/
+    _fastOpen (c09:1021) — el re-cable post-startV2 es obligatorio; el soak
+    sin él dejó v2='pending' 15 s y el hello2 hostil alcanzó _v2Fail.
+  · Stub mínimo de document en el arnés para ejercitar el teardown real.
+
+· ARNÉS: 88 → 120 escenarios (fuzzer F ampliado con v2off/resync-st; soak
+  S completo). Batería verde (31+60+22+7+120+12+135+16).
+
+· PROCESO: 3ª vez consecutiva que el push interno de deploy_pages.py falla
+  en silencio (remoto en c2c95c44f; push manual del ref 8431e089f) — el
+  script REPORTA el hash sin verificar el push: revisión pendiente. El
+  deploy del WORKER (bug #10 de §22) sigue PENDIENTE del CF_API_TOKEN.
+
+
+## 26 · r134 · NOVENA PASADA (CHURN de sesiones + validación del resync): bug #13 — paquete tardío tras teardown
+
+Fecha: 2026-11-24 · petición del dueño: «hasta no encontrar ningún bug».
+
+· PARTE 1 · VALIDACIÓN DEL RESYNC (la whitelist de la 8ª contra el juego
+  real): el conjunto de estados de Rules es EXACTAMENTE serve/rally/point/
+  over (c06:177+) — la whitelist no puede rechazar resyncs legítimos · los
+  6 números del paquete (_sendResync c09:2294) son enteros ≥0 por
+  construcción · sv/fs viajan normalizados player|ai (host|guest es SOLO
+  del mstart). T2 lo candó: resync legítimo aplica en LOS 4 estados con
+  flip correcto al invitado (scorePlayer=m.sa, scoreAi=m.sp, server/
+  firstServer volteados) y 8 variantes corruptas se rechazan enteras.
+
+· PARTE 2 · CHURN DE SESIONES (escenario T — la dimensión que faltaba:
+  sesiones completas en cadena, no una sesión larga): 10 ciclos teardown→
+  handshake→mstart→rally→teardown. HALLAZGO #13 (bug REAL del juego):
+  un paquete 'ack' en vuelo que llega TRAS el teardown crasheaba _onRel
+  con TypeError (this._sync.onAck sobre null) — WebRTC ENTREGA los
+  paquetes encolados durante el cierre del DataChannel, así que en casco
+  real la página perdía el handler de datos en cada colgado con tráfico
+  en vuelo. FIX: guardia online en la entrada de _onRel (enlace muerto →
+  todo paquete entrante es basura; el _lastRelAt tampoco se refresca).
+  Sin fuga de estado en 10 sesiones: marcador, rallySeq, libro, _seenEv
+  y _pend a cero en cada ciclo.
+
+· 12f · NOTA MENOR de la 8ª resuelta: _netResyncT (resync de auto-curación
+  a 700 ms del mstart) ahora se limpia en onNetEnded — una revancha
+  RÁPIDA (rival nuevo <700 ms) ya no recibe el resync de la partida
+  anterior antes de su propio mstart.
+
+· ARNÉS: 120 → 140 escenarios (T churn ×10 · T2 resync 4 estados + 8
+  corruptos · cablear modela wireConn('open') con online=true, que la
+  guardia #13 exige como el juego real). Batería verde (31+60+22+7+140+
+  12+135+16). La muerte aleatoria del soak en t3/t4 de la corrida
+  anterior NO reapareció (diag permanente auto-diagnóstico si vuelve).
+
+· PROCESO: 4ª vez consecutiva que el push interno de deploy_pages.py
+  falla en silencio (remoto en 8431e089f; push manual del ref af5b25f0e).
+
+
+## 27 · r135 · DÉCIMA PASADA (MATRIZ de interacciones): 12g — mstart con gate de rol; matriz U de 121 pares ordenados VERDE; hilo abierto: flake del soak
+
+Fecha: 2026-11-24 · petición del dueño: «hasta no encontrar ningún bug».
+
+· HALLAZGO 12g (cerrado y candado): el receptor 'mstart' NO tenía gate de
+  rol (sólo validaba sa finito, fix F) — un mstart spoofado desde el lado
+  invitado reseteaba la partida DEL PROPIO anfitrión (doble autoridad →
+  bola/saque desacoplados). FIX: if (role !== 'guest') break — mismo gate
+  que el resync. Candado por EFECTO en el arnés (snapshot del anfitrión
+  antes/después: intacto ante mstart del invitado; el legítimo SÍ aplica).
+
+· ESCENARIO U · MATRIZ DE PARES ORDENADOS (nueva dimensión de cobertura):
+  11 mensajes válidos que cambian estado (mstart, resync, resync-req,
+  pause, resume, pow, hallv, mend, hello2, v2off, r) × las 121
+  combinaciones ordenadas, ancla de mstart entre pares, invariantes FSM por
+  par (v2 ok, estado ∈ {serve,rally,point,over}, marcadores enteros ≥0,
+  bola finita, sin throws) — RESULTADO: coherente al 100%. La clase de los
+  bugs históricos 12d/#13 («X tras Y») queda explorada SISTEMÁTICAMENTE.
+
+· HILO ABIERTO (no cerrado en esta ronda): el soak S muere de forma
+  intermitente (~1/6 de corridas: «enlace v2 vivo» en t3/t4) bajo caos
+  extremo. Volcado capturado con el disparador de atasco (nuevo): el
+  watchdog del ANFITRIÓN dispara con fastAge=12003/relAge=211 — el rel del
+  invitado seguía llegando mientras el fast llevaba 12 s sin llegar; el
+  invitado en el momento del STALL estaba SANO (fastOpen=true, poseAcc
+  ciclando, 30 Hz degradado por pérdida, v2 ok). Descartado por prueba
+  directa (scripts/test_encode_nan.mjs): encodePacket NO rechaza pose NaN
+  (52 bytes igual). Hipótesis pendiente: cadena del reinicio de ICE del
+  invitado (c09:1665, gate a 5 s de silencio fast propio) — si reinicia,
+  ¿deja de emitir y el anfitrión muere a los 12 s? Herramientas dejadas
+  listas: disparador de atasco en el soak (permanente), diag enriquecido
+  en onPeerGone, copia de estrés scripts/soak_stress_tmp.mjs (loss 0.5,
+  8 tramos — reproduce en ~1-2 corridas). La muerte es siempre DEGRADACIÓN
+  LIMPIA (bola finita, colas acotadas, estados coherentes — todos los
+  demás invariantes verdes incluso en la corrida muerta).
+
+· ARNÉS: 140 → 144 (U matriz + candados 12g). Batería: 31+60+22+7+144+12+
+  135+16 en verde (la corrida de batería con el flake del soak activo dio
+  142/2; las 5 corridas siguientes: 144/144).
+
+
+## 28 · r136 · UNDÉCIMA PASADA — FLAKE DEL SOAK CERRADO: mecánica completa + hardening de producto
+
+Fecha: 2026-11-24 · continuación directa del hilo abierto en §27.
+
+· MECÁNICA CONFIRMADA (con volcado + fuente de send): el arnés tiene un
+  stub global de RTCPeerConnection; startV2 REAL corre sobre él y las DOS
+  oleadas asíncronas de canales (createDataChannel del oferente en
+  _v2Offer c09:1120, y los canales recibidos del respondedor) REEMPLAZAN
+  los dcs del bus que cablear había puesto. La segunda oleada entrega
+  objetos {close,binaryType,onopen,onmessage,onerror,onclose} — SIN send.
+  El onopen del stub pone _fastOpen=true sobre un dc sin send: _fastSend
+  entra (649 entradas contadas), la puerta pasa, y el
+  try{send}catch{} traga el TypeError CADA FRAME → el invitado enmudece
+  desde ~1.1 s → el watchdog del anfitrión dispara a los 12 s
+  (fastAge=12003-12015, relAge=97-611: el rel —otro dc— seguía vivo).
+  Sólo moría el SOAK porque es el único escenario que vive >12 s; el
+  1/6 era el timing de la oleada asíncrona. DISCRIMINACIÓN COMPLETA:
+  contadores del bus (intentos/entregas por sentido), _sendFast/_fastSend
+  por NetLink, etiquetas de dc + comparación de identidad, y CLAVES +
+  FUENTE de send en el volcado del disparador.
+
+· FIX DE PRODUCTO (c09 _fastSend): un dc sin send utilizable no puede
+  enmudecer al emisor en silencio — fallo persistente >1.5 s de intentos
+  con v2 ok → _v2Fail(net_legacy): DEGRADACIÓN LIMPIA A V1 (espejo
+  cosmético, la partida sigue) en vez de muerte zombi a los 12 s. Los
+  fallos transitorios del cierre no disparan (v2!=ok o !online los
+  descartan). En el casco real cubre SCTP en cierre/reemplazo de canal.
+
+· FIX DE ARNÉS: cablear auto-re-afirma los dcs del bus a +1.4 s (tras la
+  última oleada) con guardia de generación (par.gen) para no pisar
+  sesiones posteriores del churn · re-cable post-handshake en S y en la
+  re-entrada · candado S0t (las etiquetas del bus VIGENTES tras el
+  handshake) · campos v1 del mock (controllerPaddles/paddleHand) para el
+  camino _v2Fail→tick del hardening (en el juego real c12 los tiene).
+
+· ARNÉS: 144 → 145 escenarios, VERDE. Red: qa_version 31 + red_nucleo 60
+  + claims 22 + multipartida 145. Bump 3.6.220-SDK6.
+
+
+## 29 · r137 · DUODÉCIMA PASADA — ICONOS AAA DEL UI KIT EN EL MENÚ
+
+Fecha: 2026-11-24 · petición del dueño: «añadir los iconos de la plantilla
+adjunta a nuestro sistema de menú para mejorar su aspecto».
+
+· FUENTE: UI Kit AAA adjunto (gemini-code-…html, 47 SVG). Sección F ·
+  Iconos AAA Volumétricos 128×128 — la paleta del kit ES la del juego
+  (#FFD426/#38BDF8/#0A1730). Los glifos se extraen por su COMENTARIO
+  <!-- ico_x --> (la asociación por <h3> desplazaba los iconos: el h3 va
+  DESPUÉS del svg en el DOM — detectado con hoja de contactos).
+
+· INTEGRACIÓN: el menú 3D pinta iconos desde ICONOS_MENUS (c02:931,
+  resolucion 256) → assets/externos/icono_*.png. Los actuales traen su
+  PROPIO medallón (disco navy con rim y brillo) — el glifo desnudo del kit
+  rompería el estilo. Solución: componer glifo del kit (62%) sobre un
+  medallón replicado (gradiente vertical real por filas — la primera
+  versión con elipses solapadas producía bandas; corregida con máscara
+  circular) en lienzo 256×256 (la primera salida salió a 248).
+
+· 10 ICONOS SUSTITUIDOS (mapeo directo con el kit): entrenar (objetivo),
+  multijugador (palas), campeonatos (trofeo), ranking (escalera→gráfico
+  ascendente), vestibulo (mesa), ajustes (engranaje), sala (escena),
+  audio (altavoz), usuario (perfil), partido (jugar ▶). Verificados con
+  PIL: 256×256, ~72% de píxel visible, transparencia correcta. Los 11
+  restantes del kit quedan en scripts/iconos_plantilla/ (svg+png staging)
+  para futuros huecos (musica, direccion, altura, efecto, saque, ritmo,
+  reto_semana, historial, info, vr_pala, candado/aspa/chinchetas).
+
+· qa_version 31 OK · bump 3.6.221-SDK6 · build sincronizado.
+
+
+## 30 · r138 · 13ª PASADA — REDISEÑO VISUAL DEL MENÚ: LA PIEL VIVA + EL MENÚ EN MOVIMIENTO
+
+Fecha: 2026-11-24 · petición del dueño: «rediseñar los menús, algo más
+vistoso y animado — tal como lo tenemos es muy soso. Mucho más visual,
+que encaje perfectamente en VR, perfectamente maquetado y 100% funcional».
+
+· ARNÉS DE QA VISUAL OFFSCREEN (scripts/preview_menu_offscreen.mjs —
+  NUEVO): ejecuta el drawMenu REAL en node (node-canvas + stubs de DOM/
+  Image/XR + gancho de carga que completa los exports que faltan de c10
+  y bloquea el `new PingPongGame` de c13) y vuelva las TRES panelas del
+  arco de cada página a PNG — QA exacta de lo que el dueño ve en el
+  visor, sin casco. Páginas verificadas: main, multi, champs, opts
+  (rects idénticos antes/después: 14/6/8/10 — geometría intacta) y
+  estados apuntados (HOVER=N). Produce: hoja ANTES/DESPUÉS comparativa.
+
+· LA PIEL VIVA (lienzo — repintado sólo por página/hover, nunca por
+  frame): _vestFondoRico — base profunda del kit (#0F2752→#050C1A) +
+  resplandores radiales (oro bajo el logo, cian al pie y en lados) +
+  rejilla fina de sala + campo de 110 destellos con semilla determinista
+  + viñeta. _vestBandaTop — filo de luz oro→cian por panela montada.
+  Visten el vestíbulo Y la concha de secciones: las tres alturas de
+  menú con UNA pieza (los páramos del nivel 2/3 tienen atmósfera).
+
+· DETALLES: medallones con HALO del color del aro (_vestMedallion) ·
+  placa73 con filo cian superior + rim interior (profundidad del nivel
+  3) · btn compartido: apuntado = halo del acento (verde/naranja/oro) ·
+  tarjetas del vestíbulo apuntadas = halo dorado + borde blanco ·
+  títulos de sección con subrayado degradado oro→cian · marca de agua
+  de las panelas laterales: medallón protagonista con anillos
+  concéntricos + arco de puntos (adiós vacío soso).
+
+· EL MENÚ EN MOVIMIENTO (menuFxVivo — GPU pura, lección r83: jamás
+  re-muestrear la textura): 1 · FLOTACIÓN — cada panela respira ±7 mm
+  a 3,4 s con fase propia (ola de arco; la base se deriva cada frame de
+  posición−bob: convive con cascada/_menuArco sin deriva) · 2 · HALO DE
+  APUNTADO — aro dorado aditivo sobre la tarjeta tocada por el rayo,
+  opacidad amortiguada 0.18, re-parentado a la panela que la contiene:
+  respuesta visible ANTES del repintado. Convive con el barrido r83 y
+  la cascada de entrada (la cadena FX retorna antes; vivo sólo en
+  reposo). raycast anulado (no estorba al rayo del menú).
+
+· Batería: qa_version 31 OK · red_nucleo 60 OK · arnés multipartida 145
+  VERDE · bump 3.6.222-SDK6 · build sincronizado.
+
+
+## 31 · r139 · 14ª PASADA — REDISEÑO RADIAL DEL MENÚ (el mockup del dueño:
+## «Interfaz futurista de Crazy Ping Pong VR» — cristal navy + neón cian + CTA oro)
+
+Fecha: 2026-11-24 · el dueño rechazó la 13ª («prácticamente igual») y
+adjuntó el MOCKUP de referencia: barras de cristal azul con bordes neón,
+«Jugar» como píldora DORADA, discos de icono navy con anillo cian,
+cabeceras con punto de presencia y ambiente de pabellón nocturno. La
+13ª mantenía el caramelo arcoíris: la 14ª lo jubila — el menú entero
+habla UN solo idioma: azul eléctrico + cian neón + oro de CTA.
+
+· _vestBarraNeon (NUEVO, elemento firma): cristal navy con luz de canto,
+  BORDE CIÁN GORDO (3,5 px) con halo exterior y borde interior fino; en
+  ORO viste la CTA. Parámetros (oro, hover) — aire al apuntar.
+· VESTÍBULO: tarjetas = barras neón (adiós _vestCandy arcoíris); el
+  héroe JUGAR es la ÚNICA pieza dorada (sub en marrón oscuro sobre oro,
+  como el mockup); cabeceras-píldora COMPITE/JUGAR/TU CASA con disco de
+  icono (mapa id→icono del kit en el pintor) + punto de presencia verde;
+  marcos de panela con halo neón.
+· NIVEL 2/3: placa73 = placa neón (latón r72 jubilado); btn compartido —
+  reposo cristal navy + borde neón por estilo (verde/naranja conservan
+  semántica, neutro cian, gold oro), apuntado halo del acento, ACTIVO =
+  píldora dorada con texto navy; ATRÁS de la concha = barra neón;
+  marcos de la concha con halo.
+· ARENA NOCTURNA: base #0E2C66→#040C1D + HACES DE LUZ del pabellón
+  (conos translúcidos cayendo del borde superior, cruzando panelas) +
+  resplandores/rejilla/destellos/viñeta de la 13ª.
+· MEDALLÓN (mockup): disco NAVY opaco #0A1B3A + anillo CIÁN gordo que
+  brilla + aro interior fino; aro teñido por categoría se respeta.
+· FUNCIONALIDAD INTACTA: rects idénticos en las 4 páginas del arnés
+  offscreen (14/6/8/10 antes/después) — hitboxes, ids y acciones sin
+  tocar; hover verificado (héroe dorado + filas neón).
+· Batería: qa_version 31 OK · red_nucleo 60 OK · arnés multipartida 145
+  VERDE · bump 3.6.223-SDK6 · build sincronizado.
+
+
+## 32 · r140 · 5ª PASADA — REVISIÓN MULTIJUGADOR EN PROFUNDIDAD (4 agentes
+## en paralelo + simulación de partidas en red ampliada)
+
+Fecha: 2026-11-24 · el dueño pidió revisión de la modalidad multijugador
+«en profundidad, con varios agentes y simulación de partidas en red».
+
+· 4 AGENTES de revisión (salas/lobby · handshake/arranque/desconexiones ·
+  sincronización en vivo · robustez de protocolo): 44 hallazgos (≈30 tras
+  deduplicar) — 5 CRÍTICOS verificados en Node, ~15 medios, resto bajos.
+· CRÍTICOS CORREGIDOS: (1) claim legacy sin rallyId aplicaba PUNTOS
+  FANTASMA ilimitados y envenenaba el libro (fail-closed en c09 frontera
+  + c09b onClaim monótono + c06 forcePoint fail-closed); (2) sync v1 `y`
+  EN CRUDO envenenaba reglas/estado/ELO del árbitro — gate de rol
+  (sólo el invitado aplica) + whitelist completa (dominio de st, números
+  acotados, wn coherente con el marcador); (3) NaN del canal FAST (f32 de
+  p/v/s) entraba en la bola — decodePacket rechaza el evento entero;
+  (4) tock2 basura envenenaba el reloj (offset NaN irreversible) —
+  frontera en tick2/tock2 + anchor/_sample saneados; (5) watchdog ciego
+  a la v1: la degradación limpia moría a los ~12 s — el tráfico v1
+  refresca vida, el fast decodificado prueba vida aunque yo esté
+  degradado (_onFastVida), _v2Fail arma el reloj y degrada EN ESPEJO si
+  el reliable fluye (antes muerte segura).
+· BUG REAL EXTRA desenterrado por el bus nuevo: los poderes de DUELOS
+  ('pow') viajaban por sendRel → onData y NO ESTABAN en el routing — el
+  rival jamás los veía en producción (el arnés antiguo saltaba onData y
+  lo enmascaraba). Añadido al switch.
+· MEDIOS CORREGIDOS: cuenta atrás clavada si degrada en plena cuenta
+  atrás (hook onNetV2Fail + limpieza en animate); mstart con ventana de
+  validez ±60 s y bo/fs acotados; guardia «en marcha» en startOnlineMatch
+  (EMPEZAR/revancha no resetean un rallye vivo; el duelo aceptado fuerza
+  vía _dueloForceStart); onData post-teardown no toca el juego; _iceQ
+  tope 64; segundo hello2 ignorado en cualquier estado; golpeos v1 con
+  cadencia ≥150 ms y ≤2/frame (adiós dblhit por flood); claim implausible
+  del invitado pide resync-req (cura en un RTT); techo de _pend descarta
+  SNAP primero; frescura sellada tras decodificar; SILENCIO en pausa 60→30 s;
+  _overKey por sesión; resync go/lh de dominio; causa acotada a 32 car.
+· LOBBY/SOCIAL (agente A): el duelo NO irrumpe (auto-mstart retenido
+  mientras _dueloPend; el mstart real sale al aceptar); el ELO por
+  abandono ya no es código muerto (wasOnline viaja de onPeerGone);
+  Reintentar tras join fallido NO convierte en anfitrión (reintenta el
+  código); los códigos de salas PRIVADAS se enmascaran en el pulso
+  (pollLista + UI); error fatal de peer corta el micro; el watchdog del
+  join hace teardown; el joining abortado avisa («sala no encontrada»);
+  mjsal congela el CÓDIGO (adiós TOCTOU de índice); unirse por código
+  exige sala propia cancelada (guard como mjsal); aceptar() no borra el
+  buzón si el join es inviable; 'pow' con cadencia 1 s.
+· ARNÉS r140 (test_r130_multipartida.mjs): el bus entrega el rel POR
+  onData (frontera real con JSON + guardia de sesión — antes lo saltaba);
+  invariantes de marcador/estado/libro en el grupo F; GRUPO X NUEVO con
+  13 repros (X1-X15) uno por fix crítico/medio. 182 OK · 1 fallo
+  residual: X6 (la partida degradada SOBREVIVE ✓ pero el extremo en v2
+  aún no termina de degradar en espejo dentro de la ventana del test).
+  qa_version 28 OK · 3 fallos (dependen de la línea de batería del
+  arnés: mismo residual) · red_nucleo 60 VERDE · build sincronizado ·
+  bump 3.6.224-SDK6. PENDIENTE para la siguiente pasada: cerrar X6
+  (probablemente _lastFastAt sigue fresco en el extremo ok: auditar
+  writers) y re-verde de qa_version.
+
+
+## 33 · r141 · CONVERGENCIA — 6ª pasada: auditoría congelada + catálogo
+## cerrado en UN lote (worker incluido, por primera vez)
+
+Fecha: 2026-11-25 · el dueño preguntó sin rodeos: «¿tiene sentido que cada
+revisión encuentre bugs nuevos? ¿no se puede de una pasada?». Respuesta
+honesta dada en la conversación (los bugs no son nuevos: cada pasada hace
+VISIBLES capas que antes eran invisibles; la señal real es que lo ya
+arreglado NO se re-abre). Hoy se aplicó el criterio de convergencia.
+
+· AUDITORÍA CONGELADA (3 agentes): worker/señalización (NUNCA auditado) ·
+  lobby/social (verificación de completitud r140) · convergencia del
+  núcleo (los 7 fixes r140, uno a uno, con repro propio del agente).
+· CONVERGENCIA DEMOSTRADA EN EL NÚCLEO: 6/7 fixes r140 «OK-VERIFICADO»;
+  el 7º (claims) tenía 2 escapes — gate v2 ausente en el camino clásico y
+  rallyId FRACCIONARIO (2.5 minteaba y duplicaba el punto; verificado en
+  Node) — cerrados con 1 línea por guardia (N1 + N2 en c09/c09b/c06).
+  Cero hallazgos críticos nuevos en el núcleo.
+· WORKER (2 CRÍTICOS reales, territorio nuevo): (1) ?lista=1 SEGUÍA
+  filtrando los códigos de salas PRIVADAS en el servidor (el parche r140
+  fue sólo cliente) → CASE WHEN vis='pub' en el SELECT; (2) SUPANTACIÓN
+  total de pid (upsert/bye sin credencial — el pid es público) → TOKEN DE
+  LATIDO: el primer latido genera el token, el cliente (c09c) lo guarda y
+  lo reenvía en latidos/bye/buzón; el buzón (GET/DELETE) lo exige.
+· MEDIOS DEL WORKER: tope de buzón sin límite por remitente + destinatario
+  sin latido vivo → contador global + check de frescura; eventos con
+  v/sid no escalares tumbaban el LOTE ENTERO con 500 HTML → saneo en
+  sanea() + try/catch del batch (400 JSON); el throttle r128 contaba
+  PETICIONES y no FILAS (1M filas/min agotaban la cuota D1) → contador de
+  filas; /api/presencia e /api/invita SIN throttle → 600/min global;
+  latido ?sid= público con instr() por subcadena → exacto + clave;
+  CSV con t=1e300 → rango validado; el arnés del worker apuntaba a
+  upload/ (transitorio) → al repo, con 7 casos negativos nuevos (25 OK).
+· LOBBY (auditoría de completitud r140 — 8 hallazgos, todos corregidos):
+  ELO FANTASMA (mi fix (b) de r140 revivió la rama sin discriminador de
+  partida p2p empezada → this._netStart en la condición); _dueloPend
+  ZOMBI + chip del landing muerto (limpieza en onNetEnded + 'dueloask'
+  en el despacho page); mjvis volteaba la visibilidad de una sala VIVA en
+  silencio (recreación explícita); el aborto de joining pintaba el
+  mensaje en un estado que nadie muestra ('error' ahora); aceptar() con
+  sala propia en espera destruía la sala (waiting/creating en el guard) y
+  con join inviable por otra causa perdía la invitación (available +
+  formato antes de borrar); _dueloForceStart residual al aceptar con v2
+  pending (_netStartWhenReady también); clic de sala desaparecida era
+  MUDO (mensaje con arg); teclado con sala viva bloqueaba en silencio
+  (mensaje). NUEVO BAJO: INVITAR sin feedback → fallo avisa con mj_error.
+· NÚCLEO r141: N3 ice-restart → el aviso extiende el régimen de 25 s del
+  RECEPTOR (el anfitrión mataba a los 12 s y el 2º reintento llegaba
+  tarde; mensaje nuevo 'ice-restart' en el routing); N5 _powT sin techo
+  (stamp tras el dominio); N6 applySync enteros + ow de dominio real;
+  N7 el EMISOR no envía eventos no finitos (_queueEv — el rival dejaba de
+  congelarse si mi física se NaN-izaba). Documentados sin fix (BAJO,
+  sin riesgo): N4 'mend' receptor muerto (spec §9 — impacto nulo hoy) y
+  N8 «todo tráfico = vida» ante un par hostil que inunda bytes corruptos
+  (trade-off aceptado de r140).
+· BATERÍA: multipartida 187 OK · 0 fallos (exit 0 limpio con writeSync +
+  process.exit — los timers del soak colgaban el proceso tras el resumen)
+  · red_nucleo 60 OK · claims 22 OK · worker 25 OK · qa_version 31 OK ·
+  0 fallos (las 3 dependencias del residual X6 de r140: RESUELTAS — el
+  early-mirror de 6 s exige fast VIVIDO antes de poder morir) · build
+  sincronizado · bump 3.6.225-SDK6 · deploy pages + worker.
+· CONCLUSIÓN DE CONVERGENCIA para el dueño: repetida la auditoría sobre
+  lo corregido, el núcleo no rinde hallazgos CRÍTICOS nuevos y los dos
+  «nuevos» eran escapes del MISMO fix (cerrados con una línea). Lo nuevo
+  de verdad vino del territorio NUNCA auditado (worker) y de ver la
+  COMPLETITUD de los fixes (efectos colaterales). Siguiente frontera
+  honesta: sólo la realidad (dos Quest en Wi-Fi real) puede sacar más.
+
+
+## 34 · r142 · 7ª PASADA — worker en producción + 4 agentes + 19 fixes
+
+Fecha: 2026-11-25 · el dueño dio el token de Cloudflare: worker desplegado
+y el flujo r141 validado CONTRA PRODUCCIÓN REAL (token en el primer latido,
+403 sin token, códigos privados NO filtrados en ?lista=1, buzón 403/200,
+bye con token — producción limpia). Después, 4 agentes en paralelo sobre
+lo NUNCA auditado: c12-lado-partida · c09b profundo + fixes r141 ·
+contrato token cliente-servidor · diseño de escenarios que el arnés no
+alcanza.
+
+· WATCHDOG (los 2 defectos estructurales del r141, confirmados leyendo):
+  (1) 'ice-restart' SIN TOPE congelaba el watchdog v1 PARA SIEMPRE y
+  posponía el reintento ICE propio (el MISMO sello _lastIceTry limitaba
+  ambos) → tope 2/sesión + cadencia 8 s + sello SEPARADO _iceAvisoAt +
+  sólo con el fast mudo >3 s (c09). (2) el aviso viajaba por sendRel
+  (el ICE CAÍDO — letra muerta en su escenario diana) → por this.send,
+  la misma vía que el SDP.
+· ESPEJO TEMPRANO con exenciones anti-falso-positivo: SOLO el aviso del
+  RIVAL exime (mi propio reintento ICE no dice nada del rival — con
+  reinicioVivo completo, el invitado que reintenta a los 5 s volvía al
+  régimen de 25 s y X6 moría), + pausa remota + gracia de 5 s tras
+  'resume' (el App resume del Quest tarda en re-emitir: UN mensaje de
+  reanudación ya no degrada la partida).
+· VIDA REAL: 'r' y 'm' SESELLAN _lastRelAt (el anfitrión procesaba la
+  revancha y moría a los 12 s — partida zombi asimétrica); v2off pinta
+  su campo c (la revancha rechazada en v1 por fin avisa al invitado).
+· CLAIMS: _sendResync limpia los held del EMISOR (el timer del hold
+  aplicaba el claim ENCIMA de la verdad re-anclada — defecto estructural
+  del agente D); onAck casa ack.r con el pendiente y procesa agree:false
+  SIEMPRE (antes se tragaba dispute con ok:true); ventana 600 ms →
+  VP.CLAIM_TIMEOUT (constante muerta unificada).
+· COTAS: rs/sh del resync acotados (1e15 envenenaba el correlativo y
+  degradaba a claims para siempre); _seenEv con tope duro 512 (flood de
+  ids nuevos); ring NTP 8→32 (RTT >130 ms se saltaba las muestras y el
+  offset quedaba clavado en el ancla gruesa); decodePacket con dominio
+  (kinds 1..3).
+· FAST reordenación: gate de shot en _applyFastEv (HANDOFF(n) antes que
+  HIT(n) fabricaba TRAMPAS falsas → resync-req + sospechosa en Wi-Fi
+  multipath real).
+· C12 (lado aplicación): flag _netMatchLive (set en onNetMatchStart,
+  clear en onNetEnded) para el ELO de abandono y la cola de vuelta a CPU
+  — _netStart se anula en la degradación v2 (el match sigue por espejo v1
+  y el abandono quedaba impune) y una sesión pendiente reseteaba la
+  semifinal de campeonato del anfitrión; EMPEZAR consume _dueloPend (es
+  la aceptación); el mstart cierra menú/recalibración; pausa CONGELA la
+  cuenta atrás (expiraba en pausa y sembraba el saque en frío);
+  onRemoteDueloPower: CONGELADO no recibe poderes + el ARCANO del rival
+  no pisa mi slot base (asimetría inversa de FASE 160); onNetV2Fail/
+  onNetEnded limpian _dueloForceStart/_powT; onNetMatchEnd RECIBE por fin
+  el 'mend' (muerto desde r84, dominio cerrado).
+· TOKEN (contrato, agente C): pp_tok en localStorage (2 pestañas del
+  mismo Quest ya no se 403-ean en bucle); el token SIEMPRE nace en el
+  SERVIDOR sin fila previa (adiós SQUAT del pid público); X-Tok por
+  cabecera (fuera de los logs de acceso); aceptar() vacía la tarjeta
+  local aunque el DELETE falle; rate social POR PID (60/min, mapa LRU) +
+  invitaciones POR REMITENTE (10/h) — el global castigaba a ~50 jugadores
+  legítimos. La mitigación «aceptar sin tok si v≠VERSION» se DESCARTA
+  (v es controlado por el atacante: revertiría r141 entera).
+· ARNÉS: X19 (spam acotado → el zombi es detectable) · X20 (held muere
+  con el resync) · X21 ('r' sella vida → v1 vivo, NO muerto a los 12 s) ·
+  X22 (gracia de resume + no infinita) · X23 (pow ignorado en pausa) ·
+  X24 (contrato onNetEnded). La emisión de pose requiere partida viva
+  (fastRaw=0 en el DBG lo demostró): los escenarios fijan la premisa
+  «fast vivió 1 s y murió» explícitamente.
+· BATERÍA: multipartida **203 OK · 0 fallos** · red_nucleo 60 · claims 22 ·
+  worker 25 · qa_version 31 — 341 checks en verde · bump 3.6.226-SDK6.
+· PENDIENTE HONESTO: c12:16054 _dlUpdate/DL_BASE dominio abierto para
+  ids arcana futuros (BAJO, documentado); los 3 ficheros era_legacy
+  contienen tokens CF ANTIGUOS commiteados (preexistente — recomiendo
+  rotarlos y purgarlos del histórico).
+
+
+## 35 · r143 · 8ª PASADA — los territorios que 7 rondas no tocaron
+
+Fecha: 2026-11-25 · 4 agentes NUEVOS: voz/micrófono (c03+c09) · superficie
+de seguridad del worker + sw.js · c06 reglamentaria pura + campeonato×online
+· ciclo de vida de recursos. + E2E del juego desplegado (navegador headless).
+
+· REGRESIÓN DE r142 corregida (el agente de c06 la cazó con git blame): el
+  gate del ELO por abandono leía _netMatchLive DESPUÉS de limpiarlo → el
+  abandono volvía a ser impune desde ayer. Gate sobre la captura
+  habiaPartido. Lección: el flag se captura ANTES de la limpieza.
+· LIBRO DE RECLAMOS muerto en juegos 2+ (crítico estructural): rallySeq
+  reinicia con cada juego del mejor de N pero MatchSync.applied conservaba
+  el juego anterior (~19) — TODO claim del juego nuevo caía como duplicado
+  (r<applied) sin cura. resetLibro() en el intent 'serve' con gameEnd
+  (ambos extremos, c12).
+· SUPERVIVENCIA online sin ancla de saque (crítico): va por 'm' sin mstart
+  y c06 hardcodea firstServer='player' local → DOS bolas HELD, ningún
+  saque, sin cura (sin claims ni auto-resync en supervivencia). El
+  anfitrión manda un resync tras el eco del modo (c09 'm') — X25 lo cubre.
+· CAMPEONATO × ONLINE (crítico): aceptar un duelo NO cerraba el módulo
+  activo → el fin del P2P avanzaba el camino, sumaba rank/wins y podía
+  OTORGAR EL TROFEO con un rival que nunca compitió. leaveAll en
+  _dueloArrancar + gate !net.online en champs.onMatchOver. Y el ELO del
+  flanco game-over ahora es SIMÉTRICO en P2P (antes host-hard vs
+  invitado-easy usaban ELO_CPU de SU dificultad — M4 violado).
+· VOZ (agente nuevo, H1 CRÍTICO): un getUserMedia que resuelve DESPUÉS del
+  teardown re-abría el micro con la sesión muerta (LED del casco encendido
+  en el menú). Sello de sesión _vozGen (patrón _v2T0) + guard de promesa
+  en vuelo _vozReq (3 gUM apilados dejaban 2 streams huérfanos) + el mic
+  TARDÍO (>4 s) ahora SUBE a la llamada viva con replaceTrack (antes:
+  voiceState 'on' y el rival sin oír NADA toda la partida) + call.on(close)
+  limpia srcObject/this.call + silentStream sin ctx fuera de sesión +
+  _iceOkT con clear en teardown.
+· UX de la alerta: no pisa el cartel del árbitro en plena semifinal.
+· WORKER (agente seguridad, sin críticos): social DEGRADA EN JSON (503)
+  en vez de 1101 HTML; telemetría con techo POR IP (2000 eventos/min con
+  CF-Connecting-IP — la cuota D1 del free tier se quemaba en minutos y el
+  canal social entero caía para todos); invitaciones con techo POR
+  DESTINATARIO (8/h — rotar remitentes burlaba el por-remitente);
+  contención de fuerza bruta de la CLAVE (30 fallos/min → 429 en los 4
+  llamadores); el PANEL deja de mandar la clave en la query (X-Clave por
+  cabecera en los 3 fetches — estaba en los logs de Cloudflare cada 10 s).
+· ARNÉS: X25 (ancla de supervivencia) + `reenvia` muerto con closure rota
+  eliminado (agente ciclo de vida). CICLO DE VIDA: sin contenedores
+  explosivos (todos techados — el agente lo verificó recurso a recurso);
+  listeners en pareja en todos los caminos; THREE por-red reutiliza.
+· Descartados/documentados (diseño, no bug): leaveAll de ▶ JUGAR sin
+  confirmación mata la semifinal (pedir prompt al dueño); pid estable
+  rastreable (r74 lo asume — alias por sesión si algún día se quiere);
+  CORS allowlist (valor bajo, riesgo de romper orígenes); auto-rellamada
+  de voz en ICE failed (queda el cleanup honesto); sw.js build-mixto en
+  primera recarga con red lenta (skipWaiting ya existe; riesgo de cambio).
+· BATERÍA: multipartida **205 OK · 0 fallos** · red_nucleo 60 · claims 22 ·
+  worker 25 · qa_version 31 — 343 checks en verde · bump 3.6.227-SDK6.
+
+
+## 36 · r144 · 9ª PASADA — física/golpeo (c04/c05), UI (c08/c10/c13), campeonato profundo, integridad del arnés
+
+Fecha: 2026-11-25 · 4 agentes NUEVOS. Pendiente de la r143 cerrado: el build de
+Pages de 25107866d NUNCA se disparó (API: latest build seguía en 230fc18) — en
+el despliegue de esta ronda se verifica el build por API y el CDN.
+
+· FÍSICA (primera auditoría en 9 rondas — H1 CRÍTICO):
+  - H1: collideNet evaluaba la banda de la cinta con la Y/X de FIN de
+    subpaso → un smash que cruzaba dentro de la banda pero acababa el
+    subpaso arriba ATRAVESABA la red sin evento (y a otro framerate daba
+    roce) → causas opuestas en los dos extremos, disputas espurias. Ahora
+    Y/X interpoladas en la fracción de cruce (patrón del simulador).
+  - H2: collideTable inX/inZ igual familia → canto perdido a v alta →
+    out/noret vs bote válido. Interpoladas en el cruce vertical.
+  - H3: contacto blando con impulso REAL sin evento paddle → sin HIT → el
+    rival simulaba la bola sin mi toque (divergencia garantizada). Ahora
+    el evento EMITE SIEMPRE que la física aplica impulso (flag soft para
+    el nivel sensorial) y el cooldown se fija siempre.
+  - H4: asentamiento silencioso del suelo (<0.3 m/s) emitía CERO floor →
+    rally colgado para siempre. UN evento por aterrizaje (flag __floorRest
+    que se limpia al volver a volar).
+  - H5: testPaddleContact (v1) drenaba el cooldown a 0.016 FIJO (a 90 fps
+    expiraba 15% antes) y sin bypass still → ventana de doble contacto
+    ASIMÉTRICA entre extremos. Ahora dt real + bypass.
+  - H6: la captura de reposo secuestraba la bola del RIVAL (restTouch que
+    nadie consume) mientras su autoridad seguía volando. Flag __ghost en
+    c12 y la captura exige bola propia.
+· UI (primera auditoría):
+  - UI-1: el hook onNetResyncPost que r142 LLAMABA no EXISTÍA (no-op
+    silencioso) → cartel «tu saque» fantasma tras resync + tossed residual
+    bloqueando el gatillo. Implementado en c12 (resetToss + cartel por
+    rules.server + visibilidad de la bola).
+  - UI-2: menú zombi — aceptar un duelo con la sesión MUERTA anunciaba
+    «Rival conectado» y dejaba la cancha sin partida. onNetEnded repinta
+    el menú (dueloask→main) y _dueloArrancar exige net.conn.
+  - UI-3: chip de voz mapea el 'error' nuevo de r143 (voz_error es/en).
+  - UI-4/5: ov_tv fantasma (tooltip crudo en la portada) + #status sin
+    i18n → claves es/en y data-i18n.
+  - UI-6/7: la key de dedup del marcador incluye oppLabel (transición
+    cpu→rival con todo lo demás igual) y el cartel «RIVAL EN PAUSA» no
+    sobrevive al rallye reanudado (sólo lo hacía al saque).
+· CAMPEONATO (módulos):
+  - C-F2: el trofeo de La Locura ahora escribe stage ANTES que trophy y el
+    bloque re-otorgador va bajo guard !this.trophy (escritura cortada por
+    cuota ya no re-fanfarriña ni deja campeón sin trofeo).
+  - C-F3: el rank de Halloween separa el parse del push (JSON corrupto ya
+    no congela el historial — degrada a [] como locura).
+· ARNÉS (agente de integridad — hallazgo ESTRUCTURAL): la batería nunca
+  ejecuta c12 (espejo de ~250 líneas) — la regresión ELO r142 era
+  indetectable por construcción (X24 lo admite en su comentario). Diseño
+  de migración barata documentado (Object.create(PingPongGame.prototype)
+  + andamiaje del fake + export _dbQ2). PENDIENTE para la 10ª pasada:
+  migrar onNetEnded/processIntents al código REAL y reescribir X24.
+  PENDIENTE también: variante de la segunda oportunidad (locura _afterResult
+  relanza por stage restaurado — recordando _replayVariant), aunque el
+  downgrade 5→4 que causaba ya está muerto por el flujo actual.
+· BATERÍA: multipartida 205 OK · nucleo 60 · claims 22 · worker 25 ·
+  qa_version 31 — 343 checks verde · bump 3.6.228-SDK6.
+
+## 37 · r145 · 10ª PASADA — el arnés corre el c12 REAL (migración agente D) + C-F1 La Locura
+
+Fecha: 2026-11-26 · La tarea prioritaria de r144 ejecutada. Pendiente menor
+que queda: tokens Cloudflare (CF_API_TOKEN no está en el entorno del sandbox
+— el dueño debe exportarlo para el verify; el TURN_API_TOKEN es secret del
+worker, no legible por diseño) y el gemelo menor de Magia (variante por
+stage===3, sin downgrade).
+
+· PUERTA DEL GRAFO ES (src):
+  - c10_menu_saque: _dbQ2/_rbV2/_rbV4 ahora exportan (c11:1006 los importa —
+    el import de c12 en Node moría aquí; en browser lo toleraba el ensamblador
+    del build).
+  - c13_ui_arranque: el boot (loadPaddleModel().then → new PingPongGame) va
+    bajo guard de canvas #c — sin canvas NO hay boot: c12 es hoy IMPORTABLE
+    en Node y el boot en el navegador es idéntico (canvas siempre existe).
+
+· MIGRACIÓN DEL ARNÉS (test_r130_multipartida.mjs):
+  - ELIMINADOS los 8 espejos del fake: onNetEnded, onNetMatchStart,
+    startOnlineMatch, switchMode, onNetV2Fail, onNetPause,
+    onRemoteDueloPower, onNetStatus → Object.create(PingPongGame.prototype)
+    aporta los MÉTODOS REALES. La clase de regresión que se escapó en r142
+    (gate editado en c12 sin tocar el espejo) es IMPOSIBLE por construcción.
+  - onNetMatchStart queda como ENVOLTURA (contador mstarts + método real);
+    switchMode como envoltura que cuenta switches EFECTIVOS (R1-R4 intactos).
+  - stats: GameStats REAL de c06 (ELO real en el arnés) + shims mínimos de
+    navegador (window/localStorage/Image/addEventListener/rAF) ANTES del
+    import; localStorage se limpia por juego (ELO fresco por escenario).
+  - Espejos F5/F6 del agente D aplicados: el intent 'serve' del fake replica
+    el resetLibro por gameEnd (c12:21197) y el tick mata la cuenta atrás sin
+    sesión v2 (c12:18742) — borrar cualquiera de los dos ya NO deja la
+    batería verde.
+  - X24 REESCRITO con la semántica real: A) partida viva 7-5 → ELO por el
+    corte (elo sube) + cola a CPU (0-0, bestOf libre); B) sesión pendiente
+    (sin mstart → _netMatchLive=false) → marcador 7-5, bestOf 5 y ELO
+    INTACTOS. Antes era una aserción vacía que lo admitía en su comentario.
+  - X23/J reescritos con observables REALES del pow: el receptor de un poder
+    base guarda el AVISO (_dlRemotoT=12 + cartel dl_gigante) — el slot
+    _dlId/_dlT es MI poder, no el del rival (antes se contaba un contador
+    del espejo que el real no tiene).
+  - Resultado: 206 escenarios OK (antes 205 — X24 son dos casos).
+
+· C-F1 LA LOCURA (public/championships/locura/index.js):
+  - startArkanoid(varianteForzada): el ARKANOID de la segunda oportunidad
+    relanza la MISMA variante (recordada en _afterResult antes de stop()).
+    Antes derivaba la variante de la etapa YA RESTAURADA: campeón en stage 5
+    rejugando ARKANOID 1 → segunda oportunidad ARKANOID 2 → ganarla
+    rebajaba 5→4 y re-fanfarriña el trofeo.
+  - guard en la victoria de ARKANOID 2: stage≥4 jamás rebaja a 4.
+  - (gemelo menor de Magia pendiente: variante por stage===3, sin downgrade)
+
+· PRODUCCIÓN: bump 3.6.229-SDK6 · deploy pages con push MANUAL verificado
+  por API de builds + CDN. Batería 206 · nucleo 60 · claims 22 · worker 25 ·
+  qa_version 31 = 344 checks verde.
+
+## 38 · r146 · 11ª PASADA — la red en VIVO: broker PeerJS real + dos hallazgos de seguridad de sala
+
+Fecha: 2026-11-26 · Territorio nuevo: la CAPA DE SALA (señalización PeerJS),
+que la batería r130 nunca ejercitaba (conduce NetLink por un bus local).
+
+· REVISIÓN INTENSIVA: c09_red_netlink.js leído COMPLETO (3343 líneas · 98
+  métodos). El transporte v2 ya estaba blindado por 8 rondas; los hallazgos
+  estaban en la capa de ARRIBA (PeerJS):
+
+· F1 (c09 · SEGURIDAD, real): el handler peer.on('connection') de openPeer
+  no miraba el ROL — un INVITADO (id aleatorio del broker) ACEPTABA
+  conexiones entrantes: un intruso que conociera el id disparaba el guard
+  r122 inverso («this.conn !== conn → close») y ADOPTABA la conexión
+  hostil tras CERRAR el join legítimo (secuestro de sesión del invitado:
+  «Rival conectado» + partida contra el atacante). FIX: el invitado SÓLO
+  inicia salidas — toda entrada se rechaza (conn.close + return).
+
+· F2 (c09 · real): el error peer-unavailable del joinRoom sólo hacía
+  setStatus — el peer seguía REGISTRADO en el broker y un conn tardío podía
+  resucitar la sala muerta tras el error mostrado (hermano exacto del bug
+  r140 del watchdog). FIX: teardown() antes del cartel.
+
+· ARNÉS VIVO DE PEERJS (scripts/test_r146_peerjs_vivo.mjs · 21 escenarios
+  OK): PeerServer REAL (npm «peer», proceso hijo en :3005) + shim de cliente
+  con el protocolo EXACTO sondado (scripts/probe_peer.mjs: /peerjs?id=…&
+  token=…&key=peerjs · OPEN · ID-TAKEN · OFFER/ANSWER relay src/dst) +
+  3 NetLink REALES (anfitrión, invitado, intruso). Cubre: sala real, join
+  vivo + subida v2 + mstart, sala muerta (peer-unavailable + teardown F2),
+  intruso directo al invitado (F1), r122 (segundo invitado), colisión de
+  código (ID-TAKEN → regeneración), hangup real y MUERTE DEL BROKER (error
+  network honesto). El canal fast/rel interno sigue siendo el par local
+  (territorio batería); la señalización y el ciclo de vida cruzan el broker
+  de verdad. Lecciones del arnés: los orfanos del broker en :3005 mienten
+  (pkill previo + sonda con reintentos + matanza final); el close() del
+  shim tenía la guardia de idempotencia INVERTIDA (tragaba los rechazos).
+
+· TEST DEL WORKER ESTABILIZADO (test_local 97 OK · 12 FALLOS → 109 OK ·
+  0 FALLOS) — deriva del test, no del worker: el stub de TURN devolvía
+  {key_id} y la API Realtime 2026 devuelve {uid, secret} (el worker acuña
+  con el SECRETO de la key) → P3/P4/P5/P10; el DDL manual de presencia
+  omitía el ALTER token (r141) → INSERT fallaba → 503 en cascada A2/A3;
+  la aserción K de privacidad quedó vieja ante el cambio DELIBERADO de
+  r143 (cf-connecting-ip para el rate por IP) — ahora exige que la ÚNICA
+  cf-* leída sea exactamente esa.
+
+· TOKENS CLOUDFLARE: AMBOS verificados ACTIVE (verify endpoint, llamadas
+  independientes por token — salidas enmascaradas).
+
+· DESPLIEGUE (patrón completado): el commit huérfano del deploy_pages.py
+  APLANA public/ a la raíz — empujar HEAD directo rompe las rutas (404 en
+  game.html, verificado) y el build sale del árbol equivocado. Secuencia
+  correcta: script → push del hash huérfano que imprime → API build → CDN.
+  Verificado: built 53b4e2453d · CDN 3.6.230-SDK6 · fuente e9291b5 ·
+  game.html 200. Worker SIN cambios de código (sólo test) → sin deploy.
+
+· Batería final: multipartida 206 · nucleo 60 · claims 22 · worker 25 ·
+  peerjs-vivo 21 · test_local 109 · qa 31 = 474 checks verde · bump
+  3.6.230-SDK6 · main e9291b5 · pages 53b4e2453.
+
+## 39 · r147 · 12ª PASADA — el gemelo de Magia + C-F1 REAL (el fix de r145 era un no-op)
+
+Fecha: 2026-11-27 · La deuda conocida (worklog §37/§38: «gemelo menor de
+Magia pendiente: variante por stage===3, sin downgrade») ejecutada — y la
+revisión la amplió con un hallazgo mayor: el fix gemelo de La Locura de
+r145 NO FUNCIONABA.
+
+· F-M1 (LOCURA · real, dos capas): el C-F1 de r145 era un NO-OP.
+  1. `_lastVariant = (this.arkanoid && this.arkanoid.variant)` vive DENTRO
+     de ArcadeArkanoid (1243) — `this.arkanoid` NO existe en esa clase (es
+     campo del CONTROLADOR, 2796) → _lastVariant salía SIEMPRE undefined.
+     La instancia ES el arkanoid: `this._lastVariant = this.variant`.
+  2. `startArkanoid()` no declaraba parámetro: el `a.startArkanoid(
+     this._lastVariant)` de _afterResult llegaba MUERTO y `arkanoid
+     .start()` derivaba de la etapa YA RESTAURADA (el bug exacto que r145
+     creyó cerrado: campeón en stage 5 rejugando ARKANOID 1 → segunda
+     oportunidad ARKANOID 2). FIX r147: firma `startArkanoid(
+     varianteForzada)` + hilo en el callback del MODAL de instrucciones
+     (la recursión también lo perdía) + forward a arkanoid.start().
+
+· F-M2 (MAGIA · gemelo menor, el pendiente de §37): _afterResult del orbe
+  derivaba `startOrb(this.ctrl.stage === 3)` — en REJUGADA (v2.96),
+  onLevelLost RESTAURA la etapa real (campeón → 5) antes del cartel, así
+  que el campeón rejugando el orbe COMPLEJO recibía una segunda
+  oportunidad NORMAL (más fácil). FIX: `startOrb(this._complex)` — la
+  variante JUGADA (sellada en startOrb, stop() no la toca). Las entradas
+  normales (cola de duelo par 4057 · entrada de rejugada 4875) siguen
+  derivando por etapa CORRECTAMENTE — ahí la etapa NO está restaurada.
+
+· ARNÉS (scripts/test_r147_gemelo_magia.mjs · 20 escenarios OK): los
+  ficheros de campeonato son scripts de navegador, no módulos — el arnés
+  EXTRAE los métodos reales del fuente (recorte por llaves) y los ejecuta
+  con mocks: el param forzado llega vivo a arkanoid.start(), la 2ª
+  oportunidad relanza la variante JUGADA (1 y 2) con etapa restaurada 5,
+  magia repite COMPLEJO/NORMAL según lo jugado, victoria → duelo, y el
+  cableado estático (línea muerta eliminada, guard r144 intacto, deriva
+  de entradas normales intacta).
+
+· FLAKE ANOTADO: el arnés PeerJS vivo (r146) dio 1 fallo aislado en la
+  cadena de regresión (ventana fija de 250 ms antes de parCanales bajo
+  arranque en frío); 4 pasadas limpias consecutivas después. Sin cambio.
+
+· PRODUCCIÓN: bump 3.6.231-SDK6 · build (campeonatos NO van en game.html:
+  se sirven como ficheros sueltos — sin re-sellado de contenido) · sello
+  y qa 31/31. Batería: multipartida 206 · nucleo 60 · claims 22 · worker
+  25 · test_local 109 · peerjs-vivo 21 · gemelo-magia 20 · qa 31 =
+  492 checks verde. Deploy pages por orphan + verificación CDN de LOS
+  FICHEROS DE CAMPEONATO (el cambio no está en game.html — el CDN debe
+  servir el magia/locura nuevos).
+
+## 40 · r148 · 13ª PASADA — barrido del patrón C-F1 por los 4 campeonatos restantes + F-O1 halloween
+
+Fecha: 2026-11-27 · «Otro repaso más intensivo»: la familia C-F1 (2ª
+oportunidad/rejugada que deriva variante o avance de la etapa YA
+RESTAURADA) cazada en locura (r145/r147) y magia (r147), barrida por
+COMPLETO en los otros cuatro campeonatos.
+
+· BARRIDO (lectura completa de los ciclos de rejugada/derrota/avance):
+  - estacion_orbital y valle_neon: LIMPIOS por construcción — sin 2ª
+    oportunidad automática (la derrota vuelve a la SALA), y cada arranque
+    re-deriva en start()/_empezarPrueba(et) con la etapa viva; la entrada
+    de rejugada NO persiste la etapa (memoria sola) y las restauraciones
+    de duelo SÍ persisten (v2.131) — consistente en ambos sentidos.
+  - oeste: ciclo de rejugada consistente — replayLaunch no persiste la
+    etapa de rejugada, así que la restauración de _endPrueba en DERROTA
+    (sin setItem, a diferencia de la victoria) es CORRECTA (el storage
+    siempre guardó la etapa real). La dificultad del duelo rejugado se
+    deriva del NODO rejugado (n≥5?3:n==3?2:1) ✓.
+  - halloween: hila idx almacenado (pruebaIdx/dueloIdx) ✓ y restaura
+    PERSISTIENDO en _stageClear ✓ — pero…
+
+· F-O1 (HALLOWEEN · hallazgo real): onMatchOver sólo llamaba _stageClear
+  si GANABAS (`if (won)`) — y _finPrueba (las PRUEBAS) ya lo llamaba con
+  win O derrota. Una rejugada de DUELO perdida dejaba el _replay PEGADO:
+  la victoria real siguiente entraba por la rama de rejugada de
+  _stageClear (restauraba el stage «real» que ya estaba) y el AVANCE
+  LEGÍTIMO se perdía — el jugador tenía que ganar el mismo duelo DOS
+  veces. Mismo defecto que la v2.131 cazó en estacion_orbital («_replay
+  pegado al siguiente duelo real»). FIX r148: _stageClear(this.dueloIdx,
+  won, 'duelo') SIEMPRE — en derrota sin rejugada la función retorna sin
+  efectos (if (!gana) return), conducta idéntica en el camino normal.
+
+· CONVENCIÓN DEL GANADOR verificada en los 6: las reglas envían
+  'player'|'ai' (c06:513) y todos comparan === 'player' (o toleran
+  booleano) — sin bug (el pariente del FIX CRÍTICO v3.2 de estacion).
+
+· CF_API_TOKEN: sigue SIN tokens en el entorno (pendiente heredado §37 —
+  el verify necesita que el dueño lo exporte; no se fuerza).
+
+· ARNÉS (scripts/test_r148_campeonatos.mjs · 15 OK): extracción de
+  métodos REALES de halloween (onMatchOver + _stageClear cableados) y de
+  oeste (_endPrueba + _stageClear + replayLaunch) sobre storage simulado
+  — F-O1 reproducido y amarrado (A-E), ciclo de oeste verificado (F-I:
+  memoria vs storage, dificultad por nodo rejugado, nodo vigente sin
+  rejugada). Nota: el localStorage real se inyecta como mock (oeste usa
+  localStorage directo en _stageClear; en Node el try/catch lo tragaba).
+
+· PRODUCCIÓN: bump 3.6.232-SDK6 · build sincronizado · sello y qa 31/31.
+  Batería: multipartida 206 · nucleo 60 · claims 22 · worker 25 ·
+  test_local 109 · peerjs-vivo 21 · gemelo-magia 20 · campeonatos-r148 15
+  · qa 31 = 509 checks verde. Deploy pages (halloween debe servir la fix
+  en CDN — el campeonato NO va dentro de game.html).
+
+## 41 · r149 · 14ª PASADA — «todo el juego»: núcleo ligero (c03/c07/c06/c11) + F-A1 audio
+
+Fecha: 2026-11-27 · Séptima autorización del repaso intensivo. Territorio
+SIN auditoría profunda reciente: c03 (audio/voz), c07 (escena sala),
+c06 (motor de reglas) y c11 (champloader) — c01/c02 al barrido del
+subagente. La historia git local se encontró REBOBINADA por el reciclaje
+del sandbox (HEAD 849704e-bot, contenido r148 íntegro en el árbol);
+GitHub main ya tenía 3f4dbf3. node_modules reciclado también: ws y peer
+rehinsstalados como devDependencies (infraestructura de los arneses).
+
+· F-A1 [BUG REAL · c03_audio_voz]: startHallMusic CONSUMÍA la petición
+  de música del menú (setMusicWanted(false) destruye musicWanted) y la
+  rama de restauración del icono de mute de la pared (setHallMute →
+  «el aire vuelve al menú SOLO si él ya lo había pedido») quedaba MUERTA
+  para ese flujo: silenciar el salón ya no devolvía el aire al menú
+  aunque el menú estuviera abierto delante del jugador (la única
+  recuperación era cerrar y reabrir el menú). FIX: la petición se
+  RECUERDA (_menuReq) al consumirla, se RE-ARMA con setMusicWanted(true)
+  al silenciar el salón (startMusic() a secas no basta: exige
+  musicWanted) y EXPIRA al salir del salón o ante una petición fresca.
+  Arnés r149 con la máquina de música REAL extraída sobre AudioContext
+  simulado: el bug reproducido y amarrado (A), sustitución de memoria
+  (B), expiración fuera de contexto (C), maestro musicOn=false manda (D),
+  nada se inventa sin petición previa (E), no-regresión del re-mute (F).
+
+· F-A2 [RIESGO · c07_escena_sala]: vaivén de los troqueles sin guard —
+  un pack externo de campeonato sin sway en decor.pieces producía
+  0.006 * undefined = NaN en rotation.z CADA FRAME (matriz corrupta
+  silenciosa — mismo patrón NaN que el repo cazó en panNode). FIX:
+  default 0.5 con preservación del cero explícito (sway != null).
+  Los packs instalados usan 0.3-0.9 (verificado) — por eso hoy no se
+  disparaba: riesgo de superficie de contenido externo (c11:268).
+
+· c06 (motor de reglas) releído COMPLETO (applyPoint/forcePoint con
+  guardia r79/r140/r141, handleEvents, update con deuce/serie/over):
+  curtido, sin nuevos defectos. c11 leaveAll: autocuración r60/r97
+  correcta (cerrojo global, musicOff universal, voz publicada retirada,
+  skin de mesa restaurada). c01/c02 limpios según el subagente (con
+  verificación de llamadores; el doble import de c02 es obra del
+  pipeline de build, no defecto).
+
+· Convención del ganador re-verificada en el núcleo: las reglas envían
+  'player'|'ai' (c06:513) — el FIX CRÍTICO v3.2 de estacion cubre ambos.
+
+· CF_API_TOKEN: sin tokens en el entorno (re-check; sigue pendiente §37).
+
+· PRODUCCIÓN: bump 3.6.233-SDK6 · build sincronizado · sello y qa 31/31.
+  Batería 523 checks: multipartida 206 · nucleo 60 · claims 22 · worker
+  25 · test_local 109 · peerjs-vivo 21 (tras restaurar ws+peer) ·
+  gemelo-magia 20 · campeonatos-r148 15 · nucleo-ligero-r149 14 · qa 31.
+  Deploy pages + verificación CDN del game.html con F-A1.
+
+## 42 · Base de conocimiento maestra para transferencia
+
+Fecha: 2026-11-27 · Petición del dueño: informe absoluto para que un agente
+de IA retome el desarrollo. Generado `INFORME-MAESTRO.md` (raíz del repo,
+21 secciones, ~80 citas fichero:línea): visión/filosofía, mapa del repo,
+ensamblado game.html (DEPS-FASE2/pieza_pura/golden), los 14 subsistemas
+c00-c13 con sus ganchos y líneas clave (minería propia r144-r149 + 3
+subagentes de verificación sobre c02/c04/c05/c07, c12/c13/c08/c10 y la
+infraestructura worker/live-service/peer-server/Caddy/deploy), flujo de
+partida, física (RK4/CCD/bote/DIMS), árbitro y modos, red (NetLink/PPNET/
+RedSocial/claims/broker), campeonatos (contrato, fábrica gen_campeonato/
+qa_plantilla, los 6 vivos), audio (invariantes UNA MELODÍA + F-A1),
+sala/skins/troqueles (F-A2), UI/HUD/preferencias, logros/recompensas/
+estadísticas, infraestructura (API completa del worker, D1, cron, cuotas,
+sw.js), release punta a punta, batería de arneses (523 checks), historia
+de lecciones (12 reglas de bugs reales), convenciones, recetas operativas
+(16 recetas), estado r149 + pendiente §37 (CF_API_TOKEN sigue SIN tokens
+en el entorno — re-verificado) y cheat sheet. Copia de usuario en
+download/INFORME-MAESTRO.md.
+
+## 43 · ARRANQUE DIRECTO AL SALÓN — la portada se retira
+
+Fecha: 2026-11-26 · Petición del dueño: «la pantalla del juego ya entre
+directamente en el Hall del usuario sin pantalla intermedia (la que muestra
+el logo, el botón jugar en VR, las raquetas con los idiomas)».
+
+CÓMO ESTABA: URL → portada opaca (#overlay: portada.jpg + JUGAR EN VR +
+palas de idiomas) → click → sesión VR → onSessionStart → enterHall(). El
+animate ya renderizaba el court en 2D con cámara orbital (bloque 8) pero
+el Hall solo existía dentro de VR.
+
+CÓMO QUEDA (v3.6.234-SDK6, fase 189):
+- 00_head.html: #overlay transparente con pointer-events:none (los botones
+  re-activan); .bgblur/.rays/.bball/.star/.hero-wrap display:none; .stage
+  pasa a barra inferior fija con gradiente; palas de idioma compactas
+  arriba-derecha (30px); PLAY IN VR a 220px; #status/.footer pequeños con
+  text-shadow; #mutebtn arriba-izquierda; fade-in del canvas (.listo);
+  media query ≤640px.
+- c13: tras crear el juego llama game.enterHall() SIN sesión VR (el Hall
+  ES la pantalla de entrada), añade clase listo al canvas y un listener
+  one-shot pointerdown/keydown → game.rearmHallAudio() (el AudioContext
+  solo puede nacer dentro de un gesto; setHallWanted sin ctx se descarta
+  en silencio en _loadHallMusic — leída en c03:712).
+- c12: bloque 8 del animate — si this.inHall && hallGroup, la cámara 2D se
+  planta en la ENTRADA del salón (rig ya está en HALL.cz+2,3; cámara hija
+  del rig → local (0,1.55±vaivén,0), lookAt mundo a la pared frente de
+  insignias/búho z0=−22,45) con respiración sutil; la órbita del court
+  queda como rama else (sesión acabada fuera del salón, igual que antes).
+- c12: método nuevo rearmHallAudio() — ensure() + setHallWanted de la
+  variante activa. Idempotente.
+- La sesión VR no cambia: enterHall ya está activo → onSessionStart hace
+  no-op en el salón; onSessionEnd tampoco toca el rig (leído 10186) y el
+  overlay reaparece por onXRState(false) como siempre, ahora sobre el
+  Hall en 2D.
+- El smoke de deploy_pages no toca la portada (solo __PP_VERSION +
+  pageerrors) — verificado antes de tocar.
+
+VERIFICACIÓN: arnés nuevo scripts/test_r151_portada_salon.py (Chromium
+headless + ThreadingHTTPServer en :3007 — lección: TCPServer sin
+SO_REUSEADDR deja EADDRINUSE en la re-lectura; offsetParent es NULL para
+position:fixed → el criterio honesto es getBoundingClientRect):
+10/10 OK — 0 pageerrors, inHall=true, hallGroup visible/roomGroup oculta/
+mesa oculta, rig z=−16,2, cámara local (0,~1.55,0), hero display:none,
+overlay transparente, vrbtn/palas/mutebtn con caja visible, canvas .listo.
+Captura scripts/_r151_salon.png: salón museo completo como entrada, HUD
+mínimo vivo, badge V3.6.234-SDK6.
+BATERÍA: 523 checks verde (31+60+22+206+25+109+21+20+15+14) + 10 del
+arnés r151. qa_version 31 OK con golden nuevo f6368756ad103e04…
+
+DESPLEGO r151: deploy_pages --push (huérfano refs/heads/pages → b8baade5c,
+smoke 87 peticiones 0 pageerrors) → CDN VERIFICADA: PAGES-VERSION.txt
+version=3.6.234-SDK6 fuente_commit=12cab04b, game.html vivo con
+rearmHallAudio ×2, sw.js crazypp-v3.6.234-SDK6 (rebuild de Pages tarda
+~2-3 min: la primera lectura daba aún la 233). Lección: el reciclaje del
+sandbox borró de nuevo scripts/worker-tele/.github-pat (regenerado 0600,
+gitignored ✓). PENDIENTE MENOR: el push espejo main:proyecto (--backup)
+falló CUATRO veces con «Invalid username or token» mientras el MISMO
+token empujaba main sin problema segundos antes (c96f16d incluido) —
+el rechazo es ESPECÍFICO de la ref proyecto (protección de rama o
+política del PAT en esa ref), NO límite de tasa ni token muerto. No
+afecta a producción (Pages ya está vivo). Reintentar cuando toque el
+dueño o con otro credential:
+  GIT_TOKEN=$(cat scripts/worker-tele/.github-pat) git push -f \
+    https://FranJavierDavila:$GIT_TOKEN@github.com/FranJavierDavila/CrazyPP.git HEAD:refs/heads/proyecto
+
+## 44 · PORTADA CLÁSICA EN LA RAÍZ (LANDING) + ENTRADA VR EN UN TOQUE
+
+Fecha: 2026-11-26 · Petición del dueño: «la LANDING informativa es la que
+quiero que quede como teníamos la game.html, se entra desde ahí, así la
+game.html ya debemos estar dentro de VR».
+
+DECISIÓN TÉCNICA (leída antes de escribir): la activación de usuario que
+autoriza requestSession NO cruza la navegación (WebXR exige un gesto DENTRO
+del documento destino — sin excepción en ningún navegador). El camino más
+fiel posible: la raíz /CrazyPP/ vuelve a SER la portada clásica y el último
+toque ocurre ya dentro del juego — un toque EN CUALQUIER PARTE, sin diana.
+
+CÓMO QUEDA (v3.6.235-SDK6, fase 190):
+- deploy_pages.py · plantilla LANDING rehecha: portada.jpg con heroFloat +
+  Ken Burns, haces/bolas/estrellas (el arte de la portada antigua, valores
+  del 00_head original), palas ES/EN 84px que escriben pp_lang (la MISMA
+  clave que lee c00 — verificada en c00:13/2983), gran botón JUGAR EN VR
+  (jugar_es/jugar_en) → game.html?vr=1, estado WebXR honesto, PASSTHROUGH
+  → game.html?ar=1 solo si isSessionSupported('immersive-ar'), TV en vivo,
+  Ko-fi (URL real de 04_boot: ko-fi.com/escala3d), badge V@@VERSION@@ y
+  línea de deploy. Responsive (media ≤560px).
+- c13 · bloque r152 tras el kick2D: con ?vr=1/?ar=1 añade #tapvr (aviso
+  pointer-events:none, texto TOCA EN CUALQUIER PARTE… / TAP ANYWHERE…,
+  i18n por TLang) y un listener en window (pointerdown/keydown) que llama
+  enterVR(false, autoAR) — audio.ensure() DENTRO del gesto, rechazo
+  atrapado (escritorio sin WebXR → #tapvr.mal con el mensaje honesto).
+  ?ar=1 fija ppxr_pending_ar + pendingAR (mismo camino que el arbtn
+  antiguo). onXRState(true) retira #tapvr al entrar en VR.
+- 00_head.html · CSS #tapvr (píldora dorada pulsante, clamp(), z-24,
+  pointer-events:none — no roba un toque al lienzo).
+- La r151 queda INTACTA: game.html sin parámetro sigue entrando directo al
+  salón; el botón compacto del HUD pide VR como siempre.
+
+VERIFICACIÓN: arnés nuevo scripts/test_r152_landing_portada.py — 14/14 OK.
+Lecciones del arnés: (1) page.evaluate serializa nodos DOM anidados como
+str, no como elementos → devolver SIEMPRE datos planos; (2) el sitio de
+prueba debe enlazar TODO el árbol public/ (core/, vendor/…) — un 404 de un
+módulo ES mata el boot entero. Capturas _r152_landing.png (la portada
+exacta de antes, badge 3.6.235) y _r152_tapvr.png (salón + píldora, y el
+juego arrancó EN ESPAÑOL porque la parte A dejó pp_lang=es: la persistencia
+de idioma funciona de punta a punta).
+BATERÍA: 523 checks + r151 10/10 + r152 14/14. qa_version 31 OK, golden
+nuevo 617643cab092164a….
+
+## 45 · REVISIÓN INTEGRAL (r152-b)
+
+Fecha: 2026-11-26 · Petición del dueño: «revision integra». Alcance: estado
+del repo + matriz de gates completa + auditoría estática del núcleo (14
+módulos, 51.474 líneas) + servicio de señalización REAL de ciclo completo.
+Informe completo con evidencias: download/REVISION-INTEGRAL-r152.md.
+
+HALLAZGOS Y CORRECCIONES (todas verificadas en solitario):
+- F1 · PII REAL en worker.js:848 — el techo r143 leía cf-connecting-ip
+  (violaba la política r11). Ahora techo POR SID del lote; muro duro =
+  cap global 20k filas/min. Pendiente del dueño: deploy con CF_API_TOKEN.
+- F2 · test_local.mjs validaba la política VIEJA («única cf-* leída es
+  cf-connecting-ip») → contrato nuevo: CERO lecturas cf-*. 109 OK.
+- F3 · qa_telemetria daba la purga DELETE por abierta (H18/r112 la cerró
+  con TELE_CLAVE) → 3 fallos fantasma. Ahora el 403 por diseño se CODIFICA
+  como check y la purga real sólo con TELE_CLAVE en el entorno. 131 OK.
+- F4 · golden c05 obsoleto (era r113): las desviaciones sueloParedes/
+  apoyoRodadura son los arreglos legítimos r144 (H6 fantasma, soft events,
+  aterrizaje, cooldown) — re-bendecido --update + determinismo ×2. 17 OK.
+- F5 · presupuesto.json game.html 2.632.184 → 2.720.208 (base sellada;
+  gate +1%). 16 OK.
+- F6 · r130: duración NATURAL 365 s (los cortes a X17 eran timeout 300 del
+  shell, no el test). Watchdog de progreso añadido (240 s sin check →
+  exit 1; .unref()) y veredicto duplicado retirado. Procedimiento: r130 con
+  tope ≥420 s; batería SECUENCIAL (puertos fijos).
+- NUEVO · arnés r153 (test_r153_senal_ciclo_real.mjs, 21 OK): el server.js
+  DEL REPO en :3005 con ciclo completo sala→join→v2→mstart→reset (guard 8 s)
+  →bye→muerte del servicio→rearranque→sala nueva. Lección: peer desmontado
+  por teardown() NO emite 'network' (correcto en peerjs real).
+- OBSERVACIÓN (sin cambio hoy): c09b:961 fetch de PAGES-VERSION sin
+  AbortController (único; flujo no bloqueante) — añadir señal 8 s en la
+  próxima ronda que toque c09b (implica re-sellar).
+- SELLO: src/game/** sin cambios → game.html byte-idéntico, golden
+  617643ca VÁLIDO (qa_version 31 OK al cierre).
+
+MATRIZ FINAL: qa_version 31 · red 60+22+14+20+15+206+25+21+109+probe ·
+física 12+17+perf · python 16+131+135 · arneses 10/10 · 14/14 · 21/21 —
+TODO VERDE en solitario.
+
+## 46 · AUDITORÍA 9 (r152-c)
+
+Fecha: 2026-11-26 · Segunda auditoría sobre el sello r152-b: profundidad
+en las zonas NO cubiertas antes. Informe: download/AUDITORIA-9-r152-c.md.
+
+LIMPIAS CON EVIDENCIA: localStorage.setItem 13/13 en try/catch · escudo
+del bucle c12 completo (catch por firma + anim_shield + vigía) · toast y
+render social sin XSS (i18n fija / textContent) · Caddyfile sin defectos ·
+_onRel y sanea() blindados · listeners de sesión sin fuga · 0 markers.
+
+HALLAZGOS CORREGIDOS:
+- D1 · verruga del cubo «x» en MI techo por sid (r152-b F1): filas sin sid
+  compartían cubo — un flood anónimo 429eaba a anónimos inocentes. Ahora
+  sin sid NO entran en el mapa (sólo el cap global las frena).
+- D2 · el techo por sid NO tenía prueba de comportamiento: bloque D2 en el
+  harness (109→114 checks): flood 500×5 (MAX_LOTE trunca cada POST a 500 —
+  lección amarrada; el limiter r128·F2 de 300 peticiones/min corre ANTES)
+  → exactamente UN 429 · otro sid aislado · sin sid → 204 · limpieza 3000
+  para no tocar los totales exactos del bloque r11.
+- D3 · arnés NUEVO r154 (test_r154_paquetes_malformados.mjs, 11 OK): caos
+  de TIPOS en la frontera real (22 basuras JSON con __proto__/profundidad
+  2000/1 MB + 6 buffers fast arbitrarios + bye aparte + recuperación con
+  paquete válido) — r130-X cubre lo semántico, r154 cubre lo tipográfico.
+  Lecciones amarradas: el bye desmonta POR DISEÑO y el handshake v2
+  necesita frames de c12.
+
+MATRIZ FINAL: qa_version 31 · worker-tele 114 · r154 11 · red
+60+22+14+20+15+25+21 · r153 21 · r130 206 (baseline de sesión, dependencias
+no tocadas) · física 12+17+perf · python 16+131+135 · arneses 10/10 ·
+14/14 — TODO VERDE. Pendientes: deploy del worker (dueño, CF_API_TOKEN) y
+AbortController en c09b:961 en la próxima ronda que re-selle.
+
+## 47 · DESPLIEGUE DEL WORKER EN PRODUCCIÓN (post-auditoría 9)
+
+Fecha: 2026-11-26 · scripts/deploy_worker.py con el API token del dueño
+(verificado /user/tokens/verify → active; un segundo token también activo,
+reservado como respaldo — no hizo falta).
+
+- URL: https://crazypp-tele.escala3dcorreoia.workers.dev/api/tele
+- D1 «crazypp-tele» reutilizada (uuid 24ee07a2…) · secret(s) previos
+  preservados por keep_bindings (1 secret ICE, nunca leído)
+- CLAVE regenerada por endpoint de secrets y guardada en
+  scripts/worker-tele/.clave-produccion (600, gitignored) — el dueño la
+  vio UNA vez en consola; pegarla en el panel /telemetria si el navegador
+  no la recuerda
+- E2E EN PRODUCCIÓN: latido total=1226 · resumen sin clave → 403 · POST
+  lote de prueba → 204 · resumen con clave → deploy_prueba=4 (2 de esta
+  sonda + 2 restos de una sonda anterior con otro sid; la purga diaria de
+  04:37 los caducará) · DELETE por sid → borrados=2 · total restaurado a
+  1226 — producción limpia
+- CRON activo y verificado por GET: 37 4 * * * (scheduled() · r128·F2)
+- INTEGRIDAD: el módulo servido por la API es IDÉNTICO línea a línea al
+  repo (1599 = 1599, 0 eliminadas, 0 modificadas; la API añade 5 líneas
+  de sobre multipart al eco del GET) — producción lleva el fix PII
+  r152-b + techo por sid sin cubo «x» de la auditoría 9.
+
+Queda pendiente (próxima ronda que re-selle): AbortController en el fetch
+de PAGES-VERSION (c09b:961).
+
+## 48 · AUDITORÍA 10 (r152-d) · SUPERFICIE WEB JAMÁS REVISADA
+
+Fecha: 2026-11-26 · Primera revisión profunda de las zonas que ninguna
+ronda anterior había tocado: sw.js, panel telemetría, tv.html,
+actualizar/descarga/index, live-service (index.ts), peer-server,
+champloader externo y el HUD del núcleo como sumidero de datos del peer.
+Informe: download/AUDITORIA-10-r152-d.md.
+
+HALLAZGO REAL CORREGIDO:
+- XSS en el PANEL DEL DUEÑO (telemetria.html): fraseDe() tenía
+  «default: return ETIQUETA[k] || ('Evento: ' + k)» — el NOMBRE del evento
+  sin escapar para eventos desconocidos. Un cliente puede mandar
+  e:'<img src=x onerror=…>' (cabe en los 40 B de sanea()) y ejecutar código
+  en el navegador del dueño, donde vive la CLAVE en localStorage. Fix:
+  esc(k). Demostrado con arnés NUEVO r155 (test_r155_panel_xss.py, 12/12):
+  resumen/eventos/rank HOSTILES por route-mock → antes: ejecución real y
+  nodos inyectados (window.__ppPwned definido); después: cero ejecución,
+  cero nodos, texto escapado, data-sid LITERAL intacto.
+
+LIMPIAS CON EVIDENCIA (todo lo demás de la zona nueva):
+- sw.js: estrategias correctas (red-primero 4 s game.html, network-first
+  datos vivos, cache-first assets, same-origin, sólo GET) · única pega:
+  swr() muerto de 9 líneas → eliminado (el byte cambia, el SW se
+  re-registra solo)
+- tv.html: todo lo remoto por esc(); matchId sin esc() es SEGURO porque el
+  live-service exige ^[A-Za-z0-9_-]{6,64}$ (H15 r111) y viewers/startedAt
+  son server-side; RELAY parcialmente escapado en contexto de texto (sin
+  riesgo)
+- live-service: matchId regex + meta recortada (24/16) + anti-secuestro
+  (H13) + sólo el dueño inyecta estado/eventos — sólido
+- peer-server: wrapper fino sobre la lib peer (validación de la librería;
+  key por defecto documentada en el LEEME)
+- c11 champloader: id con ^[a-z0-9_-]+$ antes del import dinámico (sin
+  path-traversal), manifest.id ≠ carpeta → «incompatible» visible, version
+  numérica obligatoria (r128·F3)
+- HUD del núcleo: nota() y nota() son canvas fillText/wrapText — el
+  statusMsg con datos del PEER (net_build_warn → vc.peerC) jamás pasa por
+  DOM → sin XSS por red
+- nick rival: NO viaja por el canal del juego (sin superficie)
+- T(): interpolación plana por split/join, receptores canvas — seguro
+- telemetria.html resto: esc() en tJugadores/tVR/fichas/rank/hbars/
+  svgSpark; JSON crudo por textContent; colorNombre = hash numérico
+  (imposible inyectar en style)
+
+PENDIENTE HISTÓRICO CERRADO: el fetch de PAGES-VERSION.txt (c09b:955)
+YA lleva signal con AbortSignal.timeout(4000) desde hace varias rondas —
+el pendiente «AbortController en c09b:961» de §46/§47 estaba
+DESACTUALIZADO. Nada que hacer; el registro queda corregido.
+
+MATRIZ: sw.js sintaxis OK · qa_version 31 (sello intacto) ·
+qa_telemetria 131 · qa_ugc_guardia 135 · r155 12/12 · arneses r151/r152
+verde. game.html NO cambia (0 toques en src/game/): sin re-sello.
+
+## 49 · AUDITORÍA 11 (r152-e) · NÚCLEO NUNCA ABIERTO: c01-c08, c10, c12 storage, championships/
+
+Fecha: 2026-11-26 · Últimas zonas sin revisión propia: los módulos pequeños
+y medianos que las rondas anteriores sólo tocaban por greps globales, más
+el storage de c12 y el contenido real de championships/. VEREDICTO GLOBAL:
+CERO DEFECTOS NUEVOS — cada zona limpia con evidencia de lectura/sonda.
+Informe: download/AUDITORIA-11-r152-e.md.
+
+EVIDENCIA POR ZONA:
+- SINKS: cero innerHTML/insertAdjacent/outerHTML/document.write/eval/new
+  Function/srcdoc en c01,c02,c04,c05,c06,c07,c08,c10 y en championships/.
+  Los únicos atob() del repo (c03:1121,1783) decodifican CONSTANTES
+  EMBEBIDAS del bundle (banco SFX + voces) → decodeAudioData.
+- JSON.parse (15 en c12/c00/c06): TODOS en try/catch con forma validada
+  (Array.isArray/typeof/normalización). c12:11 · c00:3 · c06:1.
+- c00 WORLDRANK caché: _normalize + _sanitize — p clamp 0..1e7, t parse,
+  n sin control/<>, recorte 12, a igual, máx 10 filas, sort por puntos.
+  Caché envenenada (localStorage propio) NO puede escapar del render.
+- c03 voz: el texto hablado sale del banco embebido + T()/estado del
+  juego (speechSynthesis — sin ejecución posible); NINGÚN nick del peer.
+  Personalidad del manifest externo (__PP_CHAMP_PERS): sólo
+  pers.agresividad → clamp 1..5 → multiplicadores PM/GM ±22% de tono/gan-
+  cia del blip sintético. Los sounds[kind] del manifest: URLs construidas
+  SIEMPRE como championships/<id>/<valor> (id con regex [a-z0-9_-]+) →
+  same-origin, decodificadas como AUDIO (sin ejecución); fallo → síntesis
+  para siempre (flag failed).
+- c01: los 2 fetch (pala.glb, gun.glb) con r.ok check, reject y
+  .catch(()=>resolve(null)) → fallback procedural. Geometría pura.
+- c10: constants y temporales THREE, cero I/O.
+- c08: cero getElementById/textContent, cero fetch — HUD puramente
+  THREE/canvas.
+- c12 nick: _nameBuf → trim, colapso de espacios, slice(0,12); setItem
+  pp_player_name con try/catch (c12:7981).
+- c06: almacenamiento de logros parseado con guard y campos normalizados
+  (winsByDiff/ach con fallback); estilo del rival con clamps (EF.tope).
+- championships/ contenido: cero sinks peligrosos en los módulos.
+
+MATRIZ (ronda cerrada): qa_version 31 · qa_telemetria 131 ·
+qa_ugc_guardia 135 · golden c05 17 · r151 ✓ · r152 ✓ · r153 21 ·
+r154 11 · r155 12/12 — TODO VERDE. game.html intacto (cero toques en
+src/game/): sin re-sello.
+
+## 50 · ANÁLISIS DE COBERTURA (r152-e2) · ¿QUEDA ALGO SIN REVISAR?
+
+Fecha: 2026-11-26 · Mapeo explícito de TODO el repo contra las 11
+auditorías. Respuesta: la superficie de riesgo del juego está cubierta
+AL COMPLETO; lo que quedaba fuera eran capas de INFRAESTRUCTURA y
+OPERACIÓN, y esta ronda las cierra todas con evidencia. Informe:
+download/ANALISIS-COBERTURA.md.
+
+TAREA HISTÓRICA CERRADA (3ª vez pedida) · TOKENS/CREDENCIALES:
+- .clave-produccion NO trackeada (git log --all --follow vacío, perms
+  600, gitignored). El VALOR no aparece en ningún fichero trackeado
+  (git grep -F). Cero PATs/claves privadas en el contenido del repo.
+- Worker de producción EN VIVO hoy: 403 sin clave en resumen/eventos
+  (auth real), 200 con clave, D1 respondiendo (total 1238, 287 sesiones,
+  rank 90 días), cron 04:37 en wrangler.toml. La cadena Cloudflare
+  completa queda probada OPERATIVA (más fuerte que tokens/verify, que
+  además no era verificable: .cf-token no existe en este sandbox).
+- .env trackeado = SÓLO DATABASE_URL placeholder del scaffold Next.js
+  (0 valores con forma de secreto). db/custom.db = binario regenerable.
+  Ambos DES-TRACKeados esta ronda (git rm --cached; quedan en disco).
+
+HALLAZGO DE COBERTURA CRÍTICO · DESPLIEGUE PAGES ATRASADO:
+- Pages servía el commit b051162 (11:08) — ANTES del parche XSS de la
+  auditoría 10: el telemetria.html EN VIVO no llevaba esc(k). El repo
+  tenía la corrección pero el pipeline deploy_pages.py no se había
+  vuelto a ejecutar.
+- CIERRE: deploy_pages.py --push ejecutado (ensamblado desde HEAD,
+  sellos verificados, 620 ficheros · 206 MB, smoke Playwright 87
+  peticiones · 0 fallos, commit huérfano 7c03838 en refs/heads/pages)
+  y VERIFICADO EN VIVO: fuente_commit=4a2847411 (HEAD) · parche XSS
+  presente (grep=1) · game_sha256 idéntico al despliegue anterior
+  (correcto: las auditorías 10/11 no tocan game.html).
+
+SUPPLY CHAIN (lo que no se había mirado):
+- live-service: socket.io 4.8.4 · engine.io 6.6.11 — FUERA de los
+  rangos afectados de CVE-2026-59724 (<6.6.7) y CVE-2026-102599
+  (<6.6.10, DoS por upgrade de transporte). peer ^1.5.4: sin avisos
+  conocidos encontrados.
+- Scaffold Next.js raíz (next 16.1.1/react 19.0.0): CVE-2025-55182/
+  66478 (React2Shell) NO aplica en producción — el sitio Pages es
+  estático; el scaffold no se despliega. Recomendación: podar.
+- CI: sin .github/workflows — pipeline manual documentado
+  (deploy_pages.py + gates). bump_version.py/QA validan los sellos.
+
+GATES HOY: qa_version 31 · qa_telemetria 131 · qa_ugc_guardia 135 ·
+golden c05 17 · qa_rendimiento 16 (cadena 12828 ms ≤ tope) ·
+r151-r155 verde · smoke de despliegue 0 fallos.
+
+## 51 · PLAN «MI PERFIL» + menú de 6 secciones (r152-f) · DISEÑO
+
+Fecha: 2026-11-26 · Petición del dueño: nueva sección Mi Perfil (ficha
+de jugador: avatar+marco, bandera+nombre, nivel XP, rango ELO, stats,
+insignias, Editar) y reorganización del menú principal a 6 secciones.
+Análisis profundo con evidencia de código y números verificados.
+Entregable: download/PLAN-MI-PERFIL.md (18 secciones + fases F1-F6).
+
+DECUBRIMIENTOS QUE BARATIZAN LA IMPLANTACIÓN:
+- hallProfile()/onPeerHall() (r23) ya viajan por hello2 con ELO,
+  victorias, racha, insignias y skins SANEADOS contra catálogos —
+  extender con {pv, av, mc, nv} son ~15 líneas del patrón auditado.
+- ELO M4 (r118) unificado con inicial 1000 → encaja EXACTO en la banda
+  «Amateur III» de la escala del dueño (punto de partida estándar).
+- Monedero (r85) y tienda con monedas ya existen (25/8, costes 200-600,
+  pp_compras con guards) — avatares/marcos = tipo nuevo de compra.
+- CONFIG_LOGROS con emoji + _vestMedallion: las insignias del mock son
+  el sistema de logros actual filtrado.
+- Palas ya se desbloquean por ELO (min 150/400/800/1500/2500).
+
+NÚMEROS VERIFICADOS (scripts/calc_economia_perfil.py):
+- Curva XP 150+62·(n-1)^1.35 → L27→28 = 5.192 (mock del dueño 5.000).
+- Economía: sesión casual ≈ 196 monedas/h; avatar legendario 2.400 ≈
+  12 sesiones; catálogo nuevo (20 avatares+10 marcos = 19.500) ≈ 99 h.
+- 21 rangos sin huecos; easy/medium/hard → Novato I/Amateur III/
+  Amateur I; con 75% victorias vs medium el ELO estabiliza ~1223 —
+  los rangos altos exigen hard/P2P: significativos, no inflados.
+
+REORG MENÚ (9 tarjetas → 6): JUGAR absorbe partido/carrera/entrenamiento/
+supervivencia/tutorial en subpágina; nombre se MUDA de Ajustes a
+Mi Perfil; ranking mundial como pestaña de la ficha; salir usa su
+flujo salirask existente.
+
+RIESGOS CUBIERTOS EN EL PLAN: país=regex ISO-2 contra catálogo (cero
+XSS), onPeerHall contra catálogos (cero spoofing de código), tope
+10 duelos P2P puntuados/día (anti-farm), sin dinero real, render
+canvas fillText (el patrón ya auditado), 1 key nueva pp_perfil_v1 con
+guard + migración tolerante M4, worker D1 opcional retro-compatible.
+
+PLAN: F1 datos → F2 stats/economía → F3 menú 6 → F4 ficha+editar →
+F5 tienda+red → F6 deploy con qa_perfil nuevo + arnés r156 + bump +
+push (lección §50). Estimación ~1.100-1.400 líneas; física intacta.
+
+## 52 · REVISIÓN GENERAL r152-g · cero bugs pendientes (2026-11-27)
+
+Fecha: 2026-11-27 · Petición del dueño: revisión general en busca de
+bugs pendientes. Entregable: download/REVISION-r152-g.md. Veredicto:
+**CERO bugs** — 401 comprobaciones automáticas + 5 sondas en vivo,
+todas verdes.
+
+INCIDENTE Y RECUPERACIÓN (documentado): el reciclado del sandbox mezcló
+.git antiguo (HEAD r113) con ficheros recientes. Todo seguro en GitHub:
+fetch + reset --hard cc24939, árbol limpio, parches presentes (esc(k)=1,
+sw.js sin swr(), INFORME-MAESTRO §19). Informes de download/ regenerados
+(ANALISIS-COBERTURA + PLAN-MI-PERFIL idénticos; AUDITORIA-11
+irrecuperable byte a byte — hallazgos íntegros en commit 4a28474 y
+INFORME-MAESTRO). El MAESTRO ya anticipaba ambos efectos del reciclado
+con su remedio.
+
+MATRIZ VERDE COMPLETA: qa_version 31 · qa_telemetria 131 ·
+qa_ugc_guardia 135 · golden c05 17 · test_fisica 12 · arnés r153
+señalización real 21 · r154 caos 11 · r155 XSS 12 · r151 10/10 ·
+r152 14/14 · qa_rendimiento 16 (cadena 11643 ms ≤ tope) · worker 403
+en vivo · Pages 3.6.235-SDK6 con parche XSS vivo (grep=1). Marcadores
+TODO/FIXME reales en el núcleo: cero (las coincidencias son texto del
+juego). Pages sirve 4a28474 — contenido-idéntico al HEAD (el plan
+cc24939 no tocó ficheros del juego).
+
+PENDIENTE OPERATIVO DEL DUEÑO: el reciclado borró .clave-produccion,
+.cf-token y .github-pat → la sonda CON clave del worker y el
+tokens/verify esperan restauración (LEEME.md: valor en las variables
+del worker crazypp-tele). El lado sin clave (403) ya prueba la auth
+viva. Los pushes siguen funcionando; el próximo deploy_pages --push
+pedirá GIT_TOKEN en el entorno.
+
+## 53 · MI PERFIL IMPLEMENTADO (r156) · 3.6.236-SDK6 (2026-11-27)
+
+Fecha: 2026-11-27 · Petición del dueño: implementar el apartado Mi Perfil
+(ficha, nivel XP, rango ELO, insignias, monedas, países, avatares y
+marcos) + menú de 6 secciones, con su clave de telemetría y tokens para
+producción. VERSIÓN 3.6.236-SDK6 · golden bendecido 39b7d9c6.
+
+QUÉ ENTRÓ (F1-F5 del PLAN-MI-PERFIL.md):
+- c02 (DATO): RANGOS_ELO 21 rangos sin huecos (la escala del dueño tal
+  cual; ELO inicial 1000 = Amateur III) · XP_CURVA 150+62(n-1)^1.35
+  (L27≈5.192, calibrado a su mock) · XP_ACCION/MONEDAS_ACCION v2 ·
+  PAISES 64 con specs de bandera simplificada (cero descargas: los emoji
+  de bandera NO renderizan en Quest) · AVATARES 20 (bustos procedurales)
+  · MARCOS 10 · helpers rangoDeElo/xpPara/xpAcum/nivelDe · rejilla DATO
+  «jugar» · paneles del VESTÍBULO reorganizados a 6 secciones.
+- c06: stats.data.xp + RETROACTIVO para veteranos (won·40+lost·12+ach·50)
+  · recordMatch modo-aware (IA 25/8 +5 hard · P2P 40/12 CON TOPE 10/día)
+  · XP por modo · unlock() paga 50 por insignia nueva · premio() para
+  surv/train/tut/carrera/champ · registrarXP().
+- c12: VESTÍBULO (el menú real del hall, drawMenuVestibulo ← paneles DATO)
+  reorganizado a 6 secciones: JUGAR héroe naranja (subpágina rejilla con
+  partido/carrera/entrenamiento/supervivencia/tutorial) · Multijugador ·
+  Campeonatos · MI PERFIL (nuevo) · Ajustes · Salir. drawMenuHub 2D
+  (legado) también reorganizado. Página «perfil» (ficha del mock: avatar+
+  marco, bandera+nombre, nivel+barra XP, rango con medalla, 412/72%/racha,
+  insignias, monedas) + «perfil_edit» (pestañas Nombre/País/Avatar/Marco,
+  65 banderas, tienda con arm de DOS toques y autosave, pp_compras).
+  El NOMBRE sale de Ajustes (pname → perfil_edit, retorno vivo) ·
+  hallProfile/onPeerHall con {pv,av,mc,nv} saneado contra catálogos.
+- c00: 32 claves i18n es/en.
+- Tests NUEVOS: qa_perfil.py (121) · test_perfil_datos.mjs (36) ·
+  arnés browser test_r156_perfil.py (58: clicks REALES por menuClick,
+  compra, tope P2P, saneado rival, persistencia tras reload).
+
+DESCUBRIMIENTO CLAVE: drawMenuHub era legado — el menú REAL es el
+VESTÍBULO (drawMenuVestibulo ← CONFIG_SECCIONES.paneles, c02:1007);
+la reorganización vive en DATOS y la ficha/jugar usan el patrón
+drawMenuRank (panela C, _menuBtn, kill-transform).
+
+GATES: 31+131+135+17+12+21+11+10/10+14/14+12+16 + los 3 nuevos (121+36+58)
+TODOS VERDES. Presupuesto: game.html +75 KB (2,8%) por el apartado
+completo → base refrescada con el --update del propio gate (protocolo de
+su nota: «refrescar SOLO tras un cambio intencionado») — futuras rondas
+siguen capped a +1%. node_modules regenerado con bun install (reciclado
+del sandbox, lección §19). Fix arnés: expectativas de economía medían
+deltas con logros nuevos contaminando (+130/+450) — pre-desbloqueo en el
+test para medir deltas puros (30/50 IA · 400/660 P2P).
+
+CREDENCIALES: tokens/verify CERRADO (token ACTIVE — tarea histórica de
+3 rondas). La clave facilitada cpp-3Lg7… NO coincide con la CLAVE de
+producción del worker (403 con query y con cabecera; env.CLAVE existe):
+el dueño debe igualarla en el dashboard (Workers → crazypp-tele →
+Variables). Guardada en scripts/worker-tele/.clave-produccion (gitignored)
+junto a .cf-token y .cf-token-dash.

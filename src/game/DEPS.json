@@ -1,10 +1,10 @@
 {
   "fase": 2,
-  "generado": "2026-11-11T18:41:39.563Z",
-  "golden": "# SHA-256 del game.html ensamblado (build_game.py — regenerado por sella_r56_fisica_datos)",
+  "generado": "2026-11-23T13:12:56.647Z",
+  "golden": "# SHA256 del game.html que produjo esta división (3.6.209-SDK6, fase 186 · r112 CORRECCIONES DE LA AUDITORÍA r111: 14 hallazgos arreglados — H1-H10/H12 juego · H13-H15 live-service · higiene gemelas QA; golden anterior r110/r111: a627bed1efcac80b…)",
   "ficheros": {
     "c00_pre_three.js": {
-      "lineas": 3553,
+      "lineas": 3855,
       "declara": 15,
       "exporta": [
         "PP_ICONS",
@@ -28,11 +28,11 @@
         "c×467",
         "y×168",
         "x×168",
-        "st×81",
+        "st×82",
         "Math×61",
-        "window×35",
+        "window×46",
         "i×28",
-        "e×17"
+        "e×19"
       ]
     },
     "c01_modelos_3d.js": {
@@ -63,17 +63,28 @@
       ]
     },
     "c02_cfg_escena.js": {
-      "lineas": 770,
-      "declara": 30,
+      "lineas": 1438,
+      "declara": 41,
       "exporta": [
         "AI_PRESETS",
         "ARCANO_CFG",
         "BOLA_ASPECTOS",
         "CARRERA_DIVISIONES",
         "COLORS",
+        "CONFIG_AUDIO",
+        "CONFIG_DIFICULTAD",
+        "CONFIG_LOGROS",
+        "CONFIG_MEDALLAS",
+        "CONFIG_MENU",
+        "CONFIG_MENUS",
+        "CONFIG_PIELES",
+        "CONFIG_RALLY",
+        "CONFIG_SECCIONES",
+        "CONFIG_TORNEOS",
         "DIMS",
         "ELO_CPU",
         "HALL_VARIANTES",
+        "ICONOS_MENUS",
         "MESA_ALTOS",
         "MESA_ALTO_MAX",
         "MESA_ALTO_MIN",
@@ -98,23 +109,26 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
+        "E×27",
         "cfg×21",
         "Math×21",
         "THREE×16",
+        "M×10",
         "kk×9",
         "m×9",
-        "cl×6",
-        "pers×5",
-        "k×3"
+        "cl×6"
       ]
     },
     "c03_audio_voz.js": {
-      "lineas": 2037,
+      "lineas": 2068,
       "declara": 6,
       "exporta": [
         "GameAudio"
       ],
       "importa": {
+        "c02_cfg_escena.js": [
+          "CONFIG_AUDIO"
+        ],
         "c00_pre_three.js": [
           "TLang",
           "VOICE_B64",
@@ -135,11 +149,13 @@
       ]
     },
     "c04_fisica_ccd.js": {
-      "lineas": 369,
-      "declara": 53,
+      "lineas": 541,
+      "declara": 65,
       "exporta": [
+        "BOTE_TUNE",
         "CCD_TUNE",
         "MAX_SUBSTEP_DT",
+        "SOLVER_TUNE",
         "applyAerodynamics",
         "applyBounceSpin",
         "bladeNormalLocal",
@@ -158,6 +174,7 @@
         "ccdUpB",
         "createPaddleSim",
         "crossPoint",
+        "integraVuelo",
         "ipNormal",
         "ipRight",
         "ipUp",
@@ -192,19 +209,19 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "THREE×46",
-        "ps×34",
-        "Math×19",
-        "t×12",
-        "vel×11",
-        "spin×10",
-        "p×9",
-        "y×8"
+        "THREE×53",
+        "ps×51",
+        "Math×23",
+        "a×21",
+        "spin×18",
+        "o×18",
+        "vel×17",
+        "dt×16"
       ]
     },
     "c05_colisiones_ia_golpeo.js": {
-      "lineas": 1183,
-      "declara": 28,
+      "lineas": 1402,
+      "declara": 32,
       "exporta": [
         "__ppServeTelemetry",
         "applyServeProgressiveAssist",
@@ -220,9 +237,10 @@
       ],
       "importa": {
         "c04_fisica_ccd.js": [
+          "BOTE_TUNE",
           "CCD_TUNE",
           "MAX_SUBSTEP_DT",
-          "applyAerodynamics",
+          "SOLVER_TUNE",
           "applyBounceSpin",
           "bladeNormalLocal",
           "bounceOnTable",
@@ -239,6 +257,7 @@
           "ccdUpA",
           "ccdUpB",
           "crossPoint",
+          "integraVuelo",
           "ipNormal",
           "ipRight",
           "ipUp",
@@ -269,19 +288,19 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "ball×132",
-        "pos×105",
-        "vel×69",
-        "Math×66",
-        "pad×64",
+        "ball×161",
+        "pos×113",
+        "vel×79",
+        "Math×77",
+        "pad×66",
         "out×36",
-        "C×27",
-        "THREE×26"
+        "rp×32",
+        "THREE×29"
       ]
     },
     "c06_logros_stats_ia_rival.js": {
-      "lineas": 1025,
-      "declara": 11,
+      "lineas": 1809,
+      "declara": 37,
       "exporta": [
         "ACHIEVEMENTS",
         "GameStats",
@@ -290,6 +309,9 @@
       ],
       "importa": {
         "c02_cfg_escena.js": [
+          "CONFIG_DIFICULTAD",
+          "CONFIG_LOGROS",
+          "CONFIG_TORNEOS",
           "DIMS"
         ],
         "c05_colisiones_ia_golpeo.js": [
@@ -309,25 +331,29 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "Math×61",
-        "ball×55",
-        "intents×19",
-        "THREE×19",
-        "sign×18",
-        "winner×14",
-        "cause×13",
-        "ctx×13"
+        "ch×153",
+        "Math×115",
+        "THREE×57",
+        "ball×52",
+        "vivo×38",
+        "dt×20",
+        "v×20",
+        "sign×20"
       ]
     },
     "c07_escena_sala.js": {
-      "lineas": 843,
-      "declara": 11,
+      "lineas": 1449,
+      "declara": 15,
       "exporta": [
         "applyBallSkin",
         "createBall",
         "createBlobShadow",
         "createChampDecor",
         "createChispas",
+        "createCristalesCripto",
+        "createEstelaPoder",
+        "createNubePrismas",
+        "createOndaEsfera",
         "createRoom",
         "createTable",
         "relayoutMesa"
@@ -347,14 +373,14 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
+        "Math×148",
+        "THREE×140",
+        "i×129",
         "c×123",
-        "THREE×94",
-        "Math×60",
-        "p×52",
-        "i×50",
-        "g×36",
-        "rng×32",
-        "b×31"
+        "s×97",
+        "g×59",
+        "L×59",
+        "p×57"
       ]
     },
     "c08_hall_hud.js": {
@@ -404,7 +430,7 @@
       ]
     },
     "c09_red_netlink.js": {
-      "lineas": 2424,
+      "lineas": 2683,
       "declara": 1,
       "exporta": [
         "NetLink"
@@ -434,18 +460,18 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "g×139",
-        "r×113",
-        "m×71",
+        "g×142",
+        "r×116",
+        "m×82",
         "d×58",
-        "e×46",
-        "performance×42",
-        "ev×41",
-        "out×34"
+        "e×48",
+        "performance×45",
+        "ev×42",
+        "Math×35"
       ]
     },
     "c09b_red_nucleo.js": {
-      "lineas": 927,
+      "lineas": 955,
       "declara": 1,
       "exporta": [
         "PPNET"
@@ -465,7 +491,7 @@
       ]
     },
     "c09c_red_social.js": {
-      "lineas": 361,
+      "lineas": 389,
       "declara": 1,
       "exporta": [
         "RedSocial"
@@ -480,18 +506,18 @@
       "biblioteca": [],
       "globalesTop": [
         "r×20",
-        "net×10",
+        "net×13",
+        "e×10",
         "g×10",
         "base×8",
-        "e×8",
         "window×7",
-        "nuevo×6",
-        "p×4"
+        "j×7",
+        "nuevo×6"
       ]
     },
     "c10_menu_saque.js": {
-      "lineas": 105,
-      "declara": 39,
+      "lineas": 111,
+      "declara": 42,
       "exporta": [
         "AIM_BLADE",
         "AIM_BX",
@@ -520,6 +546,9 @@
         "aimM",
         "aimPitchQ",
         "aimRollQ",
+        "closAx",
+        "closQ",
+        "closX",
         "poseQ",
         "rpDir",
         "rpOrigin",
@@ -533,11 +562,11 @@
         "* as THREE ← three"
       ],
       "globalesTop": [
-        "THREE×34"
+        "THREE×37"
       ]
     },
     "c11_champloader.js": {
-      "lineas": 1087,
+      "lineas": 1112,
       "declara": 18,
       "exporta": [
         "ChampLoader",
@@ -556,6 +585,9 @@
         "pcT"
       ],
       "importa": {
+        "c02_cfg_escena.js": [
+          "CONFIG_TORNEOS"
+        ],
         "c00_pre_three.js": [
           "T",
           "__ppLang",
@@ -586,17 +618,17 @@
       "globalesTop": [
         "m×99",
         "e×72",
-        "id×50",
+        "id×58",
         "g×38",
         "THREE×31",
         "console×23",
-        "raw×18",
-        "cx×18"
+        "man×22",
+        "raw×18"
       ]
     },
     "c12_pingponggame.js": {
-      "lineas": 18291,
-      "declara": 172,
+      "lineas": 22149,
+      "declara": 195,
       "exporta": [
         "PingPongGame",
         "arBtn",
@@ -632,9 +664,15 @@
           "ARCANO_CFG",
           "BOLA_ASPECTOS",
           "CARRERA_DIVISIONES",
+          "CONFIG_DIFICULTAD",
+          "CONFIG_MENU",
+          "CONFIG_MENUS",
+          "CONFIG_SECCIONES",
+          "CONFIG_TORNEOS",
           "DIMS",
           "ELO_CPU",
           "HALL_VARIANTES",
+          "ICONOS_MENUS",
           "MESA_ALTOS",
           "MESA_ALTO_MAX",
           "MESA_ALTO_MIN",
@@ -676,6 +714,10 @@
           "createBlobShadow",
           "createChampDecor",
           "createChispas",
+          "createCristalesCripto",
+          "createEstelaPoder",
+          "createNubePrismas",
+          "createOndaEsfera",
           "createRoom",
           "createTable",
           "relayoutMesa"
@@ -754,6 +796,9 @@
           "aimM",
           "aimPitchQ",
           "aimRollQ",
+          "closAx",
+          "closQ",
+          "closX",
           "poseQ",
           "swingV"
         ],
@@ -768,18 +813,18 @@
         "RoomEnvironment ← three/addons/environments/RoomEnvironment.js"
       ],
       "globalesTop": [
-        "c×1233",
-        "Math×548",
-        "THREE×364",
-        "e×282",
-        "i×269",
-        "y×256",
-        "c2×213",
-        "S×198"
+        "c×1463",
+        "Math×660",
+        "THREE×394",
+        "e×290",
+        "i×262",
+        "m×255",
+        "y×233",
+        "S×218"
       ]
     },
     "c13_ui_arranque.js": {
-      "lineas": 6681,
+      "lineas": 6842,
       "declara": 4,
       "exporta": [
         "wrapText"
@@ -838,6 +883,12 @@
         ],
         "c02_cfg_escena.js": [
           "AI_PRESETS",
+          "CONFIG_LOGROS",
+          "CONFIG_MEDALLAS",
+          "CONFIG_MENUS",
+          "CONFIG_PIELES",
+          "CONFIG_RALLY",
+          "CONFIG_TORNEOS",
           "DIMS",
           "SERVE_ASSIST_TIERS",
           "SERVE_TUNE",
@@ -853,12 +904,12 @@
         "GLTFLoader ← three/addons/loaders/GLTFLoader.js"
       ],
       "globalesTop": [
-        "c×595",
+        "c×652",
         "G×374",
         "g×273",
-        "st×260",
-        "Math×229",
-        "S×173",
+        "st×258",
+        "Math×235",
+        "S×190",
         "b×173",
         "THREE×171"
       ]
@@ -887,6 +938,10 @@
     },
     {
       "simbolo": "SERVE_TUNE",
+      "ficherosQueImportan": 4
+    },
+    {
+      "simbolo": "CONFIG_TORNEOS",
       "ficherosQueImportan": 4
     },
     {
@@ -938,19 +993,15 @@
       "ficherosQueImportan": 2
     },
     {
-      "simbolo": "applyAerodynamics",
+      "simbolo": "CONFIG_LOGROS",
+      "ficherosQueImportan": 2
+    },
+    {
+      "simbolo": "CONFIG_DIFICULTAD",
       "ficherosQueImportan": 2
     },
     {
       "simbolo": "predictStrike",
-      "ficherosQueImportan": 2
-    },
-    {
-      "simbolo": "tmpTarget",
-      "ficherosQueImportan": 2
-    },
-    {
-      "simbolo": "bolaAspectoPorId",
       "ficherosQueImportan": 2
     }
   ]

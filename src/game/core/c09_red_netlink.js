@@ -36,6 +36,11 @@ export class NetLink {
     // (el anfitrión lo captura en processIntents; send-once)
     this.lastPoint = null;   // { w:'player'|'ai', c:causa, rh:n }
     this.lastRetry = null;   // causa del LET (texto neutro)
+    // r128 · A1 (auditoría r120): claims remotos EN VERIFICACIÓN — el punto
+    // no se aplica hasta que mi árbitro local lo confirma o vence la ventana
+    // (cruces ghost: el rival puede ser el único que vio el punto, r122).
+    this._held = null;        // Map rallyId → { m, wMapped, timer }
+    this._lastClaimMs = 0;    // cadencia: anti-ráfaga de claims forjados
   }
 
   available() { return typeof Peer !== 'undefined'; }
@@ -49,10 +54,46 @@ export class NetLink {
     'let', 'serve_net', 'serve_net_touch', 'serve_out', 'net_stay', 'wall', 'out',
   ]);
 
+  /** A2 (r129 · ola 3) · BROKER DE SEÑALIZACIÓN CONFIGURABLE: por defecto
+   *  el cloud público de PeerJS (0.peerjs.com, sin SLA — el hallazgo A2).
+   *  Si globalThis.PP_SIGNAL_ENDPOINT lleva una URL (p. ej.
+   *  «https://mi-dominio/peerjs»), las salas se registran en el PeerServer
+   *  PROPIO (mini-services/peer-server en el VPS del dueño, detrás de
+   *  Caddy) SIN tocar la lógica de juego: mismo protocolo, mismo cliente.
+   *  El valor se lee al abrir el peer: puede fijarse antes de host/join. */
+  static _signalOpts() {
+    const ep = (typeof globalThis !== 'undefined') ? globalThis.PP_SIGNAL_ENDPOINT : null;
+    if (!ep) return undefined;                       // cloud por defecto (como siempre)
+    try {
+      const u = new URL(String(ep));
+      if (u.protocol !== 'https:' && u.protocol !== 'http:') return undefined;
+      return {
+        host: u.hostname,
+        port: Number(u.port) || (u.protocol === 'https:' ? 443 : 80),
+        path: (u.pathname || '/').replace(/\/+$/, '') + '/',
+        secure: u.protocol === 'https:',
+      };
+    } catch (e) {
+      console.warn('PP_SIGNAL_ENDPOINT inválido, se usa el cloud de PeerJS:', ep);
+      return undefined;
+    }
+  }
+
   genCode() {
+    // r128 · A3 (auditoría r120): crypto.getRandomValues en vez de
+    // Math.random (xorshift128+ es reconstruible a partir de sus salidas).
+    // Se mantienen 5 símbolos: la UI de unión valida /^[A-Z0-9]{5}$/ y el
+    // código se dicta por voz; el salto real de seguridad es el broker
+    // propio (A2, ola 3 del plan).
+    const buf = new Uint32Array(5);
+    try {
+      (typeof crypto !== 'undefined' ? crypto : window.crypto).getRandomValues(buf);
+    } catch (e) {
+      for (let i = 0; i < 5; i++) buf[i] = (Math.random() * 0x100000000) >>> 0;
+    }
     let s = '';
     for (let i = 0; i < 5; i++) {
-      s += NetLink.CODE_CHARS[Math.floor(Math.random() * NetLink.CODE_CHARS.length)];
+      s += NetLink.CODE_CHARS[buf[i] % NetLink.CODE_CHARS.length];
     }
     return s;
   }
@@ -101,6 +142,15 @@ export class NetLink {
    *  propio de 180° en Y: (-x, y, -z)) — si no, el efecto Magnus curvaría
    *  la bola al revés en el marco del receptor. */
   static spinFromNet(a, out) { out.set(-a[0], a[1], -a[2]); return out; }
+
+  /** r132 · F (7ª pasada · FUZZING): geometría SANEADA en la frontera del
+   *  cable. Un paquete corrupto o hostil (NaN, strings, arrays cortos)
+   *  JAMÁS puede NaN-izar la bola: en física real un NaN de posición o
+   *  velocidad es PERMANENTE (la bola muere sin recuperación). */
+  static arrOk(a, n) {
+    return Array.isArray(a) && a.length >= n &&
+      a.slice(0, n).every((v) => typeof v === 'number' && Number.isFinite(v));
+  }
 
   /* v2.25 · REMAPEO DE CAUSAS por punto de vista. El anfitrión redacta la
    * causa del punto desde SU perspectiva ('tu rival' = el invitado). En el
@@ -247,6 +297,10 @@ export class NetLink {
     // ocupada), error claro en vez de quedarse en 'joining' para siempre.
     this._joinTO = window.setTimeout(() => {
       if (this.status === 'joining' && !this.online) {
+        // r140 · el watchdog del join hace TEARDOWN: antes sólo setStatus —
+        // el peer seguía registrado en el broker, el micro capturando y un
+        // conn tardío resucitaba la sesión DESPUÉS del error mostrado.
+        this.teardown();
         this.setStatus('error', T('room_not_found', { c: this.code }));
       }
     }, 15000);
@@ -260,13 +314,26 @@ export class NetLink {
 
   openPeer(id, onReady) {
     try {
-      this.peer = id ? new Peer(id) : new Peer();
+      // A2 (r129): el broker lo elige PP_SIGNAL_ENDPOINT (PeerServer propio
+      // del dueño) o el cloud de PeerJS si no hay configuración — ver
+      // _signalOpts(). new Peer(id, undefined) ≡ new Peer(id).
+      const opts = NetLink._signalOpts();
+      this.peer = id ? new Peer(id, opts) : new Peer(undefined, opts);
     } catch (e) {
       this.setStatus('error', T('net_fail', { m: e.message }));
       return;
     }
     this.peer.on('open', () => { this._retryIds = 0; onReady && onReady(); });
     this.peer.on('connection', (conn) => {     // lado anfitrión
+      // r146 · F1 (10ª revisión de red): el guard r122 sólo protegía al
+      // ANFITRIÓN — un INVITADO (id aleatorio del broker) ACEPTABA la
+      // conexión entrante de cualquier peer que conociera su id: el
+      // intruso disparaba «this.conn !== conn» → cerraba la conexión
+      // legítima del join y ADOPTABA la hostil (secuestro de la sesión
+      // del invitado: «Rival conectado» y partida contra el atacante,
+      // con mstart/startV2 del secuestrador). El invitado SOLO inicia
+      // salidas (wireConn/joinRoom): toda conexión ENTRANTE se rechaza.
+      if (this.role !== 'host') { try { conn.close(); } catch { /* */ } return; }
       // r122 · una sala = un rival: con conexión VIVA se rechaza el nuevo;
       // si sólo queda un RESTO cerrado de una sesión anterior se aparta y
       // se acepta el entrante (antes un conn a medio abrir era reemplazado
@@ -299,11 +366,26 @@ export class NetLink {
         return;
       }
       if (t === 'peer-unavailable') {
+        // r146 · F2 (10ª revisión de red): el peer-unavailable del join hace
+        // TEARDOWN — hermano del watchdog r140: el peer seguía REGISTRADO en
+        // el broker y un conn tardío podía resucitar la sesión después del
+        // error mostrado (sala muerta → «Rival conectado» zombi).
+        this.teardown();
         this.setStatus('error', T('room_not_found', { c: this.code }));
       } else if (t === 'network' || t === 'server-error' || t === 'socket-error') {
         this.setStatus('error', T('no_lobby_server'));
       } else if (this.status !== 'online') {
         this.setStatus('error', T('mj_error') + ': ' + t);
+      }
+      // r140 · ERROR FATAL = limpieza parcial: el micro seguía capturando
+      // (testigo verde en Quest indefinido) tras un error sin pulsar
+      // Cancelar. 'network'/'disconnected' se dejan (recuperables —
+      // peer.on('disconnected') reintenta); el resto corta el micro.
+      if (t !== 'network' && t !== 'disconnected' &&
+          this.micStream) {
+        try { this.micStream.getTracks().forEach((tr) => tr.stop()); } catch { /* */ }
+        this.micStream = null;
+        this.voiceState = 'off';
       }
     });
     this.peer.on('disconnected', () => {
@@ -359,28 +441,64 @@ export class NetLink {
       this.game?.audio?.kick();
       this.game?.onNetStatus?.();
     });
-    call.on('close', () => { if (this.voiceState === 'on') this.voiceState = 'off'; });
+    call.on('close', () => {
+      if (this.voiceState === 'on') this.voiceState = 'off';
+      // r143 · la voz muerta limpia SUS recursos: el chip quedaba en 'on'
+      // y srcObject con el stream residual el resto de la sesión
+      try { if (this.remoteAudio) this.remoteAudio.srcObject = null; } catch { /* */ }
+      if (this.call === call) this.call = null;
+    });
   }
 
   async initVoice() {
     if (this.micStream) return this.micStream;
+    // r143 · GUARD DE PROMESA EN VUELO: hostRoom, conn.open y la respuesta
+    // de la llamada disparan initVoice casi a la vez — sin esto, cada
+    // llamada disparaba OTRO getUserMedia y los streams huérfanos quedaban
+    // capturando para siempre (teardown sólo paraba el ÚLTIMO).
+    if (this._vozReq) return this._vozReq;
+    // r143 · SELLO DE SESIÓN (el patrón _v2T0 de las ofertas v2, r130·4):
+    // un getUserMedia que resuelve DESPUÉS del teardown re-abría el micro
+    // con la sesión muerta — LED del casco encendido en el menú sin sesión
+    const gen = this._vozGen || 0;
     this.voiceState = 'asking';
     this.game?.onNetStatus?.();
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
-        video: false,
-      });
-      this.micStream = stream;
-      stream.getAudioTracks().forEach((t) => { t.enabled = this.micOn; });
-      this.voiceState = 'on';
-      this.game?.onNetStatus?.();
-      return stream;
-    } catch (e) {
-      this.voiceState = 'denied';
-      this.game?.onNetStatus?.();
-      throw e;
-    }
+    this._vozReq = (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          video: false,
+        });
+        if (gen !== (this._vozGen || 0)) {
+          try { stream.getTracks().forEach((t) => t.stop()); } catch { /* */ }
+          this.voiceState = 'off';
+          this.game?.onNetStatus?.();
+          return null;
+        }
+        // r143 · el mic TARDÍO (>4 s: se respondió la llamada con el stream
+        // silencioso) por fin SUBE a la llamada viva — antes quedaba solo
+        // guardado: voiceState 'on', LED encendido y el rival sin oír NADA
+        try {
+          const pc = this.call && this.call._pc;
+          const snd = pc && pc.getSenders &&
+            pc.getSenders().find((s) => s.track && s.track.kind === 'audio');
+          if (snd) await snd.replaceTrack(stream.getAudioTracks()[0]);
+        } catch { /* sin renegociación posible: queda el silencio */ }
+        this.micStream = stream;
+        stream.getAudioTracks().forEach((t) => { t.enabled = this.micOn; });
+        this.voiceState = 'on';
+        this.game?.onNetStatus?.();
+        return stream;
+      } catch (e) {
+        // r143 · clasificar: sin hardware de micro ≠ permiso denegado
+        this.voiceState = (e && e.name === 'NotFoundError') ? 'error' : 'denied';
+        this.game?.onNetStatus?.();
+        throw e;
+      } finally {
+        this._vozReq = null;
+      }
+    })();
+    return this._vozReq;
   }
 
   /** v2.25: stream SILENTE de respaldo (sin micrófono). Si getUserMedia se
@@ -388,6 +506,9 @@ export class NetLink {
    *  voz del RIVAL se oye (solo no se transmitirá la nuestra). */
   silentStream() {
     if (this._silent) return this._silent;
+    // r143 · sin sesión viva NO se crea el AudioContext (segundo hermano
+    // del sello de initVoice): el ctx corría en el menú tras un teardown
+    if (!this.online && !this.peer && !this.conn) return null;
     try {
       const Ctor = window.AudioContext || window.webkitAudioContext;
       if (!Ctor) return null;
@@ -411,10 +532,12 @@ export class NetLink {
   initVoiceWithCap() {
     return new Promise((resolve) => {
       let done = false;
+      const gen = this._vozGen || 0;        // r143 · sello de sesión
       const finish = (s, st) => {
         if (done) return;
         done = true;
         window.clearTimeout(t);
+        if (gen !== (this._vozGen || 0)) { resolve(null); return; }   // r143
         if (st) this.voiceState = st;
         this.game?.onNetStatus?.();
         resolve(s || this.silentStream());
@@ -541,6 +664,11 @@ export class NetLink {
   /* --------------- recepción --------------- */
   onData(d) {
     if (!d || typeof d !== 'object') return;
+    // r140 · GUARDIA DE SESIÓN (5ª pasada multi-agente): las entregas
+    // tardías tras el teardown (WebRTC drena los encolados al cerrar) no
+    // tocan el juego — espejo de la guardia r132·9ª de _onRel, que sólo
+    // cubría el canal reliable. Sólo 'bye' pasa (anuncia la despedida).
+    if (!this.online && d.k !== 'bye') return;
     // v3.6.71 · r79: señalización y control del transporte v2 (por la
     // DataConnection PeerJS o por el canal reliable propio, mismo formato)
     if (d.k === 'sdp') { this._v2RemoteDesc(d.d); return; }
@@ -559,25 +687,51 @@ export class NetLink {
       case 'hello2': case 'tick2': case 'tock2': case 'ready2':
       case 'mstart': case 'claim': case 'ack': case 'resync': case 'resync-req':
       case 'pause': case 'resume': case 'mend': case 'v2off': case 'hallv':
+      // r140 · 'pow' AÑADIDO al routing: los poderes de DUELOS viajan por
+      // sendRel (canal fiable → onData) y aquí se DESCARTABAN — el arnés
+      // antiguo entregaba el rel directamente a _onRel y enmascaraba el
+      // bug: en producción el rival jamás veía el poder del otro (r84).
+      // r141 · 'ice-restart': el aviso de reparación ICE extiende el
+      // régimen de silencio del RECEPTOR (25 s) mientras dura el apretón.
+      case 'pow': case 'ice-restart':
         this._onRel(d);
         return;
     }
     if (d.k === 'p') {
-      if (d.pad) {
+      // r140 · el tráfico v1 PRUEBA VIDA: la frescura del watchdog (r112)
+      // sólo la escribía _onRel — tras un _v2Fail a v1 la partida moría a
+      // los ~12 s con el rival vivo emitiendo 'p'/'h' a 30 Hz (el objetivo
+      // declarado de r132·11ª, «degrada LIMPIO a v1», era falso).
+      this._lastRelAt = performance.now();
+      // r132 · F: sub-campos validados en la frontera (arrOk) — la muestra
+      // corrupta se descarta entera y no entra en estado del juego
+      if (d.pad && NetLink.arrOk(d.pad, 7)) {
         // v2.91: se guarda TAMBIÉN la muestra anterior para estimar la
         // velocidad de la pala rival (muerte adelantada suave)
         if (this.remotePaddle) this._padPrev = this.remotePaddle;
         this.remotePaddle = { p: d.pad.slice(0, 3), q: d.pad.slice(3, 7), t: performance.now() };
       }
-      if (d.b) {
+      if (d.b && NetLink.arrOk(d.b.p, 3) && NetLink.arrOk(d.b.v, 3)) {
         this.remoteBall = d.b;
         this.remoteBallT = performance.now();
       }
-      if (d.e) this._inEvs.push(...d.e);
-      if (d.y) this.applySync(d.y);
+      if (Array.isArray(d.e) && d.e.length) {
+        const evs = d.e.filter((ev) => Array.isArray(ev) && ev.length >= 4 &&
+          typeof ev[0] === 'string' &&
+          [1, 2, 3].every((i) => typeof ev[i] === 'number' && Number.isFinite(ev[i])));
+        if (evs.length) this._inEvs.push(...evs);
+      }
+      // r140 · el sync v1 es ESPEJO DEL ANFITRIÓN: sólo el invitado lo
+      // aplica — sin este gate, un {k:'p', y:…} del invitado envenenaba
+      // las reglas del ANFITRÍO (árbitro) y podía forjar fin de partida
+      // + ELO (st='over' dispara recordMatch). La frontera vive en
+      // applySync (whitelist completa, abajo).
+      if (d.y && this.role === 'guest') this.applySync(d.y);
       return;
     }
     if (d.k === 'h') {
+      // r140 · vida v1 también en los golpeos (mismo motivo que 'p')
+      this._lastRelAt = performance.now();
       // v2.25: solo el anfitrión encola golpeos para validarlos. En el
       // invitado un golpeo del anfitrión significa "la bola ahora es suya":
       // se cambia el dueño AL INSTANTE (sin esperar al siguiente sync) y no
@@ -586,22 +740,31 @@ export class NetLink {
       // velocidad y spin del paquete) — antes el invitado mostraba la bola
       // congelada hasta el siguiente paquete 'p' (hasta 50 ms de bola muerta
       // en cada golpeo del anfitrión).
-      if (this.role === 'host') this._pendingHits.push(d);
+      if (this.role === 'host') {
+        // r132 · F: sólo se encola golpeo con geometría sana (el legítimo
+        // SIEMPRE la lleva — sendHit manda p/v incondicionalmente)
+        if (NetLink.arrOk(d.p, 3) && NetLink.arrOk(d.v, 3)) this._pendingHits.push(d);
+      }
       else {
         if (this.owner !== 'host') this.owner = 'host';
         const g = this.game;
-        if (g && d.p && d.v) {
+        if (g && NetLink.arrOk(d.p, 3) && NetLink.arrOk(d.v, 3)) {
           NetLink.posFromNet(d.p, g.ball.pos);
           NetLink.vecFromNet(d.v, g.ball.vel);
-          if (d.s) NetLink.spinFromNet(d.s, g.ball.spin);
+          if (NetLink.arrOk(d.s, 3)) NetLink.spinFromNet(d.s, g.ball.spin);
           this.remoteBall = { p: d.p.slice(), v: d.v.slice(),
-            s: d.s ? d.s.slice() : null };
+            s: NetLink.arrOk(d.s, 3) ? d.s.slice() : null };
           this.remoteBallT = performance.now();
         }
       }
       return;
     }
     if (d.k === 'r') {    // el invitado pide revancha
+      // r142 · 'r' y 'm' son VIDA REAL del par: se retornaban SIN sellar
+      // _lastRelAt — el anfitrión procesaba la revancha, emitía el mstart
+      // y MORÍA IGUAL a los 12 s (invitado con cuenta atrás huérfana:
+      // partida zombi asimétrica en el filo del watchdog).
+      this._lastRelAt = performance.now();
       // r75 · v3.6.166 · GUARDA ANTI DOBLE ARRANQUE (el saque fantasma de
       // la segunda partida): la revancha de AMBOS pulsada casi a la vez
       // dispara DOS mstart con startAt distintos (el propio del anfitrión
@@ -617,8 +780,24 @@ export class NetLink {
       return;
     }
     if (d.k === 'm') {
+      this._lastRelAt = performance.now();   // r142 · vida real (ver 'r')
       if (this.role === 'host' && (d.md === 'match' || d.md === 'survival')) {
         this.game.switchMode(d.md);
+        // r131 · FIX #11 (6ª auditoría · código no auditado): ECO DE MODO —
+        // el 'm' sólo viaja del que PIDE: el anfitrión cambiaba en LOCAL y
+        // el invitado que pidió SUPERVIVENCIA jamás recibía confirmación
+        // (seguía en PARTIDO: cartel, voz y modo divergían entre extremos).
+        // El eco reutiliza la rama espejo del invitado (FASE 144). Sin
+        // bucle: el invitado no re-envía y la guardia mode===mode de
+        // switchMode filtra los repetidos (arnés R1-R4).
+        this.sendMode(d.md);
+        // r143 · SUPERVIVENCIA sin ancla de saque: no hay mstart (va por
+        // 'm') y cada extremo nacía con SU sacador local ('player'
+        // hardcode en c06:272) → DOS bolas HELD, ningún saque, y sin cura
+        // (la supervivencia está excluida de claims y del auto-resync del
+        // mstart). El resync del anfitrión re-ancla al invitado (fs/go/sv/
+        // rs/sh) — el reliable garantiza que llegue DESPUÉS del propio 'm'.
+        if (d.md === 'survival') this._sendResync();
       } else if (this.role === 'guest' && d.md === 'survival') {
         // v3.6.142 · FASE 144 · el anfitrión arrancó SUPERVIVENCIA: el
         // invitado cambia SU modo en espejo (antes el mensaje sólo lo
@@ -642,6 +821,46 @@ export class NetLink {
    *  en su perspectiva: se regeneran localmente, nunca se copian. */
   applySync(y) {
     const g = this.game;
+    if (!g || !g.rules) return;
+    // r140 · FRONTERA DEL SYNC v1 (5ª pasada multi-agente): r132 saneó
+    // pad/b/e pero el paquete `y` entraba EN CRUDO — un peer corrupto
+    // escribía state/marcador/bestOf arbitrarios y forjaba fin de partida
+    // con ELO PERSISTIDO (st='over' + wn). Whitelist igual que
+    // _applyResync (r132·8ª): dominio de st, números finitos acotados,
+    // etiquetas de dominio y ganador COHERENTE con el marcador espejado.
+    const ST_OK = { serve: 1, rally: 1, point: 1, over: 1 };
+    // r141 · N6 (convergencia): ENTEROS (rh/bo fraccionarios minteaban la
+    // lógica de rotación) y ow de dominio REAL v1 ['host','guest'] —
+    // 'player'/'ai' jamás los produce un build legítimo.
+    const num = (v, max) => (Number.isInteger(v) &&
+      v >= 0 && v <= max) ? v : null;
+    const et = (v, ok, dflt) => (ok.includes(v) ? v : dflt);
+    const sp = num(y.sp, 99), sa = num(y.sa, 99);
+    if (!y.st || !ST_OK[y.st] || sp === null || sa === null) return;
+    const wn = et(y.wn, ['player', 'ai'], '');
+    // el fin de partido declarado debe cuadrar con el marcador (el
+    // ganador va arriba — un 'over' imposible no celebra ni puntúa ELO)
+    const wnSano = !wn || (y.st !== 'over') ||
+      (wn === 'player' ? sp > sa : sa > sp);
+    y = {
+      st: y.st, sp, sa,
+      sv: et(y.sv, ['player', 'ai'], 'player'),
+      ow: et(y.ow, ['host', 'guest'], 'host'),
+      md: et(y.md, ['match', 'survival', 'duelos'], 'match'),
+      rh: num(y.rh, 999) || 0, bo: num(y.bo, 5) || 1,
+      gp: num(y.gp, 5) || 0, ga: num(y.ga, 5) || 0,
+      wn: wnSano ? wn : '',
+      pt: y.pt && typeof y.pt === 'object' ? {
+        w: et(y.pt.w, ['player', 'ai'], 'ai'),
+        c: typeof y.pt.c === 'string' ? y.pt.c.slice(0, 32) : '',
+        rh: num(y.pt.rh, 999) || 0,
+      } : null,
+      rt: typeof y.rt === 'string' ? y.rt.slice(0, 32) : null,
+      gw: y.gw && typeof y.gw === 'object' ? {
+        w: et(y.gw.w, ['player', 'ai'], 'ai'),
+        p: num(y.gw.p, 99) || 0, q: num(y.gw.q, 99) || 0,
+      } : null,
+    };
     const r = g.rules;
     // v2.51 · ANTI-FLAP: tras un golpeo propio el invitado RECLAMA la bola
     // (owner='guest' en sendHit). El sync del anfitrión todavía lleva su
@@ -809,7 +1028,17 @@ export class NetLink {
     // golpeos del rival (solo el anfitrión valida y puntúa)
     if (this.role === 'host' && this._pendingHits.length) {
       const hits = this._pendingHits; this._pendingHits = [];
+      // r140 · CADENCIA v1 (5ª pasada multi-agente): el flood de {k:'h'}
+      // con geometría válida reglaba puntos por «doble golpe» (el 2º
+      // golpeo consecutivo es falta) e inflaba rallySeq con beginServeRally
+      // repetido. ≥150 ms entre golpeos y ≤2 por frame — un humano real no
+      // golpea más rápido.
+      let vistos = 0;
       for (const h of hits) {
+        if (++vistos > 2) break;
+        const nowHl = performance.now();
+        if (nowHl - (this._lastNetHitT || 0) < 150) continue;
+        this._lastNetHitT = nowHl;
         const g = game;
         // v2.51: un golpeo del rival SOLO es procesable en rallye, o en
         // saque si se declara como tal (sv=1). En 'point'/'over' el golpeo
@@ -817,6 +1046,9 @@ export class NetLink {
         // dueño (antes desplazaba la bola a una posición fantasma).
         const st = g.rules.state;
         if (st !== 'rally' && !(st === 'serve' && h.sv)) continue;
+        // r132 · F: geometría validada también aquí (redundante con la
+        // frontera del onData: defensa en profundidad)
+        if (!NetLink.arrOk(h.p, 3) || !NetLink.arrOk(h.v, 3)) continue;
         NetLink.posFromNet(h.p, g.ball.pos);
         NetLink.vecFromNet(h.v, g.ball.vel);
         if (h.s) NetLink.spinFromNet(h.s, g.ball.spin);   // v2.25: espejado
@@ -971,6 +1203,26 @@ export class NetLink {
     this._txBuf = new ArrayBuffer(PPNET.VP.MAX_PKT);
     this._lossLowT = 0; this._degraded = false;
     this._lastFastAt = 0; this._iceRestarts = 0;
+    // r130·3 · FIX FUGA DE SESIÓN (bug #6 de la 3ª auditoría): startV2
+    // re-inicializa casi todo, pero estos sellos de la sesión ANTERIOR
+    // sobrevivían al teardown y contaminaban la partida nueva:
+    //  · _mstartAt → mstartReciente()/guardia del 'r' (c09:660) suprimía el
+    //    mstart de la SESIÓN 2 durante 8 s tras el último mstart de la
+    //    sesión 1 («creo la sala nueva, le doy a jugar y no pasa nada» — el
+    //    rival espera un arranque que el anfitrión silencia).
+    //  · _lastIceTry → reinicioVivo (frame 1500) dejaba SILENCIO en 25 s
+    //    durante los primeros 15 s de la sesión nueva: un rival muerto de
+    //    verdad tardaba el doble en detectarse.
+    //  · _lastRemoteHitT → cadencia: sólo hacía el juicio MÁS permisivo,
+    //    se resetea por higiene. (_visOff/_lastRelAt ya se resetean más
+    //    abajo, en el bloque de FSM de esta misma función.)
+    this._lastIceTry = 0; this._mstartAt = 0;
+    this._lastRemoteHitT = 0;
+    // r140 · el dedupe de 'over' también por sesión: un rival NUEVO con el
+    // mismo ganador|marcador en la partida 2 volvía a celebrar... al revés:
+    // sin reset, el 'over' de la sesión 2 con la MISMA firma que la sesión
+    // 1 no celebraba ni registraba ELO en ese extremo.
+    this._overKey = '';
     this._helloDone = false; this._helloTO = null;
     this._iceQ = [];                            // r81: ICE tempranos en cola
     this._iceVigilado = false; this._iceOkT = null;   // r125: diagnóstico ICE
@@ -1012,8 +1264,19 @@ export class NetLink {
   }
 
   async _v2Offer() {
+    // r130·4 · FIX #9 (4ª auditoría): CARRERA ASÍNCRONA — el pc se creaba
+    // DESPUÉS de un await de RED (ICE_ASYNC → fetch /api/ice, hasta 1-3 s
+    // con la caché fría). Un teardown en esa ventana (cancelar la sala,
+    // salir del menú) dejaba `this._pc = pc` asignado DESPUÉS de la
+    // limpieza: un RTCPeerConnection VIVO filtrado (agente ICE + asignación
+    // TURN sin cerrar, repetible cada intento). Sello de sesión: _v2T0 lo
+    // re-estampa cada startV2 y teardown lo pone a 0 — si cambió, el vuelo
+    // asíncrono pertenece a una sesión muerta: se cierra SU pc y se aborta.
+    const sesion = this._v2T0;
     try {
-      const pc = new RTCPeerConnection(await NetLink.ICE_ASYNC());
+      const cfg = await NetLink.ICE_ASYNC();
+      if (!sesion || this._v2T0 !== sesion) return;        // cancelada: nada creado aún
+      const pc = new RTCPeerConnection(cfg);
       this._pc = pc;
       this._fast = pc.createDataChannel('fast', { ordered: false, maxRetransmits: 0 });
       this._rel = pc.createDataChannel('rel', { ordered: true });
@@ -1024,19 +1287,32 @@ export class NetLink {
       };
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      if (!sesion || this._v2T0 !== sesion) {   // cancelada en plena oferta
+        try { pc.close(); } catch { /* */ }
+        if (this._pc === pc) { this._pc = null; this._fast = null; this._rel = null; }
+        return;
+      }
       this.send({ k: 'sdp', d: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
     } catch (e) {
-      this._v2Fail(T('net_legacy'));
+      // r130·4: el fallo sólo degrada la sesión VIVA (pending). Sobre una
+      // sesión ya desmontada (o la siguiente) era un _v2Fail fantasma.
+      if (sesion && this._v2T0 === sesion && this.v2 === 'pending') this._v2Fail(T('net_legacy'));
     }
   }
 
   /** descripción remota SDP: el anfitrión recibe la OFERTA (y responde);
    *  el invitado recibe la RESPUESTA. */
   async _v2RemoteDesc(desc) {
+    // r130·4 · FIX #9 (la otra mitad): mismo patrón que _v2Offer — el pc
+    // nace tras un await de red y un teardown en la ventana lo filtraba
+    // (y el catch llamaba _v2Fail sobre una sesión ya muerta).
+    const sesion = this._v2T0;
     try {
       if (!desc || !desc.type) return;
       if (!this._pc) {
-        const pc = new RTCPeerConnection(await NetLink.ICE_ASYNC());
+        const cfg = await NetLink.ICE_ASYNC();
+        if (!sesion || this._v2T0 !== sesion) return;      // cancelada: nada creado aún
+        const pc = new RTCPeerConnection(cfg);
         this._pc = pc;
         this._vigilarICE(pc);
         pc.onicecandidate = (e) => {
@@ -1047,8 +1323,11 @@ export class NetLink {
           else if (e.channel.label === 'rel') this._rel = e.channel;
           this._wireDC();
         };
+      } else if (!sesion || this._v2T0 !== sesion) {
+        return;                                 // pc de OTRA sesión: no tocar
       }
       await this._pc.setRemoteDescription(desc);
+      if (!sesion || this._v2T0 !== sesion) return;        // desmontada en pleno vuelo
       // r81 · ICE tempranos: los candidatos que llegaron ANTES de la
       // descripción remota se encolaban y morían en silencio (addIceCandidate
       // rechaza sin remoteDescription) — en redes reales dejaba el ICE a medio
@@ -1061,10 +1340,13 @@ export class NetLink {
       if (desc.type === 'offer') {
         const ans = await this._pc.createAnswer();
         await this._pc.setLocalDescription(ans);
+        if (!sesion || this._v2T0 !== sesion) return;
         this.send({ k: 'sdp', d: { type: ans.type, sdp: ans.sdp } });
       }
     } catch (e) {
-      this._v2Fail(T('net_legacy'));
+      // r130·4: el fallo sólo degrada la sesión VIVA (pending); sobre una
+      // desmontada (o la siguiente) era un _v2Fail fantasma con mensaje.
+      if (sesion && this._v2T0 === sesion && this.v2 === 'pending') this._v2Fail(T('net_legacy'));
     }
   }
 
@@ -1075,7 +1357,13 @@ export class NetLink {
     try {
       const rd = this._pc && this._pc.remoteDescription;
       if (this._pc && rd && rd.type) this._pc.addIceCandidate(c).catch(() => { /* */ });
-      else (this._iceQ = this._iceQ || []).push(c);
+      else {
+        const q = (this._iceQ = this._iceQ || []);
+        // r140 · tope duro: un flood de ICE sin remoteDescription crecía
+        // sin límite por sesión (memoria). 64 sobra para cualquier ICE
+        // legítimo (el drenaje de _v2RemoteDesc lo consume al abrir).
+        if (q.length < 64) q.push(c);
+      }
     } catch { /* */ }
   }
 
@@ -1092,6 +1380,15 @@ export class NetLink {
       const of = await pc.createOffer({ iceRestart: true });
       await pc.setLocalDescription(of);
       this.send({ k: 'sdp', d: { type: pc.localDescription.type, sdp: pc.localDescription.sdp } });
+      // r141 · AVISO DE REINICIO al par: la gracia de 25 s del régimen
+      // reinicioVivo sólo la tenía el EMISOR — el ANFITRIÓN ejecutaba
+      // onPeerGone a los 12 s y el 2º reintento (t≈15 s) llegaba a un
+      // enlace ya muerto. El receptor extiende SU silencio 15 s por aviso.
+      // r142 · por this.send (la MISMA vía que el SDP, señalización PeerJS
+      // viva): sendRel prefería _rel — el ICE CAÍDO — y dc.send() con ICE
+      // disconnected NO lanza, bufferiza en SCTP muerto: el aviso era
+      // letra muerta justo en su escenario diana.
+      this.send({ k: 'ice-restart' });
     } catch { /* sin recuperación posible: el watchdog de silencio decide */ }
   }
 
@@ -1190,9 +1487,23 @@ export class NetLink {
 
   _onRel(m) {
     if (!m || typeof m !== 'object') return;
+    // r132 · 9ª (arnés T, churn de sesiones): un paquete en vuelo que llega
+    // TRAS el teardown (WebRTC entrega los encolados durante el cierre) no
+    // puede tocar interior ya anulado — this._sync.onAck() crasheaba con
+    // TypeError y la página perdía el handler de datos. Enlace muerto:
+    // TODO paquete entrante es basura (el _lastRelAt tampoco debe refrescar:
+    // el watchdog de un enlace reconstruido parte de su propia vida).
+    if (!this.online) return;
     this._lastRelAt = performance.now();
     switch (m.k) {
       case 'hello2': {
+        // r132 · F + r140 · el hello2 es UNO por sesión (startV2 resetea
+        // _helloDone, la re-entrada O sigue funcionando) — un SEGUNDO
+        // hello2 se ignora en CUALQUIER estado v2: antes, en 'pending', un
+        // segundo hello2 (eco o hostil) re-disparaba la ráfaga de 8 tick2
+        // (amplificación 8:1) y uno con v/ph distintos forzaba _v2Fail de
+        // un enlace sano.
+        if (this._helloDone) break;
         if (m.v !== PPNET.VP.PROTO || m.ph !== PPNET.VP.PHYS) {
           this._v2Fail(T('net_legacy'));        // protocolo/física distintos → v1
           return;
@@ -1261,10 +1572,20 @@ export class NetLink {
         break;
       }
       case 'tick2': {
+        // r140 · frontera del reloj: un tick2 basura no se ecoa (el par
+        // sanitario completo vive en tock2 y en PPNET.NetClock.anchor)
+        if (!Number.isFinite(m.t)) break;
         this.sendRel({ k: 'tock2', t: performance.now(), e: m.t });
         break;
       }
       case 'tock2': {
+        // r140 · FRONTERA DEL RELOJ (5ª pasada multi-agente): t/e no
+        // finitos o un sesgo absurdo (>60 s entre mi t y el suyo) se
+        // descartan — 6 tock2 basura ya no pueden envenenar el reloj
+        // compartido (offset NaN/1e15 era IRREVERSIBLE: validador sin
+        // frenos temporales, avatar NaN, cuenta atrás muerta).
+        if (!Number.isFinite(m.e) || !Number.isFinite(m.t) ||
+            Math.abs(m.e - m.t) > 60000) break;
         // ancla gruesa: mi t de envío, su t completo, mi t de recepción
         this._clock.anchor(m.e, m.t, performance.now());
         this._clock.apply(performance.now(), false);
@@ -1285,8 +1606,49 @@ export class NetLink {
         // MATCH_START del anfitrión: instante futuro + primer sacador
         // r84 · + md: modo de la partida ('match'|'duelos') — autoridad del
         // anfitrión; el invitado ignora su propia elección del submenú.
-        this._mstart = { startAt: m.sa, fs: m.fs, bo: m.bo || 3, md: (m.md === 'duelos') ? 'duelos' : 'match' };
+        // r132 · F: sa no finito = paquete corrupto → descartado (el
+        // watchdog/resync re-ancla la partida; jamás countdown con NaN).
+        // r132 · 10ª (matriz U): el mstart es AUTORIDAD DEL ANFITRIÓN —
+        // sólo el invitado lo aplica (mismo gate que el resync). Sin esto,
+        // un mstart spoofado desde el lado invitado reseteaba la partida
+        // DEL PROPIO anfitrión (doble autoridad → bola/saque desacoplados).
+        if (this.role !== 'guest') break;
+        if (!Number.isFinite(m.sa)) break;
+        // r140 · ventana de validez del arranque: un sa gigante o muy
+        // atrasado (corrupción — la clase que r132·8ª saneó en resync pero
+        // no aquí) pasaba el gate y clavaba una cuenta atrás INFINITA en el
+        // invitado (zombi del saque: holdLock cada frame, watchdog alimentado
+        // por el fast del anfitrión). ±60 s de vuelo es generoso para
+        // cualquier RTT real.
+        if (this._clock &&
+            Math.abs(m.sa - this._clock.nowHost(performance.now())) > 60000) {
+          break;
+        }
+        // r140 · bo acotado (1..5) y fs de dominio: un bo basura
+        // contaminaba bestOf y la rotación de juegos del «mejor de N»
+        const boMs = (Number.isInteger(m.bo) && m.bo >= 1 && m.bo <= 5)
+          ? m.bo : 3;
+        const fsMs = (m.fs === 'host' || m.fs === 'ai') ? m.fs : 'host';
+        this._mstart = { startAt: m.sa, fs: fsMs, bo: boMs, md: (m.md === 'duelos') ? 'duelos' : 'match' };
         this.game?.onNetMatchStart?.(this._mstart);
+        break;
+      }
+      case 'ice-restart': {
+        // r141 · el par está reparando SU ICE: extiendo MI gracia de
+        // silencio a 25 s (reinicioVivo) — sin esto el anfitrión mataba la
+        // partida a los 12 s y el 2º reintento del invitado llegaba tarde.
+        // r142 · TOPE (2/sesión) + CADENCIA (8 s) + sólo con el fast ya
+        // mudo >3 s: sin tope, un aviso cada <15 s congelaba el watchdog
+        // v1 PARA SIEMPRE (zombi indetectable) y posponía mi PROPIO
+        // reintento ICE (el mismo sello _lastIceTry limita ambos); en v2
+        // sano forzaba el espejo temprano a ~6 s (degradación por spam).
+        const ahoraI = performance.now();
+        if (this.v2 === 'ok' && (this._iceAvisos | 0) < 2 &&
+            ahoraI - (this._iceAvisoAt || 0) > 8000 &&
+            (!this._lastFastAt || ahoraI - this._lastFastAt > 3000)) {
+          this._iceAvisos = (this._iceAvisos | 0) + 1;
+          this._iceAvisoAt = ahoraI;
+        }
         break;
       }
       case 'pow': {
@@ -1296,6 +1658,14 @@ export class NetLink {
         break;
       }
       case 'claim': {
+        // r141 · el camino de claims corre SOLO en v2: en v1 degradado el
+        // host re-ancla al invitado por applySync y ningún build legítimo
+        // envía claims por v1 (nacen de MatchSync.localPoint, que exige
+        // sesión v2) — sin el gate, un claim BIEN FORMADO por v1 aplicaba
+        // puntos sin plausibilidad ni ventana de 600 ms (la verificación
+        // r128 exigía v2==='ok' pero el camino clásico no lo miraba).
+        if (this.v2 !== 'ok') break;
+        if (!this._sync) break;
         this._stats.claims++;
         const g = this.game;
         // el ganador del claim viaja en perspectiva DEL EMISOR: espejar a
@@ -1306,6 +1676,46 @@ export class NetLink {
         // al revés (punto al revés y desacuerdos enmascarados).
         const wMapped = m.w === 'let' ? 'let'
           : (m.w === 'player' ? 'ai' : 'player');
+        // r128 · A1 (auditoría r120): un CLAIM forjado ({r, w}) se aplicaba
+        // SIN confrontar — onClaim marcaba aplicado y agree:true al primero
+        // que llegaba (verificado en Node: 11 de 11 claims aplicados). Ahora
+        // un claim aplicable al estado local pasa por VERIFICACIÓN: el
+        // árbitro local tiene 600 ms de ventaja antes de aplicarlo y un
+        // claim IMPOSIBLE (rallyId que salta, ganador inválido o ráfaga)
+        // no se aplica nunca — el host responde con su verdad (resync).
+        // Claims antiguos sin rallyId (r < r82) y duplicados siguen por el
+        // camino clásico, y el invitado mantiene al host como autoridad.
+        // r140 · CLAIM LEGACY CERRADO (5ª pasada multi-agente): PROTO 3 ya
+        // rechaza builds < r82 en el HELLO — el camino legacy está MUERTO.
+        // Un claim sin rallyId numérico o con ganador inválido es basura/
+        // hostil: se descarta SIN aplicar y SIN ack. Antes _sync.onClaim
+        // lo aplicaba al primer paquete (puntos fantasma ilimitados,
+        // verificado en Node: 0-0 → 1-0 → 2-0 con {k:'claim',w:'basura'})
+        // y dejaba applied=no-numérico → todo claim legítimo posterior
+        // caía como implausible: libro de reclamos inutilizado.
+        const legacy = (typeof m.r !== 'number') || !Number.isInteger(m.r) ||
+          (m.w !== 'player' && m.w !== 'ai' && m.w !== 'let');
+        if (legacy) {
+          this._stats.disputes++;
+          break;
+        }
+        const duplicado = this._sync && m.r <= this._sync.applied;
+        if (!legacy && !duplicado && g && this._sync && this.v2 === 'ok') {
+          if (PPNET.claimPlausible(m, this._sync.applied, performance.now(),
+              this._lastClaimMs || 0)) {
+            this._lastClaimMs = performance.now();
+            this._holdClaim(m, wMapped);
+            break;
+          }
+          this._stats.disputes++;                       // implausible: rechazo
+          if (this.role === 'host') this._sendResync();
+          // r140 · el invitado TAMBIÉN responde: su claim rechazado pedía
+          // la verdad del árbitro (resync-req) — antes moría sin respuesta
+          // (pending eterno del reclamante, divergencia sin cura; el
+          // CLAIM_TIMEOUT/_claimFallback eran código muerto).
+          else this.sendRel({ k: 'resync-req' });
+          break;
+        }
         const r = this._sync.onClaim(m, wMapped);
         this.sendRel(r.ack);
         if (r.apply && g) this._applyRemoteClaim(m, wMapped);
@@ -1319,6 +1729,9 @@ export class NetLink {
       }
       case 'resync': {
         if (this.role === 'guest') this._applyResync(m);
+        // r128 · A1: el estado se reinció — ningún claim en espera puede
+        // aplicarse ya (aplicarían un punto sobre una partida reinciada).
+        this._limpiaHeld();
         break;
       }
       case 'resync-req': {
@@ -1335,6 +1748,11 @@ export class NetLink {
       }
       case 'resume': {
         this._pausedRemote = false;
+        // r142 · gracia de 5 s para el espejo temprano: el 'resume' sella
+        // _lastRelAt y el rival puede tardar segundos en re-emitir pose
+        // (App resume en Quest) — sin gracia, UN mensaje de reanudación
+        // degradaba la partida tras un apagón o una pausa larga.
+        this._lastResumeAt = performance.now();
         this.game?.onNetPause?.(false);
         break;
       }
@@ -1349,7 +1767,25 @@ export class NetLink {
         break;
       }
       case 'v2off': {
+        // r132 · 8ª: igual que el hello2 (guardia F) — un v2off del rival
+        // sólo tiene sentido DURANTE el handshake (v2='pending'); en un
+        // enlace vivo un v2off corrupto/hostil NO degrada la partida en
+        // marcha (el watchdog se ocupa de un rival de verdad muerto).
+        // r140 · PERO si MI fast lleva >3 s mudo (el rival dejó de enviarme
+        // fast: degradó de verdad, r132·11ª), el aviso es LEGÍTIMO y degrado
+        // en ESPEJO — antes el 'ok' lo ignoraba siempre, seguía emitiendo a
+        // un canal muerto y su watchdog lo mataba a los 12 s (la partida
+        // acababa igual, con ~12 s de rival congelado).
+        const fastMudo = !this._lastFastAt ||
+          (performance.now() - this._lastFastAt > 3000);
+        if (this.v2 !== 'pending' && !(this.v2 === 'ok' && fastMudo)) break;
         this._v2Fail(T('net_legacy'));
+        // r142 · el MOTIVO viaja en c (la revancha rechazada en v1 responde
+        // net_v2_down): el pedido del invitado ya no muere sin feedback en
+        // SU pantalla (sólo el host veía el cartel)
+        if (typeof m.c === 'string' && m.c && this.game?.rules) {
+          this.game.rules.message = T(m.c);
+        }
         break;
       }
     }
@@ -1360,24 +1796,55 @@ export class NetLink {
     this.v2 = 'ok';
     this._stats.t0 = performance.now();
     if (this.role === 'host') {
-      // el anfitrión fija el instante de inicio en SU reloj (spec §3.8)
-      const startAt = this._clock.nowHost(performance.now()) + PPNET.VP.COUNTDOWN_MS;
-      const fs = 'host';
-      // r84 · DUELOS LOCOS: el modo de la partida viaja en el mstart (md) —
-      // lo decide la tarjeta que el anfitrión eligió en el submenú
-      // (_mjMode: 'normal'|'duelos'); el invitado lo recibe y obedece.
-      const md = (this.game && this.game._mjMode === 'duelos') ? 'duelos' : 'match';
-      this.sendRel({ k: 'mstart', sa: startAt, fs, bo: 3, md });
-      this._mstart = { startAt, fs, bo: 3, md };
-      this.game?.onNetMatchStart?.(this._mstart);
+      // r130 · FIX DOBLE ARRANQUE: si el juego ya pidió arrancar mientras la
+      // subida estaba en marcha (_netStartWhenReady, c12 startOnlineMatch con
+      // v2 'pending'), el arranque diferido de onNetV2Ready (abajo) envía SU
+      // mstart. Enviar TAMBIÉN el automático eran DOS mstart seguidos (dos
+      // resetMatch encadenados en el invitado con startAt distintos — la
+      // bola y el saque re-anclados en mitad de cuenta atrás: «la bola al
+      // empezar una nueva partida no se asigna correctamente»).
+      // r140 · EL DUELO NO IRRUMPE (5ª pasada multi-agente): con una
+      // sesión pendiente de aceptación (_dueloPend, alerta r74) el
+      // auto-mstart arrancaba la partida SIN la aceptación del dueño —
+      // teletransporte a la cancha y nukeo del campeonato/entreno en curso
+      // con el SÍ/NO en decorado. El mstart real lo emite _dueloArrancar
+      // al aceptar (startOnlineMatch con _dueloForceStart).
+      if (!(this.game && this.game._netStartWhenReady) &&
+          !(this.game && this.game._dueloPend)) {
+        // el anfitrión fija el instante de inicio en SU reloj (spec §3.8)
+        const startAt = this._clock.nowHost(performance.now()) + PPNET.VP.COUNTDOWN_MS;
+        const fs = 'host';
+        // r84 · DUELOS LOCOS: el modo de la partida viaja en el mstart (md) —
+        // lo decide la tarjeta que el anfitrión eligió en el submenú
+        // (_mjMode: 'normal'|'duelos'); el invitado lo recibe y obedece.
+        const md = (this.game && this.game._mjMode === 'duelos') ? 'duelos' : 'match';
+        this.sendRel({ k: 'mstart', sa: startAt, fs, bo: 3, md });
+        this._mstart = { startAt, fs, bo: 3, md };
+        this.game?.onNetMatchStart?.(this._mstart);
+      }
     }
     this.game?.onNetV2Ready?.();     // r79: arranque diferido si pidió revancha durante la subida
     this.game?.onNetStatus?.();
   }
 
+  /** r130 · ¿hay un mstart en los últimos 8 s? (la guardia del 'r' la usa
+   *  desde r75; ahora también startOnlineMatch, para que un pulsón del
+   *  anfitrión o el arranque diferido no DOBLEN una cuenta atrás viva). */
+  mstartReciente() {
+    return performance.now() - (this._mstartAt || 0) < 8000;
+  }
+
   /** FASE 1 · bucle por frame (c12 animate): pose 60 Hz + eventos + snaps */
   frame(dt) {
     if (!this.online) return;
+    // r130 · FIX TDZ: el watchdog de silencio (r112·H3, recreado en el
+    // rebase d706efa) leía `now` ANTES de su declaración. Oculto en QA con
+    // los canales mudos (el cortocircuito && no evaluaba), en partida REAL
+    // el primer paquete recibido ponía _lastFastAt/_lastRelAt y el siguiente
+    // frame() moría con ReferenceError: la red dejaba de EMITIR (pose,
+    // eventos, sync) y la partida quedaba zombi. La declaración se IZA aquí.
+    const now = performance.now();
+
     // v3.6.74 · r82 · TÚNEL DE EMERGENCIA (antes del gate de v2: en
     // 'pending' este bucle es el único latido que puede activarlo): si el
     // ICE del transporte propio no abre en 8 s PERO la sala PeerJS sigue
@@ -1403,15 +1870,52 @@ export class NetLink {
     //  · v2 sano: el canal FAST manda — si muere solo él (dc.onclose con
     //    transporte vivo) la partida se corta igual: el AND antiguo
     //    (reliable Y fast mudos a la vez) congelaba la partida para siempre.
-    const reinicioVivo = this._lastIceTry && (now - this._lastIceTry) < 15000;
-    const SILENCIO = this._pausedRemote ? 60000 : (reinicioVivo ? 25000 : 12000);
+    // r142 · la gracia de 25 s también la arma el AVISO del rival
+    // ('ice-restart' → _iceAvisoAt, con tope/cadencia en su case): antes
+    // compartían el MISMO sello con el reintento propio, y un par hostil
+    // congelaba el watchdog y mi autocuración con un solo mensaje.
+    const reinicioVivo = (this._lastIceTry && (now - this._lastIceTry) < 15000) ||
+      (this._iceAvisoAt && (now - this._iceAvisoAt) < 15000);
+    // r140 · pausa 30 s (antes 60): el régimen de pausa multiplicaba por 5
+    // la detección — un rival muerto EN PAUSA (visor quitado y app matada
+    // sin FIN de SCTP) dejaba al superviviente un minuto congelado.
+    const SILENCIO = this._pausedRemote ? 30000 : (reinicioVivo ? 25000 : 12000);
     if (this._tunnel || this.v2 !== 'ok') {
       const ultVida = Math.max(this._lastRelAt || 0, this._lastFastAt || 0);
       if (ultVida && now - ultVida > SILENCIO) {
         this.onPeerGone(T('conn_lost'));
         return;
       }
+    } else if (this._lastFastAt && now - this._lastRelAt < 3000 &&
+        now - this._lastFastAt > 6000 &&
+        !(this._iceAvisoAt && now - this._iceAvisoAt < 15000) &&
+        !this._pausedRemote && now - (this._lastResumeAt || 0) > 5000) {
+      // r140b · ESPEJO TEMPRANO, inmune a los regímenes de 25/30 s: si mi
+      // fast lleva 6 s mudo PERO el reliable fluye (<3 s), el rival está
+      // EMITIENDO v1 a 30 Hz — degradó de verdad y la espera del régimen
+      // (25 s del invitado por los reintentos ICE r112) sólo añade
+      // segundos de rival congelado. El _lastFastAt DEBE existir (el fast
+      // tuvo que haber vivido para poder morir: con 0, now-0>6000 era
+      // siempre cierto y mataba sesiones sanas tras el handshake).
+      // r142 · EXENCIONES anti-falso-positivo: SOLO el aviso del RIVAL
+      // (_iceAvisoAt — mi PROPIO reintento ICE no me dice nada del estado
+      // del rival: con reinicioVivo completo, el invitado que reintenta su
+      // ICE a los 5 s (r112) bloqueaba el espejo y volvía al régimen de
+      // 25 s), pausa remota y gracia de 5 s tras el resume (el App resume
+      // del Quest tarda en re-emitir: UN mensaje de reanudación no puede
+      // degradar la partida).
+      this._v2Fail(T('net_legacy'));
+      this._mirrorFire = (this._mirrorFire | 0) + 1;
+      return;
     } else if (this._lastFastAt && now - this._lastFastAt > SILENCIO) {
+      // r140 · el fast murió pero el reliable FLOJE (el rival degradó a v1
+      // y me emite 'p' a 30 Hz): degrado en ESPEJO en vez de matar la
+      // partida — antes la muerte era segura a los 12 s aunque el rival
+      // siguiera jugando en v1 (v2off sólo se honraba en 'pending').
+      if (this._lastRelAt && now - this._lastRelAt < 3000) {
+        this._v2Fail(T('net_legacy'));
+        return;
+      }
       this.onPeerGone(T('conn_lost'));
       return;
     }
@@ -1450,7 +1954,6 @@ export class NetLink {
     // telemetría — y qosTexto() la enseña en AJUSTES al momento.
     this._qosAcc += dt;
     if (this._qosAcc >= 60) { this._qosAcc = 0; this._teleQos('latido'); }
-    const now = performance.now();
     this._clock.apply(now, this.game?.rules?.state === 'rally');
     // r37 (v3.6.133) · watchdog de ICE: sin paquetes fast 5 s → REINICIO
     // DE ICE REAL (spec §11). La r125 llamaba pc.restartIce(), que SÓLO
@@ -1607,7 +2110,31 @@ export class NetLink {
       try { this.conn.send({ k: 'f2', b: buf }); } catch { /* conn cerrándose */ }
       return;
     }
-    try { this._fast.send(buf); } catch { /* DC cerrándose */ }
+    // r132 · 11ª (soak de estrés, volcado del flake): un DataChannel sin
+    // `send` utilizable (stub transitorio, SCTP en cierre, replace async)
+    // enmudecía al EMISOR en silencio — el try tragaba el TypeError cada
+    // frame y el watchdog del RIVAL mataba la partida a los 12 s sin un
+    // solo diagnóstico. Ahora el fallo persistente (>1.5 s de intentos)
+    // degrada LIMPIO a v1 (_v2Fail: espejo cosmético, la partida sigue) en
+    // vez de morir zombi; los fallos transitorios del cierre no disparan.
+    try {
+      if (!this._fast || typeof this._fast.send !== 'function') {
+        throw new Error('dc sin send');
+      }
+      this._fast.send(buf);
+      this._fsErrT = 0;
+    } catch (_e) {
+      if (this.v2 === 'ok' && this.online) {
+        if (!this._fsErrT) this._fsErrT = now;
+        if (now - this._fsErrT > 1500) {
+          this._fsErrT = 0;
+          try { this._v2Fail(T('net_legacy')); } catch { /* ya degradado */ }
+          return;
+        }
+      } else {
+        this._fsErrT = 0;
+      }
+    }
   }
 
   /** v3.6.74 · r82 · activa el túnel PeerJS para el canal fast */
@@ -1777,9 +2304,15 @@ export class NetLink {
   }
 
   _onFast(buf) {
-    if (this.v2 !== 'ok') return;
+    if (this.v2 !== 'ok') {
+      // r140 · un paquete fast DECODIFICADO prueba vida aunque yo esté
+      // degradado a v1 y no lo consuma — antes el degradado moría de
+      // hambre a los ~12 s mientras el rival (aún en v2) seguía emitiendo
+      // pose (la partida viva se cortaba por un lado solo).
+      this._onFastVida(buf);
+      return;
+    }
     const now = performance.now();
-    this._lastFastAt = now;
     const o = this._pktIn || (this._pktIn = {});
     o.yAnchor = DIMS.tableTopY;                    // ancla Y del tapete
     o.evs = [];
@@ -1790,6 +2323,10 @@ export class NetLink {
     let pkt = null;
     try { pkt = PPNET.decodePacket(buf, o); } catch (_e) { pkt = null; }
     if (!pkt) return;
+    // r140 · la frescura se sella DESPUÉS de decodificar: una lluvia de
+    // paquetes binarios basura ya no mantiene el watchdog «vivo» (partida
+    // zombi frente a un par roto/hostil que sólo emite ruido).
+    this._lastFastAt = now;
     // v3.6.74 · r82 · ECO NTP VIVO: la cabecera fast lleva echoTime/echoDelay
     // para que EL OTRO reconstruya t1 y refine el reloj (spec §4) — pero
     // estos dos campos nunca se escribían (solo a 0 en startV2): el refinado
@@ -1825,10 +2362,32 @@ export class NetLink {
       if (this._seenEv.size > 256) {
         // poda del mapa de dedupe
         for (const [k, t] of this._seenEv) if (now - t > 5000) this._seenEv.delete(k);
+        // r142 · tope DURO: la poda sólo quita entradas >5 s — un flood de
+        // ids nuevos en <5 s crecía el Map sin límite (memoria)
+        if (this._seenEv.size > 512) {
+          const exceso = this._seenEv.size - 512;
+          let quita = 0;
+          for (const k of this._seenEv.keys()) {
+            this._seenEv.delete(k);
+            if (++quita >= exceso) break;
+          }
+        }
       }
       if (ev.t !== PPNET.VP.EV.SNAP) this._fastIn.push(ev);
       else this._fastIn.push(ev);
     }
+  }
+
+  /** r140 · vida desde el canal fast en modo degradado: decodificar el
+   *  paquete (sin aplicarlo) basta para probar que el par respira — el
+   *  degradado no muere de hambre mientras el rival siga jugando en v2. */
+  _onFastVida(buf) {
+    const o = this._pktIn || (this._pktIn = {});
+    o.yAnchor = DIMS.tableTopY;
+    o.evs = [];
+    let pkt = null;
+    try { pkt = PPNET.decodePacket(buf, o); } catch (_e) { pkt = null; }
+    if (pkt) this._lastFastAt = performance.now();
   }
 
   _onAckFrom(pkt) {
@@ -2032,13 +2591,75 @@ export class NetLink {
     return { apply: true, send: null };
   }
 
+  /* r128 · A1 (auditoría r120): VERIFICACIÓN DE CLAIMS. El claim remoto
+   * queda EN ESPERA 600 ms para dar al árbitro local la primera oportunidad;
+   * se resuelve por (a) punto local del mismo rally (confronta ganadores:
+   * ack y, si difieren, resync del host) o (b) timeout — en cruces ghost el
+   * rival puede ser el único que vio el punto (r122) y se aplica tal cual.
+   * El ack se envía al RESOLVER, no al recibir. */
+  _holdClaim(m, wMapped) {
+    if (!this._held) this._held = new Map();
+    if (this._held.has(m.r)) return;                 // dedup del mismo rally
+    const timer = window.setTimeout(() => {
+      const h = this._held && this._held.get(m.r);
+      if (!h) return;
+      this._held.delete(m.r);
+      const resp = this._sync.onClaim(m, wMapped);   // aplicará (r > applied)
+      this.sendRel(resp.ack);
+      if (resp.apply && this.game) this._applyRemoteClaim(m, wMapped);
+      if (!resp.agree && this.role === 'host') this._sendResync();
+      // r142 · la ventana sale de la CONSTANTE (c09b VP.CLAIM_TIMEOUT era
+      // código muerto: 0,7 s declarados vs 600 ms hardcodeados)
+    }, Math.round((PPNET.VP.CLAIM_TIMEOUT || 0.6) * 1000));
+    this._held.set(m.r, { m, wMapped, timer });
+  }
+
+  _resolverHeld(r, winnerLocal) {
+    if (!this._held) return;
+    const h = this._held.get(r);
+    if (!h) return;
+    this._held.delete(r);
+    window.clearTimeout(h.timer);
+    const agree = (h.m.w === 'let') || (winnerLocal === h.wMapped);
+    this.sendRel({ k: 'ack', r, agree });
+    if (!agree && this.role === 'host') this._sendResync();
+  }
+
+  /** r128 · A1: el estado se reinció — ningún claim en espera puede
+   *  aplicarse ya (aplicarían un punto sobre una partida reinciada). */
+  _limpiaHeld() {
+    if (!this._held) return;
+    for (const h of this._held.values()) {
+      try { window.clearTimeout(h.timer); } catch { /* */ }
+    }
+    this._held.clear();
+  }
+
+  /** r130 · FIX LIBRO DE RECLAMOS ENTRE PARTIDAS: MatchSync.applied
+   *  sobrevivía al mstart (sólo onResync lo ponía a −1 y el resync lo
+   *  aplica el INVITADO). El rally 1 de la revancha colisionaba con el
+   *  rally 1 del partido anterior: los claims caían por el camino
+   *  «duplicado» SIN confrontación — si los dos extremos discrepaban,
+   *  la divergencia era INVISIBLE (sin dispute, sin resync) hasta que
+   *  rallySeq superaba al applied viejo. La partida nueva REINICIA el
+   *  libro y limpia claims en espera (lo llama onNetMatchStart de c12,
+   *  único punto por el que pasan TODOS los arranques). */
+  resetLibro() {
+    if (this._sync) this._sync.onResync();
+    this._limpiaHeld();
+    this._lastClaimMs = 0;
+  }
+
   _applyRemoteClaim(m, wMapped) {
     const g = this.game;
     if (!g) return;
     if (m.w === 'let') {
       // LET del rival (su mitad): repetir saque si mi árbitro no lo vio
       if (g.rules.state === 'rally') {
-        g.processIntents(g.rules.retryServe(m.c || 'let'));
+        // r140 · la causa llega saneada de frontera (32 car): el texto
+        // arbitrario sin tope se pintaba entero en el HUD cada frame
+        g.processIntents(g.rules.retryServe(typeof m.c === 'string'
+          ? m.c.slice(0, 32) : 'let'));
       }
       return;
     }
@@ -2048,14 +2669,21 @@ export class NetLink {
     // cuando el anfitrión aplica el claim de un invitado (antes solo se
     // invertía si el receptor era invitado y el host leía «culpa tuya»
     // la culpa real del rival).
-    g.processIntents(g.rules.forcePoint(wMapped, NetLink.remapCause(m.c,
-      true), m.r));
+    g.processIntents(g.rules.forcePoint(wMapped,
+      NetLink.remapCause(typeof m.c === 'string' ? m.c.slice(0, 32) : '',
+        true), m.r));
   }
 
   _sendResync() {
     const r = this.game?.rules;
     if (!r) return;
     this._stats.disputes++;
+    // r142 · los claims EN ESPERA del EMISOR mueren con el resync: el
+    // re-anclaje es la verdad final — aplicar un held 600 ms DESPUÉS
+    // (timer del hold) escribía ENCIMA de la verdad ya adoptada por ambos
+    // extremos (ack agree=true que nadie re-anclaba → divergencia sin
+    // dispute ni cura). _resolverHeld ya limpia antes de llamar aquí.
+    this._limpiaHeld();
     this.sendRel({
       k: 'resync', sp: r.scorePlayer, sa: r.scoreAi, sv: r.server,
       st: r.state, tp: r.totalPoints, gp: r.gamesPlayer, ga: r.gamesAi,
@@ -2083,12 +2711,38 @@ export class NetLink {
       // Autoridad del anfitrión: su contador viaja y el aplicador lo
       // re-ancla (en saque no hace falta: setHeld lo re-arma a 0).
       sh: this._ball ? (this._ball.shot | 0) : 0,
+      // r130·3 · FIX #8 (arnés M adverso, run 5): el GANADOR del último
+      // rallye resuelto, en perspectiva del ANFITRIÓN — el aplicador
+      // re-ancla el libro de reclamos (MatchSync.applied/appliedW) que
+      // onResync() deja a −1: sin él, el libro del invitado divergía del
+      // del anfitrión tras CUALQUIER cura por resync (divergencia
+      // invisible, exactamente la clase que el r130 selló al empezar
+      // partida). Tolerante: builds viejos no lo envían (appliedW=null).
+      aw: this._sync ? this._sync.appliedW : null,
     });
   }
 
   _applyResync(m) {
     const r = this.game?.rules;
     if (!r) return;
+    // r132 · 8ª (soak S): el resync es la AUTORIDAD del anfitrión re-anchando
+    // la partida — un paquete corrupto/hostil NO puede envenenar el estado
+    // sombra (antes st/sa/sp/sv/fs se aplicaban EN CRUDO: state=undefined,
+    // marcador con strings/NaN, server basura — el juego del invitado quedaba
+    // errático). Sólo se acepta un resync numéricamente sano; si se pierde
+    // uno legítimo, el watchdog y el siguiente resync re-anclan.
+    if (m.st !== 'serve' && m.st !== 'rally' && m.st !== 'point' && m.st !== 'over') return;
+    const numOk = (v) => typeof v === 'number' && Number.isFinite(v) &&
+      v >= 0 && Number.isInteger(v);
+    if (![m.sa, m.sp, m.tp, m.gp, m.ga, m.gn].every(numOk)) return;
+    if ((m.sv !== 'player' && m.sv !== 'ai') ||
+        (m.fs !== 'player' && m.fs !== 'ai')) return;
+    // r140 · go/lh también de dominio: forjar gameOpener/lastHitter con
+    // basura rompía la rotación ITTF del juego nuevo (divergencia de HELD
+    // tipo «yo tenía que sacar»). null/undefined son legítimos (el
+    // anfitrión manda lh:null cuando no hay golpeador aún).
+    if (m.go != null && m.go !== 'player' && m.go !== 'ai') return;
+    if (m.lh != null && m.lh !== 'player' && m.lh !== 'ai') return;
     this._sync.onResync();
     // r122 · FIX MARCADOR INVERTIDO: sp/sa/sv/fs/gp/ga/lh viajan en
     // perspectiva del ANFITRIÓN («player» = él) y se aplicaban EN CRUDO —
@@ -2114,9 +2768,27 @@ export class NetLink {
     // identidad y la guardia anti-duplicado — tras un rechazo de saque el
     // correlativo del validador vuelve a cuadrar y el CLAIM del rallye
     // re-anclado NO queda bloqueado por _appliedRally viejo.
-    if (typeof m.rs === 'number' && m.rs > 0) {
+    if (Number.isInteger(m.rs) && m.rs > 0 && m.rs < 100000) {
       r.rallySeq = m.rs;
-      r._appliedRally = m.rs;
+      // r130·3 · FIX #7 (arnés M adverso): _appliedRally SOLO si el rallye
+      // que viaja ya está RESUELTO en el anfitrión (st ≠ 'rally'). En un
+      // resync EN RALLYE VIVO, marcar rs como aplicado envenenaba las DOS
+      // guardias del receptor: su detección local del punto (netGuard de
+      // applyPoint) Y el CLAIM/forcePoint del anfitrión — el punto de ese
+      // rallye jamás se aplicaba en el invitado (H 9-8 · G 7-9: el orden
+      // rechazo→resync→punto lo disparaba bajo pérdida). El re-anclaje del
+      // rallySeq se mantiene SIEMPRE (el correlativo del validador lo
+      // necesita); sólo el sello de «aplicado» es condicional.
+      if (m.st !== 'rally') r._appliedRally = m.rs;
+      // r130·3 · FIX #8: el LIBRO de reclamos se re-ancla con la verdad del
+      // anfitrión cuando el rallye viaja resuelto (onResync() lo deja a −1
+      // para el mstart, pero en MITAD DE PARTIDA eso divergía el libro sin
+      // tocar el marcador). aw = ganador aplicado en perspectiva anfitrión.
+      if (m.st !== 'rally' && this._sync && typeof m.rs === 'number' && m.rs > 0) {
+        this._sync.applied = m.rs;
+        this._sync.appliedW = (m.aw === 'player' || m.aw === 'ai')
+          ? (gu ? flip(m.aw) : m.aw) : null;
+      }
     }
     // r48 · y si el resync aterriza en SAQUE, la FSM de bola vuelve al HELD
     // reglamentario (shot a 0 — el correlativo del próximo saque cuadra;
@@ -2130,9 +2802,15 @@ export class NetLink {
     // perdido dejaba el shot atrás y el próximo HIT del anfitrión caía
     // como trampa grave. Sólo el NÚMERO — el estado visual de la bola lo
     // reconcilia el próximo evento HIT/HANDOFF (autoridad: anfitrión).
-    if (m.st !== 'serve' && typeof m.sh === 'number' && this._ball) {
-      this._ball.shot = m.sh | 0;
+    if (m.st !== 'serve' && Number.isInteger(m.sh) && m.sh >= 0 &&
+        m.sh < 1000000 && this._ball) {
+      this._ball.shot = m.sh;
     }
+    // r142 · el resync repinta el ESTADO VISIBLE del saque: aterrizar en
+    // 'serve' con sacador distinto dejaba el cartel anterior («tu saque»
+    // fantasma) y tossed residual bloqueando el gatillo hasta un intent
+    // real (agent A7) — el juego repinta cartel y limpia el saque.
+    if (m.st === 'serve') this.game?.onNetResyncPost?.(r);
   }
 
   /** intents de PUNTO local (processIntents, c12): enviar/suprimir
@@ -2149,6 +2827,11 @@ export class NetLink {
       // r82: rallyId NO existía (undefined) — la identidad real es rallySeq
       this._claimFallback = { r: g.rules.rallySeq, t: performance.now() };
     }
+    // r128 · A1: si había un claim remoto EN ESPERA para este rally, se
+    // resuelve con mi veredicto local (ack al rival + resync si difieren).
+    if (dec.apply && this._held && this._held.size) {
+      this._resolverHeld(g.rules.rallySeq, it.winner);
+    }
     return dec.apply;
   }
 
@@ -2156,13 +2839,20 @@ export class NetLink {
     return this.retryLet(it.cause || 'let');
   }
 
-  /** saque determinista desde el marcador (spec §9): HELD del sacador */
+  /** saque determinista desde el marcador (spec §9): HELD del sacador.
+   *  r130 · FIX (bug #3 de la auditoría): TODOS los llamadores (c12 ×4)
+   *  pasan un BOOLEANO (rules.server === 'player'), pero aquí se comparaba
+   *  con el STRING 'player' → setHeld(false) SIEMPRE: la bola quedaba
+   *  HELD del RIVAL en los DOS extremos (nadie tenía la bola propia) y
+   *  sólo el resync (setHeld directo, booleano correcto) corría al
+   *  invitado. Ahora tolera booleano y string. */
   setServeHeld(serverLocal) {
     if (this.v2 !== 'ok') return;
-    this._ball.setHeld(serverLocal === 'player');
+    const mio = serverLocal === true || serverLocal === 'player';
+    this._ball.setHeld(mio);
     this._syncOwnerFromBall();
     const g = this.game;
-    if (g && serverLocal !== 'player') {
+    if (g && !mio) {
       // bola del rival: quieta hasta su lanzamiento (visual honesta)
       g.ball.vel.set(0, 0, 0);
       g.ball.spin.set(0, 0, 0);
@@ -2183,8 +2873,21 @@ export class NetLink {
     // saques, golpes ni traspasos («veo las palas pero no puedo jugar la
     // bola»). Los SNAP ya traían id propio; el resto lo recibe AQUÍ.
     if (ev.id === undefined || ev.id === null) ev.id = this._evId++;
+    // r141 · el EMISOR tampoco envía eventos no finitos (un NaN local de la
+    // física viajaba, el rival descartaba el PAQUETE entero y su espejo se
+    // congelaba mientras el NaN persistiera — la frontera del receptor
+    // queda como cinturón)
+    const arrFin = (a) => !a || (Array.isArray(a) && a.every(Number.isFinite));
+    if (!arrFin(ev.p) || !arrFin(ev.v) || !arrFin(ev.s)) return;
     this._pend.push({ ev, seqs: [], done: false });
-    if (this._pend.length > 24) this._pend.shift();   // techo duro
+    if (this._pend.length > 24) {
+      // r140 · el techo descarta primero SNAP (corrección suave que se
+      // re-emite cada ~100 ms): antes soltaba el evento más VIEJO, que
+      // podía ser el HIT/HANDOFF que sostiene el rallye (el rival jugaba
+      // con la trayectoria vieja → muertes distintas → claims cruzados).
+      const iSnap = this._pend.findIndex((e) => e.ev.t === PPNET.VP.EV.SNAP);
+      this._pend.splice(iSnap >= 0 ? iSnap : 0, 1);
+    }
   }
 
   /** drenado de eventos entrantes (c12 animate, antes de la física) */
@@ -2198,6 +2901,15 @@ export class NetLink {
   }
 
   _applyFastEv(ev, g) {
+    // r142 · GATE DE SHOT ante reordenación (el fast es unordered): un
+    // HANDOFF(n) que llegara ANTES que el HIT(n) fijaba shot=n y el HIT
+    // posterior caía en el correlativo como TRAMPA FALSA (resync-req +
+    // sospechosa, Wi-Fi multipath real). El evento atrasado se descarta:
+    // el orden real lo cura el próximo paquete en secuencia.
+    if (this._ball && typeof ev.shot === 'number') {
+      if (ev.t === PPNET.VP.EV.HIT && ev.shot <= this._ball.shot) return;
+      if (ev.t === PPNET.VP.EV.HANDOFF && ev.shot < this._ball.shot) return;
+    }
     const nowH = this._clock.nowHost(performance.now());
     if (ev.t === PPNET.VP.EV.SNAP) {
       // r110 · REPARACIÓN DE SERVE ATASCADO: SNAPs sólo emite quien tiene la
@@ -2499,6 +3211,12 @@ export class NetLink {
   _v2Fail(msg) {
     if (this.v2 === 'fail') return;
     this.v2 = 'fail';
+    // r140 · ARMAR el watchdog al degradar: _lastRelAt sólo lo escribía
+    // _onRel — un _v2Fail ANTES de cualquier paquete reliable dejaba
+    // ultVida=0 (falsy) y el zombi de r112·H3 jamás se detectaba. Con el
+    // sello aquí, la degradación arranca su propio reloj de vida (el
+    // tráfico v1 que llegue lo refresca desde onData).
+    this._lastRelAt = this._lastRelAt || performance.now();
     try { this._pc && this._pc.close(); } catch { /* */ }
     this._pc = null; this._fast = null; this._rel = null;
     this._fastOpen = this._relOpen = false;
@@ -2506,6 +3224,10 @@ export class NetLink {
     if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }
     this.setStatus(this.online ? 'online' : 'off', msg);
     this.send({ k: 'v2off' });   // avisa al otro para que degrade igual
+    // r140 · aviso al juego: la cuenta atrás del mstart moría CLAVADA (su
+    // expiración exige v2==='ok' y cuatro guardias exigen !this._netStart —
+    // saque bloqueado para siempre en el camino v1).
+    try { this.game?.onNetV2Fail?.(); } catch { /* */ }
     this.game?.onNetStatus?.();
   }
 
@@ -2526,10 +3248,24 @@ export class NetLink {
 
   onPeerGone(msg) {
     const wasOnline = this.online;
+    const prevStatus = this.status;
     if (wasOnline && this.v2) this._teleReport('peer_gone');   // r82: diagnóstico
     this.teardown();
-    this.setStatus('off', wasOnline ? msg : '');
-    if (wasOnline) this.game?.onNetEnded?.(msg);
+    // r140 · un joining abortado (el anfitrión cerró la sala mientras
+    // conectaba) volvía al landing MUDO: con wasOnline=false el mensaje se
+    // descartaba — ahora el corte en 'joining' se explica («sala no
+    // encontrada») igual que el peer-unavailable.
+    const msgFinal = wasOnline ? msg
+      : (prevStatus === 'joining' && this.code
+        ? T('room_not_found', { c: this.code }) : '');
+    // r141 · el aborto de un joining aterriza en 'error' (el ÚNICO panel
+    // que pinta statusMsg): en 'off' el mensaje era invisible — media
+    // tinta del fix r140 (g), confirmada por la auditoría de lobby.
+    this.setStatus(prevStatus === 'joining' && msgFinal ? 'error' : 'off', msgFinal);
+    // r140 · la frescura de la sesión viaja al juego: el ELO por abandono
+    // (r132 FASE 144) leía net.online que teardown acaba de poner a false —
+    // la rama era código muerto y el abandono quedaba impune.
+    if (wasOnline) this.game?.onNetEnded?.(msg, wasOnline);
   }
 
 
@@ -2560,6 +3296,15 @@ export class NetLink {
     this._pend = []; this._fastIn = []; this._seenEv = null;
     this._recvHist = null; this._mstart = null;
     this._pausedSelf = this._pausedRemote = false;
+    // r142 · sellos que NO pueden sobrevivir a la sesión: _mstartAt viejo
+    // hacía que mstartReciente() tragara el PRIMER EMPEZAR de la sala nueva
+    // (sala rápida tras abandono, hasta 8 s); _iceAvisoAt/_lastResumeAt
+    // abrían gracias de 25/5 s con un par que ya no existe.
+    this._mstartAt = 0;
+    this._iceAvisos = 0; this._iceAvisoAt = 0; this._lastResumeAt = 0;
+    // r128 · A1: sin claims en espera al desmontar la sesión
+    this._limpiaHeld();
+    this._held = null; this._lastClaimMs = 0;
     try { this.conn?.close(); } catch { /* */ }
     try { this.call?.close(); } catch { /* */ }
     try { this.peer?.destroy(); } catch { /* */ }
@@ -2572,6 +3317,13 @@ export class NetLink {
       this._silentCtx = null;
     }
     this.online = false;
+    // r143 · sello de la capa de VOZ: los getUserMedia/silentStream en
+    // vuelo que resuelvan DESPUÉS de aquí se auto-destruyen (hermanos del
+    // sello _v2T0 de las ofertas v2) · y el timer de diagnóstico ICE no
+    // debe llamar getStats() sobre una pc cerrada
+    this._vozGen = (this._vozGen || 0) + 1;
+    this._vozReq = null;
+    if (this._iceOkT) { clearTimeout(this._iceOkT); this._iceOkT = null; }
     this.remotePaddle = null; this.remoteBall = null;
     this._padPrev = null;                               // v2.91
     this._outEvs = []; this._inEvs = []; this._pendingHits = [];
@@ -2581,6 +3333,10 @@ export class NetLink {
     if (this._helloTO) { window.clearTimeout(this._helloTO); this._helloTO = null; }   // r122: no matar la sesión NUEVA en reconexión rápida
     this.voiceState = 'off';
     this.owner = 'host';
+    // r130·4 · FIX #9: invalida el sello de sesión — los vuelos asíncronos
+    // (_v2Offer/_v2RemoteDesc) que despierten DESPUÉS de este teardown
+    // detectan el cambio de _v2T0 y abortan cerrando su pc (sin fuga).
+    this._v2T0 = 0;
   }
 }
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */

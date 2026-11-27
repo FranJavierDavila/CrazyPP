@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" >
+        <!-- Pala izquierda (Roja) -->
+        <g transform="rotate(-35 48 56)">
+          <rect x="42" y="72" width="12" height="32" rx="5" fill="#D97706"/>
+          <ellipse cx="48" cy="48" rx="22" ry="26" fill="#FF3B30" stroke="#FCA5A5" stroke-width="2.5"/>
+        </g>
+        <!-- Pala derecha (Azul) -->
+        <g transform="rotate(35 80 56)">
+          <rect x="74" y="72" width="12" height="32" rx="5" fill="#D97706"/>
+          <ellipse cx="80" cy="48" rx="22" ry="26" fill="#2563EB" stroke="#93C5FD" stroke-width="2.5"/>
+        </g>
+        <!-- Pelota central -->
+        <circle cx="64" cy="96" r="11" fill="#F8FAFC" stroke="#FFD426" stroke-width="3"/>
+      </svg>

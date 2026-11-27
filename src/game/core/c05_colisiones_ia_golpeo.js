@@ -149,6 +149,7 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   // (por debajo de restEventMin ni evento ni árbitro: «golpear la bola por
   // debajo de la altura de la mesa falla»).
   if (pad.who === 'player' && !pad.serveFlight && !onHandle &&
+      !ball.__ghost &&                       // r144 · H6: la bola del RIVAL no se captura en reposo — mi pala quieta la MUTEABA (restTouch no lo consume nadie) y la mutaba mientras la autoridad del rival seguía volando → desync visual y disputas en cada dejada lenta
       Math.abs(lhz) >= hT &&
       -vRelN <= DIMS.paddleRestSpeed &&
       pad.vel.lengthSq() <= SERVE_TUNE.restPadSpeed * SERVE_TUNE.restPadSpeed) {
@@ -429,10 +430,17 @@ export function collidePaddleSweep(ball, pad, kA, kB, events) {
   // decrecientes sobre pala quieta) son mudos y no alimentan a nadie. En el
   // VUELO DEL SAQUE el evento SIEMPRE emite: el árbitro y la conversión del
   // lanzamiento necesitan ver TAMBIÉN los roces flojos (semántica SRV2).
-  if (pad.serveFlight || Math.abs(vRelN) >= SERVE_TUNE.restEventMin) {
-    pad.cooldown = DIMS.paddleHitCooldown;
-    events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN), pos: ball.pos.clone(), paddleIndex: pad.index, imanAim: imanAimUsado });
-  }
+  // r144 · H3 (agente de física, 9ª pasada): el evento AHORA EMITE SIEMPRE
+  // que la física aplicó impulso (soft: true por debajo de restEventMin) —
+  // antes un cierre 0.25-0.35 m/s aplicaba el impulso REAL sin registrar:
+  // lastHitter no cambiaba, rallyHits no subía y el HIT no salía por red →
+  // el rival seguía simulando la bola sin mi toque (divergencia garantizada
+  // del fantasma y claims de lados opuestos). El flag soft deja el nivel
+  // sensorial en manos de quien lo consume.
+  pad.cooldown = DIMS.paddleHitCooldown;
+  events.push({ type: 'paddle', who: pad.who, speed: Math.abs(vRelN),
+    soft: !(pad.serveFlight || Math.abs(vRelN) >= SERVE_TUNE.restEventMin),
+    pos: ball.pos.clone(), paddleIndex: pad.index, imanAim: imanAimUsado });
   return true;
 }
 
@@ -491,7 +499,7 @@ function apoyoMesa(ball, h) {
   ball.__ppMesa += h;
 }
 
-function collideTable(ball, prevY, events) {
+function collideTable(ball, prevY, prev, events) {
   // v2.98: el ASEDIO juega SIN mesa (sólo la mesita de madera del
   // módulo): la bola puede DESACTIVAR la mesa del núcleo igual que
   // hace con la red (ball.ignoreNet)
@@ -499,8 +507,17 @@ function collideTable(ball, prevY, events) {
   const topR = DIMS.tableTopY + DIMS.ballRadius;
   const { pos, vel, spin } = ball;
   const C = DIMS.tableCenterZ;
-  const inX = Math.abs(pos.x) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5;
-  const inZ = Math.abs(pos.z - C) <= DIMS.tableHalfLength;
+  // r144 · H2 (agente de física, 9ª pasada): la huella se evalúa con la
+  // X/Z INTERPOLADAS en la fracción del cruce vertical — antes usaba la
+  // posición de FIN de subpaso: una bola que cruzaba el plano dentro de
+  // la huella y salía de ella en el mismo subpaso (smash ≥ ~9.6 m/s)
+  // perdía el bote y caía al suelo → causa out/noret en un extremo y
+  // bote válido en el otro (h más fino) → atribución opuesta del punto.
+  const fC = (pos.y - prevY) !== 0 ? (topR - prevY) / (pos.y - prevY) : 0;
+  const xC = prev.x + (pos.x - prev.x) * fC;
+  const zC = prev.z + (pos.z - prev.z) * fC;
+  const inX = Math.abs(xC) <= DIMS.tableHalfWidth + DIMS.ballRadius * 0.5;
+  const inZ = Math.abs(zC - C) <= DIMS.tableHalfLength;
 
   if (vel.y < 0 && prevY >= topR && pos.y < topR && inX && inZ && !ball.__ppMesa) {
     pos.y = topR;
@@ -623,16 +640,27 @@ function collideTable(ball, prevY, events) {
   }
 }
 
-function collideNet(ball, prevZ, events) {
+function collideNet(ball, prevZ, prev, events) {
   const { pos, vel, spin } = ball;
   const nz = DIMS.tableCenterZ;
   const from = prevZ - nz;
   const to = pos.z - nz;
   if (from > 0 === to > 0) return;
-  if (Math.abs(pos.x) > DIMS.netHalfWidth) return;
-  if (pos.y <= DIMS.tableTopY || pos.y >= DIMS.netTopY + DIMS.ballRadius) return;
+  // r144 · H1 (agente de física, 9ª pasada): la banda de la cinta se
+  // evalúa con la Y/X INTERPOLADAS en la fracción de cruce del plano
+  // (el patrón que simulateBounceUntilTable ya usa) — antes se miraba
+  // la posición de FIN de subpaso: un smash que cruzaba DENTRO de la
+  // banda pero acababa el subpaso por encima de netTopY+r atravesaba la
+  // cinta sin evento (y a otro framerate la misma trayectoria daba
+  // roce) → causas opuestas en los dos extremos, disputas espurias y
+  // la bola atravesando la red visualmente.
+  const f = (pos.z - prevZ) !== 0 ? (nz - prevZ) / (pos.z - prevZ) : 0;
+  const yC = prev.y + (pos.y - prev.y) * f;
+  const xC = prev.x + (pos.x - prev.x) * f;
+  if (Math.abs(xC) > DIMS.netHalfWidth) return;
+  if (yC <= DIMS.tableTopY || yC >= DIMS.netTopY + DIMS.ballRadius) return;
 
-  if (pos.y < DIMS.netTopY) {
+  if (yC < DIMS.netTopY) {
     pos.z = nz + Math.sign(from) * (DIMS.ballRadius + 0.004);
     vel.z *= -0.18;
     vel.x *= 0.55;
@@ -651,6 +679,9 @@ function collideWorld(ball, events) {
   const { pos, vel, spin } = ball;
   const r = DIMS.ballRadius;
 
+  // r144 · H4: el flag de asentamiento silencioso se limpia al volver a
+  // volar (>1 cm sobre el suelo) para que el PRÓXIMO aterrizaje emita.
+  if (pos.y > r + 0.01) ball.__floorRest = 0;
   if (pos.y < r && vel.y < 0) {
     const impact = -vel.y;
     pos.y = r;
@@ -669,11 +700,22 @@ function collideWorld(ball, events) {
       vel.x *= 0.9;
       vel.z *= 0.9;
       spin.multiplyScalar(0.5);
+      // r144 · H4 (agente de física, 9ª pasada): el asentamiento silencioso
+      // emitía CERO floor — el árbitro nunca veía el punto y el rallye
+      // quedaba colgado para siempre (bola posada en el suelo sin bote
+      // válido). UN evento por aterrizaje: el flag se limpia cuando la bola
+      // vuelve a volar (r > 1 cm) o al botar de verdad. Fuera del rallye el
+      // árbitro lo ignora (bolas aparcadas de salas de campeonato).
+      if (!ball.__floorRest) {
+        ball.__floorRest = 1;
+        events.push({ type: 'floor', speed: impact, pos: pos.clone() });
+      }
     } else {
       vel.y = impact * 0.45;
       vel.x *= 0.85;
       vel.z *= 0.85;
       spin.multiplyScalar(0.35);
+      ball.__floorRest = 0;
       events.push({ type: 'floor', speed: impact, pos: pos.clone() });
     }
   }
@@ -961,11 +1003,11 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
     // v3.1.1-FEEL1 · la gracia del saque caduca con el tiempo físico
     if (ball.__serveGrace > 0) ball.__serveGrace -= h;
 
-    collideTable(ball, prevY, events);
+    collideTable(ball, prevY, tmpPrev, events);
     // v2.42: la variante ARKANOID juega SIN red (ball.ignoreNet) y añade sus
     // propias colisiones (ladrillos + perímetro + bote mínimo) POR SUBPASO,
     // así no hay túneles a velocidad de smash.
-    if (!ball.ignoreNet) collideNet(ball, prevZ, events);
+    if (!ball.ignoreNet) collideNet(ball, prevZ, tmpPrev, events);
     collideWorld(ball, events);
     if (extra) extra(ball, events);
   }
@@ -974,12 +1016,21 @@ export function stepPhysics(dt, ball, paddles, events, extra) {
 /** v2.19 (online): test de contacto pala-bola SIN integrar la bola — cuando
  *  la bola la simula el rival (llega por red), cada lado solo comprueba si SU
  *  pala toca la bola. tmpPrev hace de posición previa para el CCD. */
-export function testPaddleContact(ball, prevPos, paddles, events) {
-  for (const p of paddles) if (p.cooldown > 0) p.cooldown -= 0.016;
-  if (ball.__serveGrace > 0) ball.__serveGrace -= 0.016;   // v3.1.1-FEEL1
+export function testPaddleContact(ball, prevPos, paddles, events, dt = 1 / 60) {
+  // r144 · H5 (agente de física, 9ª pasada): el drenaje era 0.016 FIJO por
+  // llamada — a 90 fps drenaba 1,15 s por segundo real (el cooldown expiraba
+  // antes de tiempo → ventana de doble contacto ASIMÉTRICA entre extremos,
+  // HITs extra que el validador §12 rechaza en cadena). Ahora drena con el
+  // dt real del frame. Y replica el bypass `still` de stepPhysics: una pala
+  // quieta con bola en apoyo quedaba bloqueada por el cooldown residual.
+  for (const p of paddles) if (p.cooldown > 0) p.cooldown -= dt;
+  if (ball.__serveGrace > 0) ball.__serveGrace -= dt;   // v3.1.1-FEEL1
   tmpPrev.copy(prevPos);
+  const enReposo = (p) => !p.serveFlight &&
+    p.vel.lengthSq() <= SERVE_TUNE.restPadSpeed * SERVE_TUNE.restPadSpeed;
   for (const pad of paddles) {
-    if (!pad.active || pad.cooldown > 0) continue;
+    if (!pad.active) continue;
+    if (pad.cooldown > 0 && !enReposo(pad)) continue;
     // v3.1.2-CCD1: el frame completo es el intervalo barrido (pose A = prev,
     // pose B = pos de la pala): máxima fidelidad sin integrar la bola.
     collidePaddleSweep(ball, pad, 0, 1, events);
@@ -1148,7 +1199,39 @@ function simulateBounceUntilTable(from, vel, spin, maxT, out) {
   return out;
 }
 
+/* ======================================================================
+ * C1 (r129 · ola 3) · CACHÉ LRU DEL SOLVER DE TIROS
+ * computeShotVelocityReal es determinista (simulación con semilla fija,
+ * cero azar) y la IA repite consultas casi idénticas: el Súper Imán dentro
+ * del subpaso de física, rivales en posiciones que se repiten y el
+ * aplicador del disparo r99ter. Clave redondeada a 1 cm / 0,01 s / 0,1 de
+ * spin — el error del redondeo queda por debajo de la tolerancia del
+ * propio solver (bate a ±1,5 cm). LRU de 96 entradas: memoria acotada sin
+ * fugas en partidos largos. El vector devuelto SIEMPRE es un clon — los
+ * llamadores lo mutan (sesgo del swing r101) y la caché no se corrompe.
+ * ===================================================================== */
+const _solCache = new Map();
+const _SOL_CACHE_MAX = 96;
+
+function _solClave(from, target, tIn, maxSpeed, spin) {
+  return Math.round(from.x * 100) + ',' + Math.round(from.y * 100) + ',' +
+    Math.round(from.z * 100) + ',' + Math.round(target.x * 100) + ',' +
+    Math.round(target.y * 100) + ',' + Math.round(target.z * 100) + ',' +
+    Math.round(tIn * 100) + ',' + Math.round(maxSpeed * 10) + ',' +
+    Math.round((spin ? spin.x : 0) * 10) + ',' +
+    Math.round((spin ? spin.y : 0) * 10) + ',' +
+    Math.round((spin ? spin.z : 0) * 10);
+}
+
 export function computeShotVelocityReal(from, target, tIn, maxSpeed, spin) {
+  // C1 (r129): consulta a la caché LRU antes de simular (16+4 sims RK4).
+  const claveSol = _solClave(from, target, tIn, maxSpeed, spin);
+  const enCache = _solCache.get(claveSol);
+  if (enCache) {
+    _solCache.delete(claveSol);
+    _solCache.set(claveSol, enCache);   // refresco LRU (el Mapa conserva orden)
+    return enCache.clone();
+  }
   const T = Math.max(0.3, tIn);
   const topR = DIMS.tableTopY + DIMS.ballRadius;
   const v = new THREE.Vector3(
@@ -1212,6 +1295,12 @@ export function computeShotVelocityReal(from, target, tIn, maxSpeed, spin) {
   }
   const sp1 = out.length();
   if (sp1 > maxSpeed) out.multiplyScalar(maxSpeed / sp1);
+  // C1 (r129): guarda LRU — el clon de la caché vive aparte del out que se
+  // devuelve (los llamadores pueden mutarlo con el sesgo del swing).
+  if (_solCache.size >= _SOL_CACHE_MAX) {
+    _solCache.delete(_solCache.keys().next().value);
+  }
+  _solCache.set(claveSol, out.clone());
   return out;
 }
 

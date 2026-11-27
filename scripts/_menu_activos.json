@@ -1,0 +1,481 @@
+{
+ "assets/hall/arcano.mp3": {
+  "tipo": "audio",
+  "duracion_s": 161.9,
+  "bitrate_kbps": 192,
+  "codec": "mp3",
+  "canales": 2,
+  "sample_rate": "44100",
+  "peso_kb": 3801.3
+ },
+ "assets/hall/arcano.png": {
+  "tipo": "imagen",
+  "formato": "PNG",
+  "ancho": 1024,
+  "alto": 683,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_kb": 786.7
+ },
+ "assets/hall/cabana/cabana.mp3": {
+  "tipo": "audio",
+  "duracion_s": 175.4,
+  "bitrate_kbps": 192,
+  "codec": "mp3",
+  "canales": 2,
+  "sample_rate": "44100",
+  "peso_kb": 4117.9
+ },
+ "assets/hall/cabana/derecha.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 186.9
+ },
+ "assets/hall/cabana/fondo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 122.9
+ },
+ "assets/hall/cabana/frente.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 158.5
+ },
+ "assets/hall/cabana/izquierda.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 157.0
+ },
+ "assets/hall/cabana/suelo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 257.0
+ },
+ "assets/hall/cabana/techo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 180.7
+ },
+ "assets/hall/candado.png": {
+  "tipo": "imagen",
+  "formato": "PNG",
+  "ancho": 512,
+  "alto": 512,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_kb": 14.3
+ },
+ "assets/hall/derecha.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 493.0
+ },
+ "assets/hall/dojo/derecha.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 587.5
+ },
+ "assets/hall/dojo/dojo.mp3": {
+  "tipo": "audio",
+  "duracion_s": 175.6,
+  "bitrate_kbps": 192,
+  "codec": "mp3",
+  "canales": 2,
+  "sample_rate": "44100",
+  "peso_kb": 4122.1
+ },
+ "assets/hall/dojo/fondo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 490.2
+ },
+ "assets/hall/dojo/frente.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 494.4
+ },
+ "assets/hall/dojo/izquierda.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 602.6
+ },
+ "assets/hall/dojo/suelo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 520.4
+ },
+ "assets/hall/dojo/techo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 553.1
+ },
+ "assets/hall/fondo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 395.2
+ },
+ "assets/hall/frente.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 388.1
+ },
+ "assets/hall/izquierda.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 499.4
+ },
+ "assets/hall/neon/arcade.mp3": {
+  "tipo": "audio",
+  "duracion_s": 176.4,
+  "bitrate_kbps": 192,
+  "codec": "mp3",
+  "canales": 2,
+  "sample_rate": "44100",
+  "peso_kb": 4141.2
+ },
+ "assets/hall/neon/derecha.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 578.2
+ },
+ "assets/hall/neon/fondo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 520.4
+ },
+ "assets/hall/neon/frente.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 409.6
+ },
+ "assets/hall/neon/izquierda.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 553.6
+ },
+ "assets/hall/neon/suelo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 1049.6
+ },
+ "assets/hall/neon/techo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 718.0
+ },
+ "assets/hall/observatorio/derecha.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 372.6
+ },
+ "assets/hall/observatorio/fondo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 404.1
+ },
+ "assets/hall/observatorio/frente.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 372.0
+ },
+ "assets/hall/observatorio/izquierda.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 484.6
+ },
+ "assets/hall/observatorio/observatorio.mp3": {
+  "tipo": "audio",
+  "duracion_s": 158.7,
+  "bitrate_kbps": 192,
+  "codec": "mp3",
+  "canales": 2,
+  "sample_rate": "44100",
+  "peso_kb": 3727.3
+ },
+ "assets/hall/observatorio/suelo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 556.6
+ },
+ "assets/hall/observatorio/techo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 532.1
+ },
+ "assets/hall/palas.png": {
+  "tipo": "imagen",
+  "formato": "PNG",
+  "ancho": 1024,
+  "alto": 768,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_kb": 57.6
+ },
+ "assets/hall/rascacielos/derecha.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 566.0
+ },
+ "assets/hall/rascacielos/fondo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 375.6
+ },
+ "assets/hall/rascacielos/frente.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 458.0
+ },
+ "assets/hall/rascacielos/izquierda.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 279.8
+ },
+ "assets/hall/rascacielos/rascacielos.mp3": {
+  "tipo": "audio",
+  "duracion_s": 177.3,
+  "bitrate_kbps": 192,
+  "codec": "mp3",
+  "canales": 2,
+  "sample_rate": "44100",
+  "peso_kb": 4164.5
+ },
+ "assets/hall/rascacielos/suelo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 711.1
+ },
+ "assets/hall/rascacielos/techo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 387.1
+ },
+ "assets/hall/suelo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 381.2
+ },
+ "assets/hall/techo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 360.9
+ },
+ "assets/intro.mp4": {
+  "tipo": "video",
+  "duracion_s": 10.0,
+  "ancho": 1920,
+  "alto": 1080,
+  "codec": "h264",
+  "fps": "30/1",
+  "bitrate_kbps": 4602,
+  "peso_kb": 5644.3
+ },
+ "assets/pala/pala.glb": {
+  "tipo": "error",
+  "err": "Expecting value: line 1 column 1 (char 0)",
+  "peso_kb": 1378.3
+ },
+ "assets/pala/pala_pro.glb": {
+  "tipo": "error",
+  "err": "Expecting value: line 1 column 1 (char 0)",
+  "peso_kb": 33.7
+ },
+ "assets/partido/fondo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 437.4
+ },
+ "assets/partido/frente.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1849,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 334.7
+ },
+ "assets/partido/izquierda.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 2395,
+  "alto": 864,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 386.4
+ },
+ "assets/partido/suelo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 234.1
+ },
+ "assets/partido/techo.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 381.5
+ },
+ "assets/pista/suelo_pista.jpg": {
+  "tipo": "imagen",
+  "formato": "JPEG",
+  "ancho": 1296,
+  "alto": 1678,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_kb": 234.1
+ }
+}

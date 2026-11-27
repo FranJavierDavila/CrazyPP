@@ -362,7 +362,7 @@ const fraseDe = (ev) => {
     case 'champ_rank': return 'Nuevo récord de campeonato' + (ev.mejor !== undefined ? ' · ' + esc(ev.mejor) + ' puntos' : '');
     case 'ver_selfcheck': return 'El juego comprobó su versión (' + d('v') + ')';
     case 'ver_mismatch': return 'Aviso: versión distinta a la del anfitrión (' + d('v') + ')';
-    default: return ETIQUETA[k] || ('Evento: ' + k);
+    default: return ETIQUETA[k] || ('Evento: ' + esc(k));
   }
 };
 

@@ -17,12 +17,13 @@ Uso:
 """
 import asyncio
 import json
+import os
 import subprocess
 import sys
 from datetime import date
 from pathlib import Path
 
-RAIZ = Path('/home/z/my-project/upload')   # r33: el repo real es upload/ (el raíz es el fósil de octubre)
+RAIZ = Path(os.environ.get('CPP_RAIZ') or '/home/z/my-project')   # r128 · re-ancla al repo vivo (D1 de la auditoría r120): era upload/, el espejo reciclado del bot
 SCR = RAIZ / 'scripts'
 PRESUPUESTO = SCR / 'presupuesto.json'
 MODOS = ('oeste', 'magia', 'locura', 'estacion_orbital', 'halloween')  # r85: halloween sustituye a valle_neon (retirado)

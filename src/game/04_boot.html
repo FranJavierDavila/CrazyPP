@@ -20,3 +20,55 @@ document.addEventListener('DOMContentLoaded', function () {
 });
 </script>
 
+<script>
+/* r128 · E1 (auditoría r120): WATCHDOG DE ARRANQUE. Todos los manejadores
+ * de error viven DENTRO de los módulos ES: si el grafo de módulos muere
+ * (CDN caído, red del router, three.js sin cargar), nada llega a instalarse
+ * y el jugador se queda una portada muerta sin explicación. Este script
+ * clásico corre SIEMPRE: anota errores tempranos y, si en 15 s no hay
+ * juego, muestra un panel claro con la causa y el botón de recargar.
+ * Se limpia solo cuando __PP_GAME aparece. */
+(function () {
+  var t0 = Date.now();
+  var errado = '';
+  try {
+    window.addEventListener('error', function (e) {
+      if (!window.__PP_GAME && e) {
+        errado = String(e.message || e.filename || 'error').slice(0, 140);
+      }
+    }, true);
+    window.addEventListener('unhandledrejection', function (e) {
+      if (!window.__PP_GAME && e && e.reason) {
+        errado = String((e.reason && e.reason.message) || e.reason).slice(0, 140);
+      }
+    });
+  } catch (e0) { /* navegador sin handlers: queda el temporizador */ }
+  var avisa = function () {
+    if (window.__PP_GAME) return;
+    var en = ((navigator.language || 'es').toLowerCase().indexOf('en') === 0);
+    var ov = document.getElementById('overlay');
+    var d = document.createElement('div');
+    d.setAttribute('style',
+      'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:99;' +
+      'max-width:min(92vw,560px);background:rgba(7,18,41,0.96);border:1px solid #3c5aa6;' +
+      'border-radius:14px;padding:26px 30px;color:#e9edf2;font:16px/1.5 system-ui,sans-serif;' +
+      'text-align:center;box-shadow:0 12px 48px rgba(0,0,0,0.6)');
+    var limpio = errado.replace(/[<>&"]/g, '');
+    d.innerHTML =
+      '<div style="font-size:30px;font-weight:800;letter-spacing:1px;margin-bottom:10px;">CRAZY PING PONG</div>' +
+      (en
+        ? '<div style="opacity:0.85">The game could not finish loading.<br>Check your internet connection and reload the page.</div>'
+        : '<div style="opacity:0.85">El juego no terminó de cargar.<br>Comprueba tu conexión a internet y recarga la página.</div>') +
+      (limpio ? '<div style="margin-top:12px;font:12px/1.4 monospace;opacity:0.55">' + limpio + '</div>' : '') +
+      '<div style="margin-top:14px;"><button onclick="location.reload()" style="background:#2e5fb7;color:#fff;border:0;border-radius:10px;padding:10px 22px;font-size:15px;font-weight:700;cursor:pointer;">' +
+      (en ? 'RELOAD' : 'RECARGAR') + '</button></div>';
+    (ov || document.body).appendChild(d);
+    try { if (window.__PP_TELE) window.__PP_TELE.ev('boot_timeout', { m: limpio }); } catch (e2) { /* */ }
+  };
+  var iv = setInterval(function () {
+    if (window.__PP_GAME) { clearInterval(iv); return; }
+    if (Date.now() - t0 > 15000) { clearInterval(iv); avisa(); }
+  }, 500);
+})();
+</script>
+

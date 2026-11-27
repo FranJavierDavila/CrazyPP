@@ -201,6 +201,35 @@ try {
   chk(j.total === 0 && j.duraciones.n === 0 && j.porDia.length === 0,
     "tras la purga total el almacén queda a 0 (con análisis vacíos)");
 
+  // D2 · AUDITORÍA 9: TECHO POR SID (r152-b F1) con prueba de comportamiento
+  // real (el almacén está vacío aquí: los totales exactos de I no se tocan).
+  // Lotes de 500 filas (= MAX_LOTE: cada POST trunca a 500) × 5 = 2500
+  // filas/min del MISMO sid → exactamente UN 429 (en la 5ª: 2500 > 2000).
+  // (a) flood del mismo sid → un 429; (b) otro sid → cubo propio, 204
+  // (aislamiento); (c) filas SIN sid → 204 (no entran en el mapa: la
+  // verruga del cubo compartido «x» de r152-b, corregida en la auditoría 9).
+  // Al final, limpieza total: el bloque M (r11) exige totales exactos.
+  const loteRL = (sid) => JSON.stringify(Array.from({ length: 500 }, () => {
+    const o = ev("qa_rl");
+    if (sid === undefined) delete o.sid; else o.sid = sid;
+    return o;
+  }));
+  let n429 = 0;
+  for (let i = 0; i < 5; i++) {
+    r = await worker.fetch(req("/", { method: "POST", body: loteRL("s-rl") }), env, {});
+    if (r.status === 429) n429++;
+  }
+  chk(n429 === 1, `techo por sid: flood 500×5 del mismo sid → exactamente UN 429 (${n429})`);
+  r = await worker.fetch(req("/", { method: "POST", body: loteRL("s-otro") }), env, {});
+  chk(r.status === 204, `otro sid → cubo propio, 204 justo tras el flood (${r.status})`);
+  r = await worker.fetch(req("/", { method: "POST", body: loteRL(undefined) }), env, {});
+  chk(r.status === 204, `filas SIN sid → 204, sin cubo compartido (${r.status})`);
+  r = await worker.fetch(req("/", { method: "DELETE", headers: { "x-clave": "qa-clave-r8" } }), env, {});
+  j = await cuerpo(r);
+  chk(j.borrados === 3000, `limpieza del flood D2: 4×500+500+500 filas (${j.borrados})`);
+  j = await cuerpo(await worker.fetch(req("/?resumen=1&clave=qa-clave-r8"), env, {}));
+  chk(j.total === 0, `almacén a 0 tras la limpieza D2 (${j.total})`);
+
   // M · EMBUDO POR CAMPEONATO (ronda 11): stage/champion llevan id desde 3.6.8
   await worker.fetch(
     req("/", {
@@ -473,7 +502,7 @@ try {
       return { status: 400, json: async () => ({ success: false, errors: [], result: null }) };
     };
     const envIce2 = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0,
-      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key" };
+      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key", TURN_KEY_SECRET: "qa-sec" };
     r = await worker.fetch(reqIce("/api/ice"), envIce2, {});
     j = await cuerpo(r);
     chk(r.status === 200 && j.turn === true && j.ttl === 21600,
@@ -488,7 +517,7 @@ try {
 
     // P4 · caché por isolate: dos llamadas seguidas sin upstream y misma ts
     const envIce3 = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 600000,
-      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key" };
+      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key", TURN_KEY_SECRET: "qa-sec" };
     const j1 = await cuerpo(await worker.fetch(reqIce("/api/ice"), envIce3, {}));
     const antes = llamadasRtc;
     const j2 = await cuerpo(await worker.fetch(reqIce("/api/ice"), envIce3, {}));
@@ -502,7 +531,10 @@ try {
         return { status: 200, json: async () => ({ success: true, result: [{ id: "a".repeat(32) }] }) };
       }
       if (s.includes("/calls/turn_keys")) {
-        return { status: 200, json: async () => ({ success: true, result: { key_id: "k9" } }) };
+        // r146 · la API Realtime actual (2026) devuelve {uid, secret} y el
+        // worker acuña con el SECRETO de la key — el stub viejo {key_id}
+        // dejaba P3/P4/P5 en rojo por deriva del stub, no por el worker
+        return { status: 200, json: async () => ({ success: true, result: { uid: "k9", secret: "s9" } }) };
       }
       if (s.includes("/credentials/generate-ice-servers")) {
         llamadasRtc++;
@@ -581,7 +613,7 @@ try {
       return { status: 400, json: async () => ({ success: false }) };
     };
     const envAmbos = { DB: DBICE, CLAVE: "qa-clave-r8", ICE_TTL_MS: 0,
-      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key",
+      TURN_API_TOKEN: "qa-token", TURN_KEY_ID: "qa-key", TURN_KEY_SECRET: "qa-sec",
       METERED_APP: "crazypp", METERED_API_KEY: "qa-key-m" };
     r = await worker.fetch(reqIce("/api/ice"), envAmbos, {});
     j = await cuerpo(r);
@@ -607,10 +639,15 @@ try {
   r = await worker.fetch(req("/", { method: "POST", body: "[]" }), env, {});
   chk(r.headers.get("access-control-allow-origin") === "*", "POST lleva CORS");
 
-  // K · privacidad: el worker jamás toca IP ni UA
+  // K · privacidad: el worker jamás toca UA ni GEO. r152 · revisión
+  // integral: la «única excepción» r143 (cf-connecting-ip para el rate de
+  // abuso) se ELIMINA — el techo por cliente ahora se apoya en el sid del
+  // propio lote (sin PII; el muro duro sigue siendo el cap global de 20k
+  // filas/min). El contrato vuelve a ser CERO lecturas cf-*.
   chk(!/headers\.get\(\s*['"]user-agent/i.test(FUENTE), "el worker NO lee la cabecera user-agent");
-  chk(!FUENTE.includes("request.headers.get('cf") && !FUENTE.includes('request.headers.get("cf'),
-    "el worker NO lee cabeceras cf-* (IP/geo)");
+  const cfLeidas = FUENTE.match(/headers\.get\(\s*['"]cf-[^'"]*['"]/g) || [];
+  chk(cfLeidas.length === 0,
+    `r152 · el worker NO lee NINGUNA cabecera cf-* (sin IP/geo; techo por sid): ${cfLeidas.join(' ') || 'ninguna ✓'}`);
 
   // ================================================================
   // R46 · RANKINGS MUNDIALES (?rank=1) · RETENCIÓN · LOGROSTOP
@@ -680,6 +717,67 @@ try {
     "R46 · sin pid: retención vacía tolerante (jugadores 0, d1 null)");
   chk(Array.isArray(j.logrosTop) && j.logrosTop.length === 0,
     "R46 · sin pid: logrosTop vacío");
+
+  // ── A2 (r129 · ola 3) · /api/tele?salas=1 · registro vivo de salas ──
+  // Los tests de ICE ya activaron socialListo con SU simulador: en ESTE env
+  // la tabla no existe. La creamos con el DDL real de SOCIAL_SCHEMA + ALTERs
+  // (mismo patrón idempotente de socialInit).
+  await env.DB.batch([
+    "CREATE TABLE IF NOT EXISTS presencia (pid TEXT PRIMARY KEY, n TEXT, v TEXT, st TEXT, code TEXT, t INTEGER NOT NULL)",
+    "CREATE INDEX IF NOT EXISTS idx_pres_t ON presencia(t)",
+    "CREATE TABLE IF NOT EXISTS invitas (id INTEGER PRIMARY KEY AUTOINCREMENT, de TEXT NOT NULL, deN TEXT, para TEXT NOT NULL, code TEXT, t INTEGER NOT NULL)",
+    "CREATE INDEX IF NOT EXISTS idx_inv_para ON invitas(para)",
+    "CREATE INDEX IF NOT EXISTS idx_inv_t ON invitas(t)",
+    "CREATE TABLE IF NOT EXISTS cfg (k TEXT PRIMARY KEY, v TEXT)",
+  ].map((s) => env.DB.prepare(s)));
+  for (const ALT of [
+    "ALTER TABLE presencia ADD COLUMN mj TEXT",
+    "ALTER TABLE presencia ADD COLUMN vis TEXT",
+    "ALTER TABLE presencia ADD COLUMN token TEXT",   // r146 · faltaba (r141):
+    "ALTER TABLE invitas ADD COLUMN mj TEXT",        // el INSERT escribe token
+  ]) {
+    try { await env.DB.prepare(ALT).run(); } catch (e) { /* ya existe */ }
+  }
+  r = await worker.fetch(
+    new Request("https://worker.test/api/presencia", {
+      method: "POST",
+      body: JSON.stringify({ pid: "s-alas1", n: "Anfitrion", v: "qa", st: "sala", code: "ABC23", mj: "normal", vis: "pub" }),
+    }), env, {}
+  );
+  chk(r.status === 200, `A2 · latido de presencia (sala PÚBLICA) → 200 (${r.status})`);
+  await worker.fetch(
+    new Request("https://worker.test/api/presencia", {
+      method: "POST",
+      body: JSON.stringify({ pid: "s-alas2", n: "SinSala", v: "qa", st: "libre" }),
+    }), env, {}
+  );
+  // una sala PRIVADA no se anuncia + una sala CADUCADA (> TTL 90 s) tampoco:
+  await env.DB.prepare(
+    "INSERT OR REPLACE INTO presencia (pid, n, v, st, code, mj, vis, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind("s-priv", "Privada", "qa", "sala", "PRIV1", "normal", "pri", Date.now()).run();
+  await env.DB.prepare(
+    "INSERT OR REPLACE INTO presencia (pid, n, v, st, code, mj, vis, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+  ).bind("s-viejo", "Viejo", "qa", "sala", "ZZZ99", "normal", "pub", Date.now() - 100000).run();
+  j = await cuerpo(await worker.fetch(req("/?salas=1"), env, {}));
+  chk(j.ok === true && j.total === 1,
+    `A2 · salas vivas: 1 — privadas, sin código y caducados fuera (${j.total})`);
+  chk(j.salas[0]?.code === "ABC23" && j.salas[0]?.pid === "s-alas1",
+    `A2 · la sala viva es ABC23 de s-alas1 (${JSON.stringify(j.salas[0])})`);
+  chk(typeof j.salas[0]?.haceSeg === "number" && j.salas[0].haceSeg >= 0,
+    `A2 · frescura de la sala en haceSeg (${j.salas[0]?.haceSeg} s)`);
+
+  // ── A3 (r130·5 · FIX #10) · /api/presencia?lista=1 · SIN cadáveres ──
+  // s-viejo (sala PÚBLICA ZZZ99 con t-100000 s, ya insertada arriba) NO
+  // puede aparecer en el listado del medallón aunque la purga muestreada
+  // aún no lo haya borrado; s-alas1 (latido fresco) SÍ.
+  j = await cuerpo(await worker.fetch(new Request("https://worker.test/api/presencia?lista=1"), env, {}));
+  const pids = (j.jugadores || []).map((x) => x.pid);
+  chk(j.ok === true && !pids.includes("s-viejo"),
+    `A3 · lista de presencia SIN latidos muertos (${JSON.stringify(pids)})`);
+  chk(pids.includes("s-alas1"),
+    "A3 · la sala viva ABC23 SÍ aparece en el listado");
+  chk(typeof j.n === "number" && j.n >= 1,
+    `A3 · conteo con TTL intacto (n=${j.n})`);
 } catch (e) {
   chk(false, "excepción del harness: " + (e?.stack || String(e)));
 }

@@ -109,6 +109,28 @@ export class ChampLoader {
       if (!/^[a-z0-9_-]+$/i.test(id)) return false;
       if (this.entries.some((x) => x.id === id)) return true;   // ya está
       if (!man) return false;
+      // r128 · F3 (auditoría r120): validación MÍNIMA del manifest en
+      // runtime (antes el esquema sólo lo revisaban scripts de build): id
+      // coherente con la carpeta y version numérica. Un manifest roto o
+      // suplantado queda VISIBLE como incompatible, no rompe el núcleo.
+      if (man.id && man.id !== id) {
+        this.entries.push({
+          id, folder: `championships/${id}/`,
+          title: (man.title && man.title.es) || id, storage: '',
+          eager: false, estado: 'incompatible', manifest: man,
+          error: `manifest.id ${man.id} ≠ carpeta ${id}`,
+        });
+        return true;
+      }
+      if (typeof man.version !== 'number' || man.version < 1) {
+        this.entries.push({
+          id, folder: `championships/${id}/`,
+          title: (man.title && man.title.es) || id, storage: '',
+          eager: false, estado: 'incompatible', manifest: man,
+          error: 'manifest sin version numérica',
+        });
+        return true;
+      }
       // v2.125 · CONTRATO: un manifest de un contrato futuro no se
       // integra (y queda VISIBLE, no mudo).
       const contrato = man.contract || 1;
@@ -120,6 +142,28 @@ export class ChampLoader {
           title: man.title || { es: id, en: id }, storage: man.storage || '',
           eager: false, estado: 'incompatible', manifest: man,
           error: `contract ${contrato} > 1`,
+        });
+        return true;
+      }
+      // r129 · F3b (auditoría r120 · ola 3): el resto del CONTRATO
+      // OBLIGATORIO del championship.schema.json se valida aquí en runtime
+      // — un módulo de tercero con el manifest incompleto (sin rival, sin
+      // storage, sin assets, sin título) no entra: degrade elegante a
+      // «incompatible» con el motivo visible, igual que arriba. Los 7
+      // manifests del dueño cumplen el esquema completo (verificado al
+      // sellar esta ronda).
+      const faltan = [];
+      if (!man.title || !man.title.es) faltan.push('title.es');
+      if (!man.description || !man.description.es) faltan.push('description.es');
+      if (!man.rival || !man.rival.id || !man.rival.name || !man.rival.kind) faltan.push('rival{id,name,kind}');
+      if (typeof man.storage !== 'string' || !man.storage) faltan.push('storage');
+      if (typeof man.assets !== 'string' || !man.assets) faltan.push('assets');
+      if (faltan.length) {
+        this.entries.push({
+          id, folder: `championships/${id}/`,
+          title: (man.title && man.title.es) || id, storage: '',
+          eager: false, estado: 'incompatible', manifest: man,
+          error: 'manifest incompleto: falta ' + faltan.join(', '),
         });
         return true;
       }

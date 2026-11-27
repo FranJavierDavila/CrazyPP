@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;900&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    @page { size: 794px 1123px; margin: 0; }
+    :root {
+      --c-bg: #f4f4f3;
+      --c-accent: #8c7225;
+      --c-text: #181816;
+      --c-muted: #8f8d86;
+      --c-mid: #7c704b;
+      --c-surface: #eae9e4;
+    }
+    html, body {
+      margin: 0; padding: 0;
+      width: 794px; height: 1123px;
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: 'Inter', 'Liberation Sans', 'Noto Sans SC', sans-serif;
+    }
+    @media screen {
+      html { height: auto; display: flex; justify-content: center; min-height: 100vh; background: var(--c-bg); }
+      body { transform-origin: top center; scale: min(1, calc(100vw / 794), calc(100vh / 1123)); margin: 0 auto; box-shadow: 0 0 60px rgba(0,0,0,0.12); }
+    }
+    .cover { width: 794px; height: 1123px; position: relative; border: none; outline: none; box-shadow: none; }
+
+    /* Layer 1 · fondo: retícula a opacidad 2% (clip solo aquí) */
+    .layer1 { position: absolute; inset: 0; overflow: hidden; z-index: 1; }
+    .grid {
+      position: absolute; inset: 0;
+      background-image:
+        repeating-linear-gradient(0deg, rgba(140,114,37,0.05) 0 0.5px, transparent 0.5px 50px),
+        repeating-linear-gradient(90deg, rgba(140,114,37,0.05) 0 0.5px, transparent 0.5px 50px);
+    }
+
+    /* Layer 2 · estructura: línea ancla vertical ultra gruesa */
+    .layer2 { position: absolute; inset: 0; z-index: 2; }
+    .anchor-line {
+      position: absolute;
+      left: 95px; top: 112px; bottom: 112px;
+      width: 8px;
+      background: var(--c-accent);
+    }
+
+    /* Layer 3 · contenido (texto, sin overflow hidden) */
+    .layer3 { position: absolute; inset: 0; z-index: 3; }
+    .kicker {
+      position: absolute; left: 175px; top: 168px;
+      font-size: 16pt; font-weight: 400;
+      letter-spacing: 3pt; text-transform: uppercase;
+      color: var(--c-text); opacity: 0.6;
+      max-width: 540px;
+    }
+    .hero {
+      position: absolute; left: 175px; top: 320px;
+      font-size: 64pt; font-weight: 900; line-height: 1.15;
+      color: var(--c-text);
+      max-width: 560px;
+    }
+    .hero .thin { font-weight: 300; color: var(--c-mid); }
+    .summary {
+      position: absolute; left: 175px; top: 561px;
+      font-size: 16.5pt; font-weight: 400; line-height: 1.6;
+      color: var(--c-text); opacity: 0.85;
+      max-width: 476px;
+    }
+    .meta {
+      position: absolute; left: 175px; top: 842px;
+      font-size: 18pt; font-weight: 400; line-height: 1.5;
+      color: var(--c-text);
+      max-width: 500px;
+    }
+    .meta .muted { color: var(--c-muted); font-size: 16pt; }
+    .footer {
+      position: absolute; left: 175px; bottom: 100px;
+      font-size: 12.5pt; font-weight: 400;
+      letter-spacing: 2pt; text-transform: uppercase;
+      color: var(--c-text); opacity: 0.6;
+      max-width: 560px;
+    }
+  </style>
+</head>
+<body>
+  <div class="cover">
+    <div class="layer1"><div class="grid"></div></div>
+    <div class="layer2"><div class="anchor-line"></div></div>
+    <div class="layer3">
+      <div class="kicker">Informe de análisis · Auditoría r120</div>
+      <div class="hero">CRAZYPP</div>
+      <div class="summary">
+        Análisis independiente del juego de ping pong WebXR para Meta Quest 3:
+        núcleo modular de 14 subsistemas, multijugador P2P, campeonatos UGC y
+        cadena de build byte-exacta. Veinticinco hallazgos verificados con
+        fichero y línea, medición en vivo del render y un plan de acción en
+        tres olas.
+      </div>
+      <div class="meta">
+        Versión auditada 3.6.209-SDK6 · Fase 186<br>
+        <span class="muted">23 de noviembre de 2026 · elaborado por Z.ai</span>
+      </div>
+      <div class="footer">Auditoría de solo lectura · ningún fichero del juego fue modificado</div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,10 +1,27 @@
 :81 {
+	# r128 · F4 de la auditoría r120: el proxy por query sólo admite el
+	# live-service (:3004). Antes ANY port via ?XTransformPort=… servía de
+	# SSRF interno hacia cualquier puerto local.
 	@transform_port_query {
-		query XTransformPort=*
+		query XTransformPort=3004
 	}
 
 	handle @transform_port_query {
 		reverse_proxy localhost:{query.XTransformPort} {
+			header_up Host {host}
+			header_up X-Forwarded-For {remote_host}
+			header_up X-Forwarded-Proto {scheme}
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	# r129 · A2 (auditoría r120): ruta FIJA por prefijo para el PeerServer
+	# propio (mini-services/peer-server en :3005). Con ella, el dueño puede
+	# apuntar PP_SIGNAL_ENDPOINT aquí y dejar de depender del cloud de
+	# PeerJS (0.peerjs.com). PeerJS usa long-polling + WebSocket: Caddy
+	# proxyifica ambos por defecto.
+	handle /peerjs/* {
+		reverse_proxy localhost:3005 {
 			header_up Host {host}
 			header_up X-Forwarded-For {remote_host}
 			header_up X-Forwarded-Proto {scheme}

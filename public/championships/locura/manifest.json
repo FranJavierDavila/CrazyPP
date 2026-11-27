@@ -92,7 +92,7 @@
       "comboRally": 6,
       "surprisedRally": 3
     },
-    "powerBanner": "superpoder.webp",
+    "powerBanner": "../../assets/championships/superpoder.webp",
     "music": "bso.ogg",
     "musicVolume": 0.18,
     "champId": "clown",

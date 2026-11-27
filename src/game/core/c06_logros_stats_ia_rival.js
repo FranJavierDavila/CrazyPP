@@ -5,7 +5,7 @@ export const ACHIEVEMENTS = CONFIG_LOGROS.core.map((a) => ({   // r61 · FASE 15
 // copia plana por entrada para que los getters name/desc de abajo vengan en
 // las copias, como siempre.
 /* DEPS-FASE2-INICIO (generado por scripts/mod_fase2_generar.mjs — no editar a mano) */
-import { CONFIG_DIFICULTAD, CONFIG_LOGROS, CONFIG_TORNEOS, DIMS } from './c02_cfg_escena.js';
+import { CONFIG_DIFICULTAD, CONFIG_LOGROS, CONFIG_TORNEOS, DIMS, MONEDAS_ACCION, XP_ACCION } from './c02_cfg_escena.js';
 import { tmpD, tmpT, tmpTarget } from './c04_fisica_ccd.js';
 import { computeShotVelocityReal, predictStrike } from './c05_colisiones_ia_golpeo.js';
 import * as THREE from 'three';
@@ -31,6 +31,8 @@ export class GameStats {
       won: 0, lost: 0, streak: 0, bestStreak: 0,
       pointsWon: 0, pointsLost: 0, aces: 0, bestRally: 0,
       monedas: 0,   // r85 · ECONOMÍA CRAZY: el monedero vive con las stats
+      xp: 0,        // r156 · MI PERFIL: experiencia acumulada (el NIVEL se deriva, nunca se guarda)
+      p2pDia: { dia: '', n: 0 },   // r156 · tope diario de duelos puntuados (anti-farm)
       winsByDiff: { easy: 0, medium: 0, hard: 0 },
       ach: {},
       // M4 (r118) · ELO unificado (roadmap MEJORAS.md M4): el número de
@@ -58,6 +60,15 @@ export class GameStats {
     if (!this.data.hoyDia || typeof this.data.hoyDia !== 'object') this.data.hoyDia = { dia: '', v: 0 };
     // r85 · migración tolerante del MONEDERO (datos viejos sin monedas)
     if (typeof this.data.monedas !== 'number') this.data.monedas = 0;
+    // r156 · MI PERFIL: XP RETROACTIVO una sola vez para veteranos
+    // (won·40 + lost·12 + logros·50 — PLAN-MI-PERFIL §6); datos nuevos ya
+    // traen xp:0 y pasan de largo.
+    if (typeof this.data.xp !== 'number' || this.data.xp < 0) {
+      this.data.xp = Math.round((this.data.won | 0) * XP_ACCION.partidoV +
+        (this.data.lost | 0) * XP_ACCION.partidoD +
+        Object.keys(this.data.ach || {}).length * MONEDAS_ACCION.logro);
+    }
+    if (!this.data.p2pDia || typeof this.data.p2pDia !== 'object') this.data.p2pDia = { dia: '', n: 0 };
   }
 
   save() {
@@ -67,6 +78,9 @@ export class GameStats {
   unlock(key) {
     if (this.data.ach[key]) return false;
     this.data.ach[key] = Date.now();
+    // r156 · insignia NUEVA = monedas (PLAN-MI-PERFIL §7: MONEDAS_ACCION.
+    // logro) — el desbloqueo también alimenta la tienda de avatares.
+    this.data.monedas = (this.data.monedas | 0) + MONEDAS_ACCION.logro;
     this.save();
     // r46 · el evento de DESBLOQUEO lo firma c12·celebrate (única vía por la
     // que pasan TODOS los logros: recordPoint/survival/match → celebrate) —
@@ -112,6 +126,45 @@ export class GameStats {
     return out;
   }
 
+  /** r156 · MI PERFIL: XP directo (puntos que no pasan por recordMatch). */
+  registrarXP(n) {
+    const v = (typeof n === 'number' && isFinite(n)) ? Math.max(0, Math.round(n)) : 0;
+    if (!v) return;
+    this.data.xp = (this.data.xp | 0) + v;
+  }
+
+  /** r156 · premios NO-match (economía v2, PLAN-MI-PERFIL §7 — tablas en
+   *  c02 · MONEDAS_ACCION/XP_ACCION). que: 'surv' {oleadas, record} ·
+   *  'train' {meta} · 'tut' · 'carrera' {nueva} · 'champ' {titulo|oro|
+   *  plata|bronce}. Los PARTIDOS (ia/carrera/p2p) pagan por recordMatch.
+   *  Devuelve {mon, xp} para el toast/telemetría. */
+  premio(que, extra) {
+    const Mo = MONEDAS_ACCION, X2 = XP_ACCION;
+    const e = extra || {};
+    let mon = 0, xp = 0;
+    if (que === 'surv') {
+      const ol = Math.min(Math.max(e.oleadas | 0, 0), Mo.survTope / Mo.survOleada);
+      mon += Math.round(ol * Mo.survOleada);
+      xp += X2.survBase + Math.round(ol * X2.survOleada);
+      if (e.record) mon += Mo.survRecord;
+    } else if (que === 'train') {
+      if (e.meta) { mon += Mo.trainMeta; xp += X2.trainMeta; }
+    } else if (que === 'tut') {
+      mon += Mo.tut; xp += X2.tut;
+    } else if (que === 'carrera') {
+      mon += e.nueva ? Mo.carreraNueva : Mo.carreraRep;
+      xp += X2.carreraEtapa;
+    } else if (que === 'champ') {
+      mon += e.titulo ? Mo.champTitulo
+        : (e.oro ? Mo.oro : (e.plata ? Mo.plata : (e.bronce ? Mo.bronce : Mo.champEtapa)));
+      xp += e.titulo ? X2.champTitulo : X2.champEtapa;
+    }
+    this.data.monedas = (this.data.monedas | 0) + mon;
+    this.registrarXP(xp);
+    this.save();
+    return { mon, xp };
+  }
+
   /** Fin de PARTIDO. Devuelve logros nuevos.
    *  M4 (r118) · ELO: info opcional { modo, oppElo } — modo 'ia'|'carrera'|
    *  'p2p' elige el factor K (24 · 20 · 32: los duelos humanos valen más);
@@ -151,10 +204,28 @@ export class GameStats {
       this.data.lost++;
       this.data.streak = 0;
     }
-    // r85 · ECONOMÍA CRAZY: el monedero se gana JUGANDO — +25 por victoria,
-    // +8 por derrota (participar también paga). Alimenta la TIENDA de
-    // bolas y mesas (c12 · _comprar) sin tocar ELO, logros ni física.
-    this.data.monedas = (this.data.monedas | 0) + (win ? 25 : 8);
+    // r85 → r156 · ECONOMÍA CRAZY v2 (PLAN-MI-PERFIL §7, tablas en c02):
+    // IA 25/8 (+5 hard) · P2P 40/12 con TOPE DIARIO (anti-farm, 10/día)
+    // · XP (IA 40/12 +10 hard · P2P 60/18). Los TRES modos llegan aquí
+    // por recordMatch (c12:1681 ia · c12:21336 carrera · c09:973 p2p),
+    // así que una sola tabla cubre el núcleo. Alimenta la TIENDA de
+    // avatares/marcos sin tocar ELO, logros ni física.
+    const difB = (difficulty === 'hard') ? 1 : 0;
+    const hoyE = new Date();
+    const diaE = hoyE.getFullYear() + '-' + ('0' + (hoyE.getMonth() + 1)).slice(-2) + '-' + ('0' + hoyE.getDate()).slice(-2);
+    let mon = 0;
+    if (modo === 'p2p') {
+      const pd = (this.data.p2pDia && this.data.p2pDia.dia === diaE) ? this.data.p2pDia : { dia: diaE, n: 0 };
+      pd.n = (pd.n | 0) + 1;
+      this.data.p2pDia = pd;
+      mon = (pd.n <= MONEDAS_ACCION.p2pTopeDia) ? (win ? MONEDAS_ACCION.p2pV : MONEDAS_ACCION.p2pD) : 0;
+    } else {
+      mon = win ? (MONEDAS_ACCION.iaV + difB * MONEDAS_ACCION.hardBonus) : MONEDAS_ACCION.iaD;
+    }
+    this.data.monedas = (this.data.monedas | 0) + mon;
+    this.registrarXP(modo === 'p2p'
+      ? (win ? XP_ACCION.p2pV : XP_ACCION.p2pD)
+      : (win ? XP_ACCION.partidoV + difB * XP_ACCION.hardBonus : XP_ACCION.partidoD));
     this.save();
     return out;
   }
@@ -385,10 +456,13 @@ export class Rules {
    *  EXACTAMENTE applyPoint (mismo intent, mismos mensajes) para que el
    *  receptor viva el punto idéntico al local. */
   forcePoint(winner, cause, rallyId) {
-    if (rallyId !== undefined && rallyId !== null) {
-      if (this._appliedRally === rallyId) return [];
-      this._appliedRally = rallyId;
-    }
+    // r140/r141 · FAIL-CLOSED + ENTERO: sin rallyId entero NO se aplica —
+    // un claim basura (o fraccionario: 2.5 burlaba _appliedRally=2 y
+    // duplicaba el punto del rallye) jamás fabrica un punto. rallySeq y
+    // totalPoints son siempre enteros: cero riesgo de regresión.
+    if (!Number.isInteger(rallyId)) return [];
+    if (this._appliedRally === rallyId) return [];
+    this._appliedRally = rallyId;
     return this._applyPointSinGuard(winner, cause);
   }
 
@@ -1705,7 +1779,14 @@ export class OpponentAI {
     if (!d) return;
     this._disparo = null;
     const b = d.ball;
-    const vReal = d.target
+    // C1 (r129 · ola 3) · REUTILIZA LA VELOCIDAD DECIDIDA: el solver ya
+    // corrió al decidir desde el intercepto (d.pos). Si la bola VIVA llegó
+    // a ese punto (|desvío| ≤ 5 cm — la tolerancia del propio solver es
+    // 1,5 cm), el recálculo sería un solve equivalente: se reusa d.v y el
+    // golpeo deja de disparar un pico de ~100 pasos RK4 en el frame del
+    // contacto. Se recalcula SOLO si la bola se desvió (bote/Magnus):
+    // el tiro nace de donde está, hacia el mismo blanco (r99ter intacto).
+    const vReal = (d.target && b.pos.distanceTo(d.pos) > 0.05)
       ? computeShotVelocityReal(b.pos, d.target, d.T, d.maxV, d.spin)
       : d.v;
     // r101 · EL EMPUJE DEL SWING, ACOTADO: la tangente del gesto solo sesga

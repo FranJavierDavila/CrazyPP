@@ -1383,7 +1383,8 @@ export function createChampDecor(game) {
         p.angX = THREE.MathUtils.clamp(p.angX + p.avX * dt, -0.22, 0.22);
         p.angZ = THREE.MathUtils.clamp(p.angZ + p.avZ * dt, -0.26, 0.26);
         p.panel.rotation.x = p.angX;
-        p.panel.rotation.z = p.angZ + Math.sin(now * 0.9 + p.phase) * 0.006 * p.cfg.sway;
+        p.panel.rotation.z = p.angZ + Math.sin(now * 0.9 + p.phase) * 0.006
+          * (p.cfg.sway != null ? p.cfg.sway : 0.5);   // r149 · F-A2: guard NaN — un pack externo sin sway corrompía rotation.z CADA frame (NaN silencioso, mismo patrón que el panNode de c03); el cero explícito se respeta
 
         if (p.cool > 0) continue;
         // 1) la bola pasa cerca → el cartón se tambalea (la bola NO se toca)

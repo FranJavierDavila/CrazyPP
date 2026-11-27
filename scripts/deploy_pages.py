@@ -169,57 +169,178 @@ LANDING = """<!doctype html>
 <title>CRAZY PING PONG · @@VERSION@@</title>
 <link rel="icon" href="logo.svg" type="image/svg+xml">
 <style>
+  /* r152 · LA PORTADA CLÁSICA VIVE AQUÍ: desde r151 game.html entra directo
+     al salón, así que la LANDING de la raíz hereda el aspecto de la portada
+     que tenía game.html (logo, palas de idioma, JUGAR EN VR). El idioma se
+     guarda en pp_lang (la MISMA clave que lee c00 al arrancar el juego) y
+     el botón lleva a game.html?vr=1 → un toque cualquiera y estás en VR. */
   :root { color-scheme: dark; }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { min-height:100vh; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    background:#07090f; color:#e8ecf4; display:flex; align-items:center; justify-content:center;
-    background-image:
-      radial-gradient(60rem 30rem at 15% 0%, rgba(255,122,24,.16), transparent 60%),
-      radial-gradient(50rem 26rem at 90% 100%, rgba(34,211,238,.14), transparent 60%); }
-  main { max-width:640px; padding:48px 24px; text-align:center; }
-  .chip { display:inline-block; font-size:12px; letter-spacing:.12em; text-transform:uppercase;
-    color:#9fb0c8; border:1px solid #2a3550; border-radius:999px; padding:6px 14px; margin-bottom:22px; }
-  h1 { font-size:clamp(34px,7vw,58px); font-weight:900; line-height:1.02; letter-spacing:-.02em;
-    background:linear-gradient(92deg,#ffb347 0%, #ff7a18 45%, #22d3ee 100%);
-    -webkit-background-clip:text; background-clip:text; color:transparent; }
-  .sub { color:#9fb0c8; margin:14px 0 34px; font-size:16px; }
-  .jugar { display:inline-block; font-size:22px; font-weight:800; text-decoration:none; color:#0a0d14;
-    background:linear-gradient(92deg,#ffb347,#ff7a18); padding:18px 58px; border-radius:16px;
-    box-shadow:0 10px 40px rgba(255,122,24,.35); transition:transform .15s ease, box-shadow .15s ease; }
-  .jugar:hover { transform:translateY(-2px); box-shadow:0 14px 48px rgba(255,122,24,.5); }
-  .como { margin-top:42px; text-align:left; background:#0c1019; border:1px solid #1c2438;
-    border-radius:14px; padding:22px 24px; }
-  .como h2 { font-size:14px; text-transform:uppercase; letter-spacing:.1em; color:#8fa3c0; margin-bottom:12px; }
-  .como ol { margin-left:20px; line-height:1.9; font-size:15px; }
-  .nota { margin-top:10px; font-size:13px; color:#7e8ea8; }
-  nav { margin-top:34px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
-  nav a { color:#bfe9ff; text-decoration:none; font-size:14px; border:1px solid #23405c;
-    padding:9px 16px; border-radius:10px; background:#0b1220; }
-  nav a:hover { border-color:#22d3ee; }
-  footer { margin-top:40px; font-size:12px; color:#5c6a82; }
-  footer code { color:#7e8ea8; }
+  html, body { height:100%; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:#e9edf2;
+    background: radial-gradient(120% 90% at 50% 8%, #0b2050 0%, #071229 52%, #050810 100%);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  #bg { position:fixed; inset:0; overflow:hidden; pointer-events:none; }
+  .bgblur { position:absolute; inset:-90px;
+    background-image:url("assets/externos/portada.jpg"); background-size:cover;
+    background-position:center 38%;
+    filter:blur(16px) brightness(0.42) saturate(1.25);
+    animation:kenburns 30s ease-in-out infinite alternate; }
+  @keyframes kenburns { from { transform:scale(1.06) translate(-1.2%,-1%); }
+    to { transform:scale(1.22) translate(1.4%,1.6%); } }
+  .rays { position:absolute; top:-30%; height:170%; width:34vw;
+    background:linear-gradient(90deg, transparent 6%, rgba(96,166,255,0.13) 50%, transparent 94%);
+    transform:rotate(14deg); filter:blur(3px);
+    animation:sweep 10s ease-in-out infinite alternate; }
+  .rays.r1 { left:8vw; }
+  .rays.r2 { right:8vw; transform:rotate(-15deg); animation-delay:-4.5s; animation-duration:12s; }
+  @keyframes sweep { from { opacity:0.25; transform:rotate(11deg) translateX(-4vw); }
+    to { opacity:0.8; transform:rotate(17deg) translateX(5vw); } }
+  .bball { position:absolute; border-radius:50%;
+    background:radial-gradient(circle at 34% 30%, #ffffff 0%, #e8ecf2 55%, #b9c2cf 100%);
+    box-shadow:0 0 22px rgba(255,255,255,0.55); animation:flyball linear infinite; }
+  .bball.b1 { width:26px; height:26px; top:62%; animation-duration:9.5s; }
+  .bball.b2 { width:15px; height:15px; top:24%; animation-duration:13s; animation-delay:-6s; opacity:0.85; }
+  .bball.b3 { width:11px; height:11px; top:78%; animation-duration:16s; animation-delay:-3s; opacity:0.6; }
+  @keyframes flyball { 0% { transform:translate(-8vw,6vh); opacity:0; } 8% { opacity:1; }
+    50% { transform:translate(46vw,-9vh); } 92% { opacity:1; }
+    100% { transform:translate(108vw,5vh); opacity:0; } }
+  .star { position:absolute; width:7px; height:7px; border-radius:50%;
+    background:#ffd257; box-shadow:0 0 10px #ffd257;
+    animation:twinkle 3.2s ease-in-out infinite; }
+  .star.s1 { left:12%; top:18%; } .star.s2 { left:85%; top:26%; animation-delay:-1.1s; }
+  .star.s3 { left:22%; top:74%; animation-delay:-2s; } .star.s4 { left:76%; top:70%; animation-delay:-0.6s; }
+  .star.s5 { left:50%; top:12%; animation-delay:-2.6s; } .star.s6 { left:38%; top:86%; animation-delay:-1.7s; }
+  @keyframes twinkle { 0%,100% { opacity:0.15; transform:scale(0.7); }
+    50% { opacity:0.95; transform:scale(1.25); } }
+  main { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center;
+    gap:20px; width:100%; max-width:760px; padding:24px 18px; max-height:100vh; overflow-y:auto; }
+  .hero-wrap { animation:heroFloat 6s ease-in-out infinite; }
+  .hero-wrap img { display:block; width:min(340px, 72vw); height:auto;
+    filter:drop-shadow(0 18px 40px rgba(0,0,0,0.6)); }
+  @keyframes heroFloat { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-10px); } }
+  .padrow { display:flex; gap:26px; }
+  .padbtn { display:flex; flex-direction:column; align-items:center; gap:7px;
+    background:rgba(255,255,255,0.055); border:2px solid rgba(255,255,255,0.16);
+    border-radius:22px; padding:12px 24px 9px; cursor:pointer; color:#e9edf2;
+    font-family:inherit; transition:transform .18s, border-color .18s, box-shadow .18s; }
+  .padbtn img { width:84px; height:84px; object-fit:contain;
+    filter:drop-shadow(0 6px 14px rgba(0,0,0,0.55)); }
+  .padbtn .padlbl { font-size:13px; font-weight:800; letter-spacing:2.2px; color:#9aa7b4; }
+  .padbtn:hover { transform:translateY(-3px); border-color:rgba(255,255,255,0.38); }
+  .padbtn.sel { border-color:#ffd257; box-shadow:0 0 16px rgba(255,210,87,0.22); }
+  .padbtn.sel .padlbl { color:#ffd257; }
+  #vrbtn { background:none; border:none; cursor:pointer; display:block; }
+  #vrbtn img { display:block; width:min(340px, 76vw); height:auto;
+    filter:drop-shadow(0 14px 30px rgba(0,0,0,0.55)); transition:transform .18s; }
+  #vrbtn:hover img { transform:scale(1.06); }
+  #vrbtn:active img { transform:scale(0.97); }
+  #status { font-size:13.5px; color:#8d9aa8; min-height:20px; text-align:center;
+    max-width:720px; line-height:1.5; }
+  .footer { display:flex; flex-wrap:wrap; align-items:center; justify-content:center;
+    gap:8px 10px; font-size:13px; color:#75828f; }
+  .footlink { background:none; border:none; cursor:pointer; font-family:inherit;
+    font-size:13px; color:#8fd3e8; text-decoration:underline dotted; padding:2px 4px; }
+  .dot { opacity:0.5; }
+  #verBadge { font-size:12px; font-weight:700; letter-spacing:.08em; color:#ffd257; }
+  .deploy { font-size:11px; color:#5c6a82; margin-top:2px; }
+  .deploy code { color:#7e8ea8; }
+  @media (max-width:560px) {
+    .padbtn img { width:64px; height:64px; } .padrow { gap:14px; }
+    .hero-wrap img { width:min(260px, 68vw); }
+  }
 </style></head>
-<body><main>
-  <p class="chip">V@@VERSION@@ · commit @@COMMIT@@ · QA verde</p>
-  <h1>CRAZY PING&nbsp;PONG</h1>
-  <p class="sub">Ping-pong de superpoderes para Meta&nbsp;Quest&nbsp;3 · WebXR</p>
-  <a class="jugar" href="game.html?v=@@VERSION@@">▶&nbsp; JUGAR</a>
-  <section class="como">
-    <h2>Cómo jugar en Meta Quest 3</h2>
-    <ol>
-      <li>Abre esta página en el <b>navegador del visor</b>.</li>
-      <li>Pulsa <b>JUGAR</b> y colócate ante la mesa.</li>
-      <li>Toca el botón <b>VR</b> que aparece en pantalla.</li>
-    </ol>
-    <p class="nota">También funciona en el navegador de escritorio (modo 2D).</p>
-  </section>
-  <nav>
-    <a href="tv.html">📺 TV en vivo</a>
-    <a href="https://github.com/@@REPO@@/releases" target="_blank" rel="noreferrer">⬇ Descargar ZIPs</a>
-    <a href="https://github.com/@@REPO@@" target="_blank" rel="noreferrer">💻 Código</a>
-  </nav>
-  <footer>Desplegado desde la rama <code>pages</code> · @@FECHA@@ · game @@GAME12@@</footer>
-</main></body></html>
+<body>
+<div id="bg">
+  <div class="bgblur"></div>
+  <div class="rays r1"></div>
+  <div class="rays r2"></div>
+  <span class="bball b1"></span><span class="bball b2"></span><span class="bball b3"></span>
+  <span class="star s1"></span><span class="star s2"></span><span class="star s3"></span>
+  <span class="star s4"></span><span class="star s5"></span><span class="star s6"></span>
+</div>
+<main>
+  <div class="hero-wrap"><img src="assets/externos/portada.jpg" alt="CRAZY PING PONG"></div>
+  <div class="padrow">
+    <button class="padbtn" data-lang="es" type="button">
+      <img src="assets/externos/pad_es.png" alt="Español"><span class="padlbl">ESPAÑOL</span>
+    </button>
+    <button class="padbtn" data-lang="en" type="button">
+      <img src="assets/externos/pad_en.png" alt="English"><span class="padlbl">ENGLISH</span>
+    </button>
+  </div>
+  <a id="vrbtn" href="game.html?vr=1" aria-label="Jugar en VR">
+    <img id="playEs" src="assets/externos/jugar_es.png" alt="JUGAR EN VR">
+    <img id="playEn" src="assets/externos/jugar_en.png" alt="PLAY IN VR" style="display:none">
+  </a>
+  <div id="status">Comprobando compatibilidad con WebXR…</div>
+  <div class="footer">
+    <a id="arlink" class="footlink" href="game.html?ar=1" style="display:none">🏠 PASSTHROUGH · tu habitación</a>
+    <span class="dot" id="arDot" style="display:none">·</span>
+    <a class="footlink" href="tv.html" target="_blank" rel="noreferrer">📺 TV en vivo</a>
+    <span class="dot">·</span>
+    <a class="footlink" href="https://ko-fi.com/escala3d" target="_blank" rel="noreferrer">☕ Apoyar en Ko-fi</a>
+    <span class="dot">·</span>
+    <span id="verBadge">V@@VERSION@@</span>
+  </div>
+  <p class="deploy">Desplegado desde la rama <code>pages</code> · @@FECHA@@ · game @@GAME12@@</p>
+</main>
+<script>
+(function () {
+  'use strict';
+  function savedLang() {
+    var l = null;
+    try { l = localStorage.getItem('pp_lang'); } catch (e) { /* */ }
+    if (l === 'es' || l === 'en') return l;
+    var n = String(navigator.language || 'es').toLowerCase();
+    return n.indexOf('en') === 0 ? 'en' : 'es';   // es* → ES · resto → EN (como c00)
+  }
+  var lang = savedLang();
+  var xrOK = false, checked = false;
+  var statusEl = document.getElementById('status');
+  var TXT = {
+    es: { ok: '✅ VR LISTO — ponte el visor y pulsa JUGAR',
+          no: '🖥️ Sin visor: entra igual — el salón ya vive en 2D',
+          sin: '🖥️ Este navegador no soporta WebXR — el juego funciona igual en 2D',
+          chk: 'Comprobando compatibilidad con WebXR…' },
+    en: { ok: '✅ VR READY — put the headset on and press PLAY',
+          no: '🖥️ No headset: come in anyway — the hall already lives in 2D',
+          sin: '🖥️ This browser does not support WebXR — the game works in 2D anyway',
+          chk: 'Checking WebXR support…' }
+  };
+  function paint() {
+    document.querySelectorAll('.padbtn').forEach(function (b) {
+      b.classList.toggle('sel', b.dataset.lang === lang);
+    });
+    document.getElementById('playEs').style.display = lang === 'en' ? 'none' : '';
+    document.getElementById('playEn').style.display = lang === 'en' ? '' : 'none';
+    if (!checked) { statusEl.textContent = TXT[lang].chk; return; }
+    statusEl.textContent = navigator.xr ? (xrOK ? TXT[lang].ok : TXT[lang].no) : TXT[lang].sin;
+  }
+  document.querySelectorAll('.padbtn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      lang = b.dataset.lang;
+      try { localStorage.setItem('pp_lang', lang); } catch (e) { /* */ }
+      paint();
+    });
+  });
+  if (navigator.xr && navigator.xr.isSessionSupported) {
+    navigator.xr.isSessionSupported('immersive-vr').then(function (ok) {
+      xrOK = ok; checked = true; paint();
+    }).catch(function () { checked = true; paint(); });
+    navigator.xr.isSessionSupported('immersive-ar').then(function (ok) {
+      if (ok) {
+        document.getElementById('arlink').style.display = '';
+        document.getElementById('arDot').style.display = '';
+      }
+    }).catch(function () { /* */ });
+  } else {
+    checked = true;
+  }
+  paint();
+})();
+</script>
+</body></html>
 """
 
 
@@ -424,8 +545,8 @@ def do_release(version):
     git_push(f'refs/tags/{tag}', forzar=True)
     body = (f'CRAZY PING PONG **{version}**\n\n'
             f'- **Jugar sin descargar**: {PAGES_URL} (ábrela en el navegador del visor)\n'
-            f'- **ZIPs**: COMPLETO (todo, ~125 MB) · ligera (~11 MB) · CLOUDFLARE · '
-            f'SOLO (servicio live, 6 KB)\n'
+            f'- **ZIPs**: COMPLETO (todo, ~186 MB) · ligera (sin campeonatos, ~58 MB) · '
+            f'CLOUDFLARE (estático puro, ~186 MB) · SOLO (servicio live, 6 KB)\n'
             f'- QA del release: cuádruple verde + smoke\n')
     api = f'https://api.github.com/repos/{OWNER_REPO}'
     r = requests.post(f'{api}/releases', headers=H, timeout=(15, 120), json={
@@ -473,6 +594,12 @@ def main():
     unknown = flags - {'--push', '--release', '--backup', '--no-smoke'}
     if unknown:
         sys.exit(f'✗ flags desconocidos: {unknown}')
+    if '--backup' in flags and '--push' not in flags:
+        # r129 · lección propia: --backup empuja main→proyecto (respaldo
+        # anti-rollback) pero NO publica la rama pages — sin --push el
+        # sitio vivo no cambia y el deploy parece hecho sin haberse hecho.
+        print('· aviso r129: --backup sin --push NO publica la rama pages\n'
+              '  (el sitio vivo no cambia; añade --push para publicar).')
     ensure_excluded()
     head = out(['git', 'rev-parse', 'HEAD'])
     print(f'· ensamblando sitio desde HEAD {head[:9]} (git archive, solo trackeados)…')

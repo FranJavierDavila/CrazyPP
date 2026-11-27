@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { strict as assert } from 'node:assert';
 
 /* — copia del worker real a /tmp como .mjs (sólo para importar) — */
-const FUENTE = '/home/z/my-project/upload/scripts/worker-tele/worker.js';
+const FUENTE = '/home/z/my-project/scripts/worker-tele/worker.js';   // r141 · al repo (upload/ es transitoria)
 mkdirSync('/tmp/worker_test_r169', { recursive: true });
 const DESTINO = '/tmp/worker_test_r169/worker.mjs';
 writeFileSync(DESTINO, readFileSync(FUENTE));
@@ -27,7 +27,7 @@ function makeD1() {
   };
   let ids = 0;
   const RE_ONCONFLICT_PRES =
-    /INSERT INTO presencia \(pid, n, v, st, code, mj, vis, t\) VALUES \(\?, \?, \?, \?, \?, \?, \?, \?\)/;
+    /INSERT INTO presencia \(pid, n, v, st, code, mj, vis, token, t\) VALUES \(\?, \?, \?, \?, \?, \?, \?, \?, \?\)/;
   const RE_INSERT_INV =
     /INSERT INTO invitas \(de, deN, para, code, mj, t\) VALUES \(\?, \?, \?, \?, \?, \?\)/;
   function stmt(sql, args = []) {
@@ -60,6 +60,15 @@ function makeD1() {
         return { meta: { changes: n } };
       })();
     }
+    if (s.startsWith('DELETE FROM presencia WHERE pid = ? AND (token IS NULL OR token = ?)')) {
+      // r141 · bye con token: sólo borra si la fila no tiene token o coincide
+      return (async () => {
+        const r = presencia.get(args[0]);
+        if (r && r.token && r.token !== args[1]) return { meta: { changes: 0 } };
+        presencia.delete(args[0]);
+        return { meta: { changes: 1 } };
+      })();
+    }
     if (s.startsWith('DELETE FROM presencia WHERE pid')) {
       return (async () => {
         presencia.delete(args[0]);
@@ -68,19 +77,33 @@ function makeD1() {
     }
     if (RE_ONCONFLICT_PRES.test(s)) {
       return (async () => {
-        const [pid, n, v, st, code, mj, vis, t] = args;
-        presencia.set(pid, { pid, n, v, st, code, mj, vis, t });
+        const [pid, n, v, st, code, mj, vis, token, t] = args;
+        presencia.set(pid, { pid, n, v, st, code, mj, vis, token, t });
         return { meta: { changes: 1 } };
       })();
     }
     if (s.startsWith('SELECT COUNT(*) n FROM presencia')) {
       return (async () => ({ n: presencia.size }))();
     }
-    if (s.startsWith('SELECT pid, n, st, code, mj, vis, t FROM presencia')) {
+    if (s.startsWith('SELECT pid, n, st, CASE')) {
+      // r141 · el CASE del worker deja el código SOLO en las salas públicas
       return (async () => ({
         results: [...presencia.values()]
-          .sort((a, b) => b.t - a.t).slice(0, 30),
+          .sort((a, b) => b.t - a.t).slice(0, 30)
+          .map((r) => ({ ...r, code: r.vis === 'pub' ? r.code : '' })),
       }))();
+    }
+    if (s.startsWith('SELECT token FROM presencia WHERE pid')) {
+      return (async () => {
+        const r = presencia.get(args[0]);
+        return { token: (r && r.token) || null };
+      })();
+    }
+    if (s.startsWith('SELECT t FROM presencia WHERE pid')) {
+      return (async () => presencia.get(args[0]) || null)();
+    }
+    if (s.startsWith('SELECT COUNT(*) n FROM eventos WHERE sid')) {
+      return (async () => ({ n: 0 }))();
     }
     if (s.startsWith('SELECT st, code FROM presencia WHERE pid')) {
       return (async () => {
@@ -147,11 +170,16 @@ async function llamada(d1, metodo, url, cuerpo) {
   const req = {
     method: metodo,
     url,
+    headers: { get: () => null },   // r142 · el worker lee X-Tok/X-Clave
     text: async () => cuerpo || '',
   };
   const res = await worker.default.fetch(req, { DB: d1 });
   const txt = await res.text();
-  return { status: res.status, body: JSON.parse(txt) };
+  // r141 · /api/tele responde 204 SIN cuerpo (contrato de producción) y un
+  // 500 sería HTML: el parser no puede asumir JSON
+  let body = null;
+  try { body = txt ? JSON.parse(txt) : {}; } catch { body = { _crudo: txt }; }
+  return { status: res.status, body };
 }
 
 const BASE = 'https://worker.test/api';
@@ -176,13 +204,16 @@ r = await llamada(d1, 'POST', BASE + '/presencia', JSON.stringify({
   pid: 'aabbccddeeff1122', n: 'Ana', v: '3.6.165', st: 'sala',
   code: 'ABC12', mj: 'duelos', vis: 'pub' }));
 check(r.body.ok, 'latido del anfitrión aceptado');
+const tokAna = r.body.tok;   // r141
 
 /* 3 · latido de una PRIVADA + uno libre */
-await llamada(d1, 'POST', BASE + '/presencia', JSON.stringify({
+const rBea = await llamada(d1, 'POST', BASE + '/presencia', JSON.stringify({
   pid: '1122334455667788', n: 'Bea', v: '3.6.165', st: 'sala',
   code: 'ZZZ99', mj: 'normal', vis: 'pri' }));
-await llamada(d1, 'POST', BASE + '/presencia', JSON.stringify({
+const tokBea = rBea.body.tok;   // r141
+r = await llamada(d1, 'POST', BASE + '/presencia', JSON.stringify({
   pid: '9988776655443322', n: 'Ciro', v: '3.6.165', st: 'libre' }));
+const tokCiro = r.body.tok;   // r141 · el primer latido de Ciro fija SU token
 
 /* 4 · GET lista: passthrough de mj/vis — y PRIVADA por defecto */
 r = await llamada(d1, 'GET', BASE + '/presencia?lista=1');
@@ -213,32 +244,32 @@ r = await llamada(d1, 'POST', BASE + '/invita', JSON.stringify({
   code: 'ABC12' }));
 check(r.status === 400, 'invitarse a uno mismo → 400');
 
-/* 6 · el buzón devuelve la modalidad */
-r = await llamada(d1, 'GET', BASE + '/invita?pid=9988776655443322');
+/* 6 · el buzón devuelve la modalidad (r141 · exige el token del latido) */
+r = await llamada(d1, 'GET', BASE + '/invita?pid=9988776655443322&tok=' + tokCiro);
 check(r.body.ok && r.body.invitas.length === 1 &&
       r.body.invitas[0].mj === 'duelos' &&
       r.body.invitas[0].code === 'ABC12',
   'buzón del invitado: la invitación viaja con mj=duelos');
 
 /* 7 · consumir el buzón (aceptar) */
-r = await llamada(d1, 'DELETE', BASE + '/invita?pid=9988776655443322');
+r = await llamada(d1, 'DELETE', BASE + '/invita?pid=9988776655443322&tok=' + tokCiro);
 check(r.body.ok && r.body.borrados === 1, 'DELETE del buzón lo vacía');
-r = await llamada(d1, 'GET', BASE + '/invita?pid=9988776655443322');
+r = await llamada(d1, 'GET', BASE + '/invita?pid=9988776655443322&tok=' + tokCiro);
 check(r.body.invitas.length === 0, 'buzón vacío tras aceptar');
 
 /* 8 · IDEMPOTENCIA REAL: segunda «migración» con ALTERs duplicados —
  *    D1 lanza "duplicate column" y el worker DEBE seguir sirviendo */
 r = await llamada(d1, 'POST', BASE + '/presencia', JSON.stringify({
   pid: 'aabbccddeeff1122', n: 'Ana', v: '3.6.165', st: 'sala',
-  code: 'ABC12', mj: 'duelos', vis: 'pub' }));
+  code: 'ABC12', mj: 'duelos', vis: 'pub', tok: tokAna }));
 check(r.status === 200 && r.body.ok,
   'segunda pasada con ALTERs duplicados: el worker sigue vivo (try/catch)');
 check(d1._estado.columnas.presencia.filter((c) => c === 'mj').length === 1,
   'la columna mj NO se duplica en la migración');
 
-/* 9 · bye: la baja borra la fila */
+/* 9 · bye: la baja borra la fila (r141 · con el token del latido) */
 r = await llamada(d1, 'POST', BASE + '/presencia', JSON.stringify({
-  pid: '1122334455667788', bye: 1 }));
+  pid: '1122334455667788', bye: 1, tok: tokBea }));
 check(r.body.ok, 'bye del latido');
 r = await llamada(d1, 'GET', BASE + '/presencia?lista=1');
 check((r.body.jugadores || []).length === 2, 'la fila de Bea desapareció del pulso');
@@ -251,6 +282,40 @@ r = await llamada(d1, 'GET', BASE + '/presencia?lista=1');
 const dana = (r.body.jugadores || []).find((j) => j.n === 'Dana');
 check(dana && dana.mj === 'normal' && dana.vis === 'pri',
   'valores raros de mj/vis caen a normal/pri (saneo del worker)');
+
+/* ---------- r141 · casos negativos de la auditoría del worker --------- */
+{
+  const post = (b) => llamada(d1, 'POST', BASE + '/presencia', JSON.stringify(b));
+  // la lista pública NO entrega el código de una sala PRIVADA (el parche
+  // r140 fue sólo cliente: aquí estaba la fuga real)
+  const j1 = await post({ pid: 'priv-host-1', n: 'Priv', st: 'sala',
+    code: 'ZZZ99', vis: 'pri' });
+  const tokPriv = j1.body.tok;
+  check(!!tokPriv, 'r141 el primer latido devuelve TOKEN');
+  const j2 = await llamada(d1, 'GET', BASE + '/presencia?lista=1', '');
+  const priv = (j2.body.jugadores || []).find((j) => j.pid === 'priv-host-1');
+  check(priv && priv.code === '' && priv.vis === 'pri',
+    'r141 ?lista=1 NO filtra el código de una sala PRIVADA (servidor)');
+  // suplantación de pid sin token → 403
+  const j3 = await post({ pid: 'priv-host-1', n: 'Impostor', st: 'libre' });
+  check(j3.status === 403,
+    'r141 latido SIN token sobre pid con token → 403 (anti-suplantación)');
+  // buzón exige token
+  const j4 = await llamada(d1, 'GET', BASE + '/invita?pid=priv-host-1', '');
+  check(j4.status === 403, 'r141 buzón SIN token → 403');
+  const j5 = await llamada(d1, 'GET',
+    BASE + '/invita?pid=priv-host-1&tok=' + tokPriv, '');
+  check(j5.status === 200, 'r141 buzón CON token → 200');
+  // evento con v objeto ya no tumba el lote con 500
+  const tele = (b) => llamada(d1, 'POST', BASE + '/tele', JSON.stringify(b));
+  const j6 = await tele([{ e: 'test', v: { a: 1 } }]);
+  check(j6.status !== 500,
+    'r141 evento con v objeto → NO 500 (saneo; lote no muere)');
+  // latido ?sid= público con subcadena → requiere clave
+  const j7 = await llamada(d1, 'GET', BASE + '/tele?sid=a', '');
+  check(j7.status === 403,
+    'r141 latido con ?sid= exige clave (adiós sondeo por subcadena)');
+}
 
 console.log('\nRESULTADO: ' + pasan + ' OK · ' + fallos + ' fallos');
 process.exit(fallos ? 1 : 0);

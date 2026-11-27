@@ -3294,7 +3294,14 @@ class OrbeMagico {
     // orbe se relanza (cartel explicativo con EMPEZAR y reset v2.63 idéntico
     // a un arranque fresco); el duelo del camino sólo vuelve tras VICTORIA o
     // fuera de la prueba. Mismo criterio que La Locura desde la ronda 15.
-    if (this._lastWin === false) { this.ctrl.startOrb(this.ctrl.stage === 3); return; }
+    // r147 · C-F1 gemelo (Magia, menor): la rejugada (v2.96) RESTAURA la
+    // etapa real en onLevelLost ANTES del cartel — derivar «stage === 3»
+    // aquí usaba la etapa YA RESTAURADA: un campeón en etapa 5 rejugando
+    // el orbe COMPLEJO perdía la rejugada y su segunda oportunidad era el
+    // orbe NORMAL (más fácil). Se relanza la variante ACABADA de jugar:
+    // this._complex (sellada en startOrb, stop() no la toca) — mismo
+    // patrón que La Locura (r145·r147).
+    if (this._lastWin === false) { this.ctrl.startOrb(this._complex); return; }
     this.ctrl._startDuel();
   }
 
@@ -4996,12 +5003,12 @@ export default {
     const manifest = {
       stateUrls,
       giftUrl: A('regalo.webp'),
-      powerUrl: A('superpoder.webp'),
+      powerUrl: new URL('../../assets/championships/superpoder.webp', import.meta.url).href,
       mapUrl: A('mapa.webp'),
       tapaUrl: A('tapa.webp'),
       portalsUrl: A('portals.webp'),
-      relojUrl: A('reloj.png'),
-      gunUrl: A('pistol.glb'),
+      relojUrl: new URL('../../assets/championships/reloj.png', import.meta.url).href,
+      gunUrl: new URL('../../assets/championships/pistol.glb', import.meta.url).href,
       laughUrl: A('risas.mp3'),
       musicUrl: A('bso.mp3'),
     };

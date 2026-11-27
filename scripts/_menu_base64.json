@@ -1,0 +1,653 @@
+[
+ {
+  "tipo": "imagen",
+  "mime": "image/jpeg",
+  "formato": "JPEG",
+  "ancho": 1280,
+  "alto": 720,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_bytes": 165067,
+  "b64_kb": 215,
+  "donde": "00_head.html:29",
+  "tambien_en": [
+   "03_body.html:17"
+  ]
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 160,
+  "alto": 160,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 12519,
+  "b64_kb": 16,
+  "donde": "03_body.html:22",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 160,
+  "alto": 160,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 19343,
+  "b64_kb": 25,
+  "donde": "03_body.html:26",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 512,
+  "alto": 128,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 93220,
+  "b64_kb": 121,
+  "donde": "03_body.html:32",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 512,
+  "alto": 128,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 91194,
+  "b64_kb": 119,
+  "donde": "03_body.html:33",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/ogg",
+  "duracion_s": "89.653500",
+  "peso_bytes": 951479,
+  "b64_kb": 1239,
+  "donde": "07_tail.html:19",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/webp",
+  "formato": "WEBP",
+  "ancho": 1024,
+  "alto": 1024,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 71086,
+  "b64_kb": 93,
+  "donde": "core/c08_hall_hud.js:2657",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/webp",
+  "formato": "WEBP",
+  "ancho": 1024,
+  "alto": 1024,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 108900,
+  "b64_kb": 142,
+  "donde": "core/c08_hall_hud.js:2657",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/webp",
+  "formato": "WEBP",
+  "ancho": 1024,
+  "alto": 1024,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 83052,
+  "b64_kb": 108,
+  "donde": "core/c08_hall_hud.js:2658",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/webp",
+  "formato": "WEBP",
+  "ancho": 1024,
+  "alto": 1024,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 116152,
+  "b64_kb": 151,
+  "donde": "core/c08_hall_hud.js:2658",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/jpeg",
+  "formato": "JPEG",
+  "ancho": 840,
+  "alto": 388,
+  "modo": "RGB",
+  "alfa": false,
+  "peso_bytes": 84110,
+  "b64_kb": 110,
+  "donde": "core/c10_menu_saque.js:1",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 67421,
+  "b64_kb": 88,
+  "donde": "core/c12_pingponggame.js:21547",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "1.080000",
+  "peso_bytes": 8876,
+  "b64_kb": 12,
+  "donde": "core/c12_pingponggame.js:21548",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21614"
+  ]
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "1.416000",
+  "peso_bytes": 11564,
+  "b64_kb": 15,
+  "donde": "core/c12_pingponggame.js:21549",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "1.104000",
+  "peso_bytes": 9068,
+  "b64_kb": 12,
+  "donde": "core/c12_pingponggame.js:21550",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 36848,
+  "b64_kb": 48,
+  "donde": "core/c12_pingponggame.js:21551",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "1.464000",
+  "peso_bytes": 11948,
+  "b64_kb": 16,
+  "donde": "core/c12_pingponggame.js:21552",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 81609,
+  "b64_kb": 106,
+  "donde": "core/c12_pingponggame.js:21553",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.984000",
+  "peso_bytes": 8108,
+  "b64_kb": 11,
+  "donde": "core/c12_pingponggame.js:21554",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "1.272000",
+  "peso_bytes": 10412,
+  "b64_kb": 14,
+  "donde": "core/c12_pingponggame.js:21555",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 19134,
+  "b64_kb": 25,
+  "donde": "core/c12_pingponggame.js:21557",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 512,
+  "alto": 512,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 47323,
+  "b64_kb": 62,
+  "donde": "core/c12_pingponggame.js:21561",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.816000",
+  "peso_bytes": 6764,
+  "b64_kb": 9,
+  "donde": "core/c12_pingponggame.js:21562",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21650"
+  ]
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.672000",
+  "peso_bytes": 5612,
+  "b64_kb": 7,
+  "donde": "core/c12_pingponggame.js:21563",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21588",
+   "core/c12_pingponggame.js:21654",
+   "core/c12_pingponggame.js:21663"
+  ]
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.624000",
+  "peso_bytes": 5228,
+  "b64_kb": 7,
+  "donde": "core/c12_pingponggame.js:21586",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21589"
+  ]
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.768000",
+  "peso_bytes": 6380,
+  "b64_kb": 8,
+  "donde": "core/c12_pingponggame.js:21587",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21648"
+  ]
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.312000",
+  "peso_bytes": 2732,
+  "b64_kb": 4,
+  "donde": "core/c12_pingponggame.js:21590",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.456000",
+  "peso_bytes": 3884,
+  "b64_kb": 5,
+  "donde": "core/c12_pingponggame.js:21591",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21592",
+   "core/c12_pingponggame.js:21596"
+  ]
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.384000",
+  "peso_bytes": 3308,
+  "b64_kb": 4,
+  "donde": "core/c12_pingponggame.js:21593",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.600000",
+  "peso_bytes": 5036,
+  "b64_kb": 7,
+  "donde": "core/c12_pingponggame.js:21594",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21597",
+   "core/c12_pingponggame.js:21610",
+   "core/c12_pingponggame.js:21651"
+  ]
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.408000",
+  "peso_bytes": 3500,
+  "b64_kb": 5,
+  "donde": "core/c12_pingponggame.js:21595",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "1.248000",
+  "peso_bytes": 10220,
+  "b64_kb": 13,
+  "donde": "core/c12_pingponggame.js:21598",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "1.032000",
+  "peso_bytes": 8492,
+  "b64_kb": 11,
+  "donde": "core/c12_pingponggame.js:21599",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21679"
+  ]
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "RGBA",
+  "alfa": true,
+  "peso_bytes": 109561,
+  "b64_kb": 143,
+  "donde": "core/c12_pingponggame.js:21600",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 18715,
+  "b64_kb": 24,
+  "donde": "core/c12_pingponggame.js:21609",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.576000",
+  "peso_bytes": 4844,
+  "b64_kb": 6,
+  "donde": "core/c12_pingponggame.js:21611",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 25801,
+  "b64_kb": 34,
+  "donde": "core/c12_pingponggame.js:21612",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "1.008000",
+  "peso_bytes": 8300,
+  "b64_kb": 11,
+  "donde": "core/c12_pingponggame.js:21613",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "1.854694",
+  "peso_bytes": 11354,
+  "b64_kb": 15,
+  "donde": "core/c12_pingponggame.js:21615",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "2.168163",
+  "peso_bytes": 13235,
+  "b64_kb": 17,
+  "donde": "core/c12_pingponggame.js:21616",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 25926,
+  "b64_kb": 34,
+  "donde": "core/c12_pingponggame.js:21628",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.744000",
+  "peso_bytes": 6188,
+  "b64_kb": 8,
+  "donde": "core/c12_pingponggame.js:21629",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21647",
+   "core/c12_pingponggame.js:21664"
+  ]
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.792000",
+  "peso_bytes": 6572,
+  "b64_kb": 9,
+  "donde": "core/c12_pingponggame.js:21630",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21656"
+  ]
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 21027,
+  "b64_kb": 27,
+  "donde": "core/c12_pingponggame.js:21631",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.696000",
+  "peso_bytes": 5804,
+  "b64_kb": 8,
+  "donde": "core/c12_pingponggame.js:21632",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.840000",
+  "peso_bytes": 6956,
+  "b64_kb": 9,
+  "donde": "core/c12_pingponggame.js:21633",
+  "tambien_en": [
+   "core/c12_pingponggame.js:21635"
+  ]
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 19315,
+  "b64_kb": 25,
+  "donde": "core/c12_pingponggame.js:21634",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.864000",
+  "peso_bytes": 7148,
+  "b64_kb": 9,
+  "donde": "core/c12_pingponggame.js:21636",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 12270,
+  "b64_kb": 16,
+  "donde": "core/c12_pingponggame.js:21646",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 15720,
+  "b64_kb": 20,
+  "donde": "core/c12_pingponggame.js:21649",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 12994,
+  "b64_kb": 17,
+  "donde": "core/c12_pingponggame.js:21652",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.936000",
+  "peso_bytes": 7724,
+  "b64_kb": 10,
+  "donde": "core/c12_pingponggame.js:21653",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 13045,
+  "b64_kb": 17,
+  "donde": "core/c12_pingponggame.js:21655",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.720000",
+  "peso_bytes": 5996,
+  "b64_kb": 8,
+  "donde": "core/c12_pingponggame.js:21657",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 15602,
+  "b64_kb": 20,
+  "donde": "core/c12_pingponggame.js:21662",
+  "tambien_en": []
+ },
+ {
+  "tipo": "imagen",
+  "mime": "image/png",
+  "formato": "PNG",
+  "ancho": 256,
+  "alto": 256,
+  "modo": "P",
+  "alfa": true,
+  "peso_bytes": 24569,
+  "b64_kb": 32,
+  "donde": "core/c12_pingponggame.js:21668",
+  "tambien_en": []
+ },
+ {
+  "tipo": "audio",
+  "mime": "audio/mpeg",
+  "duracion_s": "0.888000",
+  "peso_bytes": 7340,
+  "b64_kb": 10,
+  "donde": "core/c12_pingponggame.js:21680",
+  "tambien_en": []
+ }
+]

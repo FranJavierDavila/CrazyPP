@@ -23,7 +23,7 @@
  *    instalación no duplica el peso.
  * ===================================================================== */
 
-const CACHE = 'crazypp-v3.6.209-SDK6';   // ← SELLO: bump_version.py lo parchea
+const CACHE = 'crazypp-v3.6.236-SDK6';   // ← SELLO: bump_version.py lo parchea
 
 const SHELL = [
   './game.html',
@@ -70,16 +70,6 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
-
-async function swr(req) {
-  const cache = await caches.open(CACHE);
-  const cacheada = await cache.match(req, { ignoreSearch: true });
-  const fresca = fetch(req).then((resp) => {
-    if (resp && resp.ok) cache.put(req, resp.clone()).catch(() => { });
-    return resp;
-  }).catch(() => cacheada);
-  return cacheada || fresca;
-}
 
 async function redPrimero(req, ms) {
   // r98 · game.html pasa de STALE-WHILE-REVALIDATE a RED-PRIMERO con límite:

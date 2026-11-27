@@ -323,22 +323,33 @@ export const PPNET = (() => {
     // ampliaba la superficie de un paquete corrupto/hostil.
     for (let i = 0; i < nEvs && i < VP.MAX_EVENTS; i++) {
       const t = r.r8(), id = r.r16();
+      // r140 · FRONTERA FAST (5ª pasada multi-agente): los f32 del cable
+      // pueden llevar NaN/Infinity (el r132·F saneaba la frontera JSON v1,
+      // no los eventos binarios) — un evento no finito se descarta ENTERO
+      // (antes g.ball.pos.lerp(NaN) mataba la bola para siempre). La pose
+      // ya era inmune (cuantización i16+quat → siempre finita).
+      const finitos = (a) => a.every(Number.isFinite);
       if (t === VP.EV.HIT) {
         const kind = r.r8(), shot = r.r16(), tHit = r.r32();
         const p = [r.rf32(), r.rf32(), r.rf32()];
         const v = [r.rf32(), r.rf32(), r.rf32()];
         const s = [r.rf32(), r.rf32(), r.rf32()];
+        if (!finitos(p) || !finitos(v) || !finitos(s) ||
+            !Number.isFinite(tHit)) return null;
         o.evs.push({ t, id, kind, shot, tHit, p, v, s });
       } else if (t === VP.EV.HANDOFF) {
         const shot = r.r16(), tCross = r.r32();
         const p = [r.rf32(), r.rf32(), r.rf32()];
         const v = [r.rf32(), r.rf32(), r.rf32()];
         const s = [r.rf32(), r.rf32(), r.rf32()];
+        if (!finitos(p) || !finitos(v) || !finitos(s) ||
+            !Number.isFinite(tCross)) return null;
         o.evs.push({ t, id, shot, tCross, p, v, s });
       } else if (t === VP.EV.SNAP) {
         const shot = r.r16(), tSnap = r.r32();
         const p = [r.rf32(), r.rf32(), r.rf32()];
         const v = [r.rf32(), r.rf32(), r.rf32()];
+        if (!finitos(p) || !finitos(v) || !Number.isFinite(tSnap)) return null;
         o.evs.push({ t, id, shot, tSnap, p, v });
       } else {
         return null;   // tipo desconocido: paquete inválido
@@ -385,7 +396,11 @@ export const PPNET = (() => {
     /** registro de envío para recuperar t1 completo desde el eco u32 */
     markSent(fullMs) {
       this._sent.push(fullMs);
-      if (this._sent.length > 8) this._sent.shift();
+      // r142 · anillo de 32 (antes 8 ≈ 100 ms a 75-90 paq/s): con RTT real
+      // >130 ms el eco u32 no encontraba su t1 y la muestra NTP se saltaba
+      // — el offset quedaba clavado en el ancla gruesa justo en los
+      // enlaces lentos, donde TOL_FUTURE decide golpes
+      if (this._sent.length > 32) this._sent.shift();
     }
     _fullFromEcho(echoU32) {
       for (let i = this._sent.length - 1; i >= 0; i--) {
@@ -397,8 +412,13 @@ export const PPNET = (() => {
      *  intercambios; aquí cada intercambio fija un candidato y el
      *  filtro de abajo elige). mySent/myRecv en MI reloj completo. */
     anchor(mySentFull, peerFull, myRecvFull) {
+      // r140 · ancla saneada: muestras no finitas o un sesgo absurdo
+      // (>10 s entre relojes) se descartan sin tocar el reloj — 6 tock2
+      // basura ya no pueden fijar un offset NaN/1e15 irreversible.
+      if (![mySentFull, peerFull, myRecvFull].every(Number.isFinite)) return 0;
       const rtt = Math.max(0, myRecvFull - mySentFull);
       const off = peerFull - (mySentFull + rtt / 2);
+      if (!Number.isFinite(off) || Math.abs(off) > 10000) return rtt;
       this.coarse = true;
       this._sample(rtt, off);
       return rtt;
@@ -424,6 +444,7 @@ export const PPNET = (() => {
       this._sample(rtt, off);
     }
     _sample(rtt, off) {
+      if (!Number.isFinite(rtt) || !Number.isFinite(off)) return;   // r140
       this.rtt = rtt;
       if (rtt < this.rttMin) this.rttMin = rtt;
       this.rtts.push(rtt);
@@ -828,7 +849,17 @@ export const PPNET = (() => {
     /** llega CLAIM del rival; devuelve el ACK y si debo aplicar.
      *  mappedW = el ganador del claim YA espejado a MI perspectiva. */
     onClaim(cl, mappedW) {
-      if (this.applied === cl.r) {
+      // r140 · guardia monótona (defensa en profundidad): sin rallyId
+      // numérico NO se aplica NI se envenena el libro; un claim ATRASADO
+      // (r < aplicado) es duplicado puro — antes `applied = cl.r` REGRESABA
+      // el libro y un claim viejo volvía a contar un punto del mismo rallye.
+      // r141 · ENTERO (2.5 minteaba la igualdad y duplicaba el punto).
+      if (!Number.isInteger(cl.r) || cl.r < 0) {
+        return { ack: { k: 'ack', r: -1, agree: false }, apply: false,
+          agree: false };
+      }
+      if (this.applied === cl.r ||
+          (typeof this.applied === 'number' && cl.r < this.applied)) {
         const agree = (mappedW === undefined) || (cl.w === 'let') ||
           (this.appliedW === mappedW);
         return { ack: { k: 'ack', r: cl.r, agree }, apply: false, agree };
@@ -840,8 +871,14 @@ export const PPNET = (() => {
     }
     /** llega ACK a mi CLAIM; comparar marcadores (perspectiva propia) */
     onAck(ack) {
-      if (!this.pending) return { ok: true };
-      this.pending = null;
+      // r142 · casar ack.r con mi pendiente y procesar agree:false SIEMPRE:
+      // antes, un ack de OTRO rallye limpiaba mi pendiente (el ack del
+      // rallye NUEVO llegaba después y su agree:false se tragaba con
+      // ok:true — divergencia de marcador sin dispute ni resync en vuelo)
+      if (this.pending && this.pending.r !== ack.r) {
+        return { ok: true, stale: true };      // ack de un rallye viejo
+      }
+      if (this.pending) this.pending = null;
       if (ack.agree === false) { this.disputes++; return { ok: false, dispute: true }; }
       return { ok: true };
     }
@@ -866,6 +903,25 @@ export const PPNET = (() => {
       peerC: p ? p.slice(-6) : '?',
       mineC: m ? m.slice(-6) : '?',
     };
+  }
+
+  /* r128 · A1 (auditoría r120): plausibilidad de un CLAIM entrante —
+   * función PURA y testable en Node (test_r128_claims.mjs). Un claim sólo
+   * entra a verificación si su rallyId es el siguiente (máx +2 de sesgo de
+   * red), el ganador es válido y respeta la cadencia de 250 ms: bloquea
+   * ráfagas forjadas y saltos imposibles. Los duplicados (r ≤ aplicado) NO
+   * son «implausible»: siguen por el camino clásico de confrontación. */
+  function claimPlausible(cl, lastApplied, nowMs, lastClaimMs) {
+    // r141 · rallyId ENTERO: 2.5 minteaba (claimPlausible true) y burlaba
+    // la guardia de applyPoint (_appliedRally=2 ≠ 2.5 → punto doble del
+    // mismo rallye) — rallySeq/totalPoints son siempre enteros.
+    if (!cl || !Number.isInteger(cl.r) || cl.r < 0) return false;
+    if (cl.r <= lastApplied) return false;               // duplicado/antiguo
+    if (cl.r > lastApplied + 2) return false;            // salto imposible
+    if (cl.w !== 'player' && cl.w !== 'ai' && cl.w !== 'let') return false;
+    if (typeof nowMs === 'number' && typeof lastClaimMs === 'number' &&
+        nowMs - lastClaimMs < 250) return false;         // ráfaga forjada
+    return true;
   }
 
   /* ---------- r127 · P4.2 · autodiagnóstico contra la web -----------
@@ -932,6 +988,6 @@ export const PPNET = (() => {
     Writer, Reader, quatPack, quatUnpack, encodePacket, decodePacket,
     F_POSE, F_EV,
     NetClock, JitterBuf, BallAuth, Validator, NetSim, NetStats, MatchSync,
-    verCompara, verSelf, selfcheckVersion,
+    verCompara, verSelf, selfcheckVersion, claimPlausible,
   };
 })();

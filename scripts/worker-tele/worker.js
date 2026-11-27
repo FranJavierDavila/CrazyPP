@@ -81,6 +81,20 @@ const MAX_BODY = 256 * 1024;
 const MAX_EVENTO = 2000;
 const MAX_LOTE = 500;
 
+// r128 · F2 (auditoría r120): estado del throttle del POST (en memoria del
+// isolate, sin persistencia y SIN cabeceras cf-*: la política PII del
+// worker prohíbe tocar IP/geo — lo audita el QA). Dos capas: global y por sid.
+let _rlGlob = null;
+let _rlSid = null;
+let _rlSoc = null;    // r141 · throttle global de las rutas sociales
+let _rlSocP = null;   // r142 · throttle social POR PID (mapa acotado)
+let _rlInv = null;    // r141 · throttle de invitaciones (por minuto global)
+let _rlInvDe = null;  // r142 · invitaciones POR REMITENTE (10/h)
+let _rlInvPara = null; // r143 · invitaciones POR DESTINATARIO (8/h — rotar
+                       // remitentes burlaba el por-remitente)
+let _rlTeleIp = null; // r143 · telemetría POR IP (la cuota D1 se quemaba)
+let _rlC403 = null;   // r143 · contención de fuerza bruta de la clave
+
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS eventos (
      id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -147,6 +161,12 @@ function sanea(e) {
   if (!e || typeof e !== "object" || Array.isArray(e)) return null;
   if (typeof e.e !== "string" || !e.e.length || e.e.length > 40) return null;
   if (e.t !== undefined && typeof e.t !== "number") return null;
+  // r141 · v/sid/t acotados: un objeto o array en v/sid llegaba a .bind()
+  // y el LOTE ENTERO moría con 500 HTML (error 1101, sin JSON ni CORS);
+  // un t=1e300 reventaba después la exportación CSV con RangeError.
+  if (e.v !== undefined && e.v !== null && typeof e.v !== "string") return null;
+  if (e.sid !== undefined && e.sid !== null && typeof e.sid !== "string") return null;
+  if (typeof e.t === "number" && !(e.t >= 0 && e.t <= 8.64e15)) return null;
   let s;
   try {
     s = JSON.stringify(e);
@@ -157,8 +177,8 @@ function sanea(e) {
   return {
     e: e.e,
     t: e.t ?? null,
-    v: e.v ?? null,
-    sid: e.sid ?? null,
+    v: typeof e.v === "string" ? e.v.slice(0, 64) : null,
+    sid: typeof e.sid === "string" ? e.sid.slice(0, 48) : null,
     json: s,
     rec: Date.now(),
   };
@@ -167,8 +187,15 @@ function sanea(e) {
 /** La clave llega por ?clave= o cabecera X-Clave y casa con env.CLAVE. */
 function claveOk(url, request, env) {
   if (!env.CLAVE) return false; // sin CLAVE configurada no hay lectura
+  // r143 · contención de fuerza bruta: 30 fallos/min por isolate → null
+  // (el llamador responde 429). Con la clave real (28 chars mixtos) la
+  // bruta es impracticable, pero si se FILTRA el ?csv=1 escanea 50k filas
+  // sin contención alguna
+  if (!_rlC403 || Date.now() - _rlC403.t0 > 60000) _rlC403 = { t0: Date.now(), n: 0 };
   const dada = url.searchParams.get("clave") ?? request.headers.get("x-clave");
-  return typeof dada === "string" && dada === env.CLAVE;
+  const okC = typeof dada === "string" && dada === env.CLAVE;
+  if (!okC && ++_rlC403.n > 30) return null;
+  return okC;
 }
 
 /* ======================================================================
@@ -429,6 +456,8 @@ async function socialInit(env) {
     "ALTER TABLE presencia ADD COLUMN mj TEXT",
     "ALTER TABLE presencia ADD COLUMN vis TEXT",
     "ALTER TABLE invitas ADD COLUMN mj TEXT",
+    // r141 · TOKEN DE LATIDO (anti-suplantación de pid): ver POST presencia
+    "ALTER TABLE presencia ADD COLUMN token TEXT",
   ]) {
     try { await env.DB.prepare(ALTER).run(); } catch (e) { /* ya existe */ }
   }
@@ -481,11 +510,50 @@ async function social(request, env, url, metodo) {
 
     if (metodo === "POST") {
       const pid = cuerpo.pid;
+      // r141 · THROTTLE SOCIAL · r142 · POR PID (mapa LRU acotado) +
+      // global holgado: el contador SÓLO global castigaba a todos los
+      // jugadores del isolate (50 jugadores con el landing multi abierto
+      // ≈ 600/min LEGÍTIMOS → 429 esporádicos)
+      if (!_rlSocP) _rlSocP = new Map();
+      if (_rlSocP.size > 5000) _rlSocP.clear();
+      const rlP = _rlSocP.get(pid);
+      if (!rlP || Date.now() - rlP.t0 > 60000) {
+        _rlSocP.set(pid, { t0: Date.now(), n: 1 });
+      } else if (++rlP.n > 60) return json({ ok: false, error: "rate" }, 429);
+      if (!_rlSoc || Date.now() - _rlSoc.t0 > 60000) {
+        _rlSoc = { t0: Date.now(), n: 0 };
+      }
+      if (++_rlSoc.n > 2000) return json({ ok: false, error: "rate" }, 429);
       if (cuerpo.bye) {
-        if (pidOk(pid)) await env.DB.prepare("DELETE FROM presencia WHERE pid = ?").bind(pid).run();
+        // r141 · el bye exige el token si la fila lo tiene: el pid va en el
+        // listado público y cualquiera lo borraba con {pid, bye:1}
+        const tokB = typeof cuerpo.tok === "string" ? cuerpo.tok.slice(0, 64) : "";
+        if (pidOk(pid)) {
+          await env.DB.prepare(
+            "DELETE FROM presencia WHERE pid = ? AND (token IS NULL OR token = ?)"
+          ).bind(pid, tokB).run();
+        }
         return json({ ok: true, bye: true, ts: ahora });
       }
       if (!pidOk(pid)) return json({ ok: false, error: "pid inválido" }, 400);
+      // r141 · TOKEN DE LATIDO: el pid es PÚBLICO (viaja en el listado), así
+      // que sin credencial cualquiera lo suplantaba (upsert de nombre/sala/
+      // visibilidad ajena) y secuestraba su buzón. El primer latido genera
+      // un token que el cliente guarda y reenvía (latidos, bye, buzón).
+      // Filas pre-token se admiten una vez: el upsert les estampa token.
+      const filaPrev = await env.DB.prepare(
+        "SELECT token FROM presencia WHERE pid = ?"
+      ).bind(pid).first();
+      let tok = typeof cuerpo.tok === "string" ? cuerpo.tok.slice(0, 64) : "";
+      if (filaPrev && filaPrev.token && filaPrev.token !== tok) {
+        return json({ ok: false, error: "token de latido inválido" }, 403);
+      }
+      if (filaPrev && filaPrev.token) tok = filaPrev.token;
+      // r142 · SIN fila (o pre-token) el token SIEMPRE nace en el SERVIDOR:
+      // adoptar el del cuerpo permitía el SQUAT del pid público (latear
+      // ANTES que la víctima = estampar mi token = víctima en 403 hasta la
+      // purga). El cliente sobrescribe desde r.tok — self-heal intacto.
+      else tok = crypto.randomUUID().replace(/-/g, "");
       const n = texto(cuerpo.n, 20) || "Jugador";
       const v = texto(cuerpo.v, 24);
       const st = ["libre", "sala", "juego"].includes(cuerpo.st) ? cuerpo.st : "libre";
@@ -496,16 +564,19 @@ async function social(request, env, url, metodo) {
       const mj = cuerpo.mj === "duelos" ? "duelos" : "normal";
       const vis = cuerpo.vis === "pub" ? "pub" : "pri";
       await env.DB.prepare(
-        `INSERT INTO presencia (pid, n, v, st, code, mj, vis, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        `INSERT INTO presencia (pid, n, v, st, code, mj, vis, token, t) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(pid) DO UPDATE SET n=excluded.n, v=excluded.v,
-           st=excluded.st, code=excluded.code, mj=excluded.mj, vis=excluded.vis, t=excluded.t`
+           st=excluded.st, code=excluded.code, mj=excluded.mj, vis=excluded.vis,
+           token=excluded.token, t=excluded.t`
       ).bind(pid, n, v, st, st === "sala" ? code : "",
-        st === "sala" ? mj : "normal", st === "sala" ? vis : "pri", ahora).run();
+        st === "sala" ? mj : "normal", st === "sala" ? vis : "pri", tok, ahora).run();
       const { n: total } = await env.DB
         .prepare("SELECT COUNT(*) n FROM presencia WHERE t >= ?")
         .bind(ahora - PRESENCIA_TTL)
         .first();
-      return json({ ok: true, n: total, ts: ahora });
+      // r141 · el cliente aprende su token en la respuesta (lo guarda y
+      // lo reenvía: latidos, bye, buzón de invitaciones)
+      return json({ ok: true, n: total, ts: ahora, tok });
     }
 
     if (metodo === "GET") {
@@ -516,9 +587,19 @@ async function social(request, env, url, metodo) {
       if (url.searchParams.get("lista") == null) {
         return json({ ok: true, n: total, ts: ahora });
       }
+      // r130·5 · FIX #10: el listado FILTRA POR TTL igual que el conteo —
+      // antes un latido muerto (salida sin bye: crash, kill del navegador)
+      // seguía en «Partidas disponibles» hasta que la purga muestreada
+      // (1 de cada 20) pasara por allí: sala fantasma hasta ~3-4 min.
+      // r141 · CRÍTICO: el servidor SEGUÍA filtrando los códigos PRIVADOS
+      // (el parche r140 fue sólo cliente) — ?lista=1 entregaba a cualquiera
+      // el código de cada sala privada viva. El patrón correcto ya existía
+      // en ?salas=1 (vis='pub'): aquí el CASE deja el código SOLO a las
+      // públicas — el anfitrión conoce el suyo y las invitaciones salen de
+      // la tabla, no del listado.
       const { results } = await env.DB.prepare(
-        "SELECT pid, n, st, code, mj, vis, t FROM presencia ORDER BY t DESC LIMIT 30"
-      ).all();
+        "SELECT pid, n, st, CASE WHEN vis='pub' THEN code ELSE '' END code, mj, vis, t FROM presencia WHERE t >= ? ORDER BY t DESC LIMIT 30"
+      ).bind(ahora - PRESENCIA_TTL).all();
       const jugadores = (results || []).map((r) => ({
         pid: r.pid, n: r.n, st: r.st, code: r.code || "",
         mj: r.mj || "normal", vis: r.vis || "pri",   // r74 · FASE 169
@@ -552,6 +633,37 @@ async function social(request, env, url, metodo) {
       if (!remitente || remitente.st !== "sala" || remitente.code !== code) {
         return json({ ok: false, error: "sala no activa" }, 409);
       }
+      // r141 · anti-spam POR REMITENTE (la guardia contaba por DESTINATARIO:
+      // un flood llenaba 5/5 el buzón de cada pid cosechado del listado y
+      // las invitaciones legítimas rebotaban durante 6 h) + el destinatario
+      // debe tener latido vivo (adiós filas huérfanas para pids inventados).
+      // r142 · el envío masivo también es POR `de` (10/h): el global de
+      // 120/min no protegía el buzón de CADA pid frente a un flood decidido
+      if (!_rlInv || Date.now() - _rlInv.t0 > 60000) {
+        _rlInv = { t0: Date.now(), n: 0 };
+      }
+      if (++_rlInv.n > 120) return json({ ok: false, error: "rate" }, 429);
+      if (!_rlInvDe) _rlInvDe = new Map();
+      if (_rlInvDe.size > 5000) _rlInvDe.clear();
+      const rlD = _rlInvDe.get(de);
+      if (!rlD || Date.now() - rlD.t0 > 3600000) {
+        _rlInvDe.set(de, { t0: Date.now(), n: 1 });
+      } else if (++rlD.n > 10) return json({ ok: false, error: "rate" }, 429);
+      // r143 · techo POR DESTINATARIO (8/h): rotar N remitentes burlaba el
+      // por-remitente y llenaba 5/5 el buzón de cada pid cosechado del
+      // listado (las invitaciones legítimas rebotaban 6 h)
+      if (!_rlInvPara) _rlInvPara = new Map();
+      if (_rlInvPara.size > 5000) _rlInvPara.clear();
+      const rlV = _rlInvPara.get(para);
+      if (!rlV || Date.now() - rlV.t0 > 3600000) {
+        _rlInvPara.set(para, { t0: Date.now(), n: 1 });
+      } else if (++rlV.n > 8) return json({ ok: false, error: "rate" }, 429);
+      const destino = await env.DB.prepare(
+        "SELECT t FROM presencia WHERE pid = ?"
+      ).bind(para).first();
+      if (!destino || !(destino.t >= ahora - PRESENCIA_TTL)) {
+        return json({ ok: false, error: "destinatario sin latido vivo" }, 409);
+      }
       const { n: ya } = await env.DB.prepare(
         "SELECT COUNT(*) n FROM invitas WHERE para = ?"
       ).bind(para).first();
@@ -565,7 +677,18 @@ async function social(request, env, url, metodo) {
 
     if (metodo === "GET") {
       const pid = url.searchParams.get("pid");
+      // r142 · el token TAMBIÉN por cabecera X-Tok (en la URL quedaba en
+      // los logs de acceso del worker y de intermediarios)
+      const tokQ = url.searchParams.get("tok") || request.headers.get("x-tok") || "";
       if (!pidOk(pid)) return json({ ok: false, error: "pid inválido" }, 400);
+      // r141 · el buzón exige el TOKEN del latido: el pid era público y el
+      // buzarón de cualquiera se leía y vaciaba con dos peticiones
+      const filaTok = await env.DB.prepare(
+        "SELECT token FROM presencia WHERE pid = ?"
+      ).bind(pid).first();
+      if (!filaTok || !filaTok.token || filaTok.token !== tokQ) {
+        return json({ ok: false, error: "token de latido requerido" }, 403);
+      }
       const { results } = await env.DB.prepare(
         "SELECT id, de, deN, code, mj, t FROM invitas WHERE para = ? ORDER BY t DESC LIMIT 8"
       ).bind(pid).all();
@@ -579,16 +702,22 @@ async function social(request, env, url, metodo) {
 
     if (metodo === "DELETE") {
       const pid = url.searchParams.get("pid");
+      const tokD = url.searchParams.get("tok") || request.headers.get("x-tok") || "";
       const id = parseInt(url.searchParams.get("id") || "0", 10) || 0;
-      if (id > 0 && pidOk(pid)) {
+      // r141 · mismo token que el GET (borrar el buzón ajeno bloqueaba la
+      // entrega de invitaciones reales durante 6 h)
+      const filaTokD = pidOk(pid) ? await env.DB.prepare(
+        "SELECT token FROM presencia WHERE pid = ?"
+      ).bind(pid).first() : null;
+      if (!filaTokD || !filaTokD.token || filaTokD.token !== tokD) {
+        return json({ ok: false, error: "token de latido requerido" }, 403);
+      }
+      if (id > 0) {
         const r = await env.DB.prepare("DELETE FROM invitas WHERE id = ? AND para = ?").bind(id, pid).run();
         return json({ ok: true, borrados: r.meta ? r.meta.changes : 0 });
       }
-      if (pidOk(pid)) {
-        const r = await env.DB.prepare("DELETE FROM invitas WHERE para = ?").bind(pid).run();
-        return json({ ok: true, borrados: r.meta ? r.meta.changes : 0 });
-      }
-      return json({ ok: false, error: "pid inválido" }, 400);
+      const r = await env.DB.prepare("DELETE FROM invitas WHERE para = ?").bind(pid).run();
+      return json({ ok: true, borrados: r.meta ? r.meta.changes : 0 });
     }
     return json({ ok: false, error: "método no soportado en /api/invita" }, 405);
   }
@@ -632,11 +761,30 @@ export default {
     }
 
     if (url.pathname === "/api/presencia" || url.pathname === "/api/invita") {
-      return social(request, env, url, metodo);
+      // r143 · el canal social DEGRADA EN JSON (no en 1101 HTML): un flood
+      // de telemetría que queme la cuota de escritura D1 dejaba la
+      // presencia entera en excepción sin catch — el cliente al menos ve
+      // {ok:false} y reintenta en el siguiente latido
+      try {
+        return await social(request, env, url, metodo);
+      } catch (eSoc) {
+        return json({ ok: false, error: "social degradado" }, 503);
+      }
     }
 
     // ------------------------------------------------------------- POST
     if (metodo === "POST") {
+      // r128 · F2 (auditoría r120): THROTTLE GLOBAL en la memoria del
+      // isolate (best-effort). El juego real emite ~1 lote/min por sesión;
+      // 2000/min corta ráfagas de envenenamiento a escala sin tocar a una
+      // base legítima. El límite POR SID (300/min, tras el parse) acota el
+      // abuso por sesión; el sid viaja en los propios eventos, así que no
+      // hace falta leer NINGUNA cabecera (política PII sin excepciones).
+      if (!_rlGlob || Date.now() - _rlGlob.t0 > 60000) {
+        _rlGlob = { t0: Date.now(), n: 0 };
+      }
+      _rlGlob.n++;
+      if (_rlGlob.n > 2000) return json({ ok: false, error: "rate" }, 429);
       let crudo;
       try {
         crudo = await request.text();
@@ -664,19 +812,73 @@ export default {
           400
         );
       }
+      // r128 · F2: límite POR SID (300/min) — el sid llega en los eventos
+      // mismos, así que no se lee ninguna cabecera. Map acotado a 5000.
+      if (!_rlSid) _rlSid = new Map();
+      if (_rlSid.size > 5000) _rlSid.clear();
+      let sidRl = "anon";
+      for (const e of evs) {
+        if (e && typeof e === "object" && typeof e.sid === "string" && e.sid) {
+          sidRl = e.sid.slice(0, 40);
+          break;
+        }
+      }
+      const rlS = _rlSid.get(sidRl);
+      if (!rlS || Date.now() - rlS.t0 > 60000) {
+        _rlSid.set(sidRl, { t0: Date.now(), n: 1 });
+      } else {
+        rlS.n++;
+        if (rlS.n > 300) return json({ ok: false, error: "rate" }, 429);
+      }
       const filas = [];
       for (const e of evs.slice(0, MAX_LOTE)) {
         const r = sanea(e);
         if (r) filas.push(r);
       }
       if (filas.length) {
+        // r141 · el throttle cuenta FILAS, no peticiones: 2000 peticiones ×
+        // 500 eventos = 1M filas/min burlaban el r128 y agotaban la cuota
+        // D1 del free tier (el worker ENTERO en 500/1101 para todos).
+        if (!_rlGlob.f || Date.now() - _rlGlob.t0 > 60000) _rlGlob.f = 0;
+        _rlGlob.f += filas.length;
+        if (_rlGlob.f > 20000) return json({ ok: false, error: "rate" }, 429);
+        // r143 · techo POR CLIENTE (2000 eventos/min): el cap global por
+        // isolate no frena N isolates — la cuota de escritura D1 del free
+        // tier se quemaba en minutos y el canal SOCIAL entero caía para
+        // todos. r152 · REVISIÓN INTEGRAL: la clave era cf-connecting-ip y
+        // violaba la política PII propia del worker (r11/r152: NO se leen
+        // cabeceras cf-* — sin IP/geo). Ahora el techo se apoya en el sid
+        // DEL PROPIO lote (identidad que el cliente ya envía en cada fila).
+        // Un flood con sids rotados sigue frenado por el cap global de
+        // arriba: el muro duro es la cuota D1; este techo frena al cliente
+        // legítimo desbocado (bucle de reintentos, pestaña loca).
+        // AUDITORÍA 9 · filas SIN sid (qa/manual) NO entran en el mapa:
+        // antes caían todas en un cubo compartido «x» — un flood anónimo
+        // habría 429eado al resto de anónimos inocentes. Sin sid el techo
+        // por cliente NO aplica (sólo el cap global las frena).
+        const sidT = (filas[0] && typeof filas[0].sid === "string" && filas[0].sid) || null;
+        if (sidT) {
+          if (!_rlTeleIp) _rlTeleIp = new Map();
+          if (_rlTeleIp.size > 5000) _rlTeleIp.clear();
+          const rlI = _rlTeleIp.get(sidT);
+          if (!rlI || Date.now() - rlI.t0 > 60000) {
+            _rlTeleIp.set(sidT, { t0: Date.now(), n: filas.length });
+          } else if ((rlI.n += filas.length) > 2000) {
+            return json({ ok: false, error: "rate" }, 429);
+          }
+        }
         await init(env);
         const st = env.DB.prepare(
           "INSERT INTO eventos (e, t, v, sid, json, rec) VALUES (?, ?, ?, ?, ?, ?)"
         );
-        await env.DB.batch(
-          filas.map((f) => st.bind(f.e, f.t, f.v, f.sid, f.json, f.rec))
-        );
+        try {
+          await env.DB.batch(
+            filas.map((f) => st.bind(f.e, f.t, f.v, f.sid, f.json, f.rec))
+          );
+        } catch (errDB) {
+          // r141 · un fallo de DB responde 400 JSON, no 500 HTML sin CORS
+          return json({ ok: false, error: "db" }, 400);
+        }
       }
       // Contrato de producción vigente: 204 sin cuerpo (el juego no lee la respuesta)
       return new Response(null, { status: 204, headers: CORS });
@@ -701,6 +903,33 @@ export default {
         });
       }
 
+      // A2 (r129 · ola 3) · REGISTRO VIVO DE SALAS: el código de sala ya
+      // viaja en el latido de presencia — aquí se agrega (TTL del latido,
+      // 90 s) para el panel y como descubrimiento de emergencia si el
+      // broker de señalización cae: la sala sigue visible mientras el
+      // anfitrión respire. Público (el code ya es público en presencia).
+      if (url.searchParams.get("salas") !== null) {
+        await socialInit(env);
+        const vivas = await env.DB.prepare(
+          "SELECT code, pid, n, v, MAX(t) t FROM presencia " +
+          "WHERE code IS NOT NULL AND code <> '' AND vis = 'pub' AND t > ? " +
+          "GROUP BY code ORDER BY t DESC LIMIT 30"
+        ).bind(Date.now() - PRESENCIA_TTL).all();
+        const ahora = Date.now();
+        return json({
+          ok: true,
+          ts: ahora,
+          total: (vivas.results || []).length,
+          salas: (vivas.results || []).map((s) => ({
+            code: s.code,
+            pid: s.pid,
+            n: s.n,
+            v: s.v,
+            haceSeg: Math.max(0, Math.round((ahora - s.t) / 1000)),
+          })),
+        });
+      }
+
       // latido público (sin detalle): {ok, total, ts} — filtro sid opcional
       if (
         url.searchParams.get("resumen") === null &&
@@ -709,21 +938,29 @@ export default {
         url.searchParams.get("rank") === null   // r45 · el rank va detrás
       ) {
         const sid = url.searchParams.get("sid");
-        // r111-b · sin filtro sid → caché 60 s (el LED del panel); con sid
-        // sigue directo (uso puntual del dueño)
-        const total = sid
-          ? (
-              await env.DB
-                .prepare("SELECT COUNT(*) n FROM eventos WHERE instr(sid, ?) > 0")
-                .bind(sid)
-                .first()
-            ).n
-          : (await totalEventos(env)).n;
+        // r111-b · sin filtro sid → caché 60 s (el LED del panel).
+        // r141 · con sid → EXACTO y CON CLAVE: el ?sid= público con instr()
+        // sondeaba el tamaño de cualquier sesión y enumeraba por subcadena.
+        if (sid) {
+          const okC = claveOk(url, request, env);
+          if (okC === null) return json({ ok: false, error: "rate" }, 429);
+          if (!okC) {
+            return json({ ok: false, error: "clave requerida para ?sid" }, 403);
+          }
+          const total = (await env.DB
+            .prepare("SELECT COUNT(*) n FROM eventos WHERE sid = ?")
+            .bind(sid.slice(0, 40))
+            .first()).n;
+          return json({ ok: true, total, ts: Date.now() });
+        }
+        const total = (await totalEventos(env)).n;
         return json({ ok: true, total, ts: Date.now() });
       }
 
       // resumen y eventos son PRIVADOS: requieren la clave
-      if (!claveOk(url, request, env)) {
+      const okR = claveOk(url, request, env);
+      if (okR === null) return json({ ok: false, error: "rate" }, 429);
+      if (!okR) {
         if (!env.CLAVE) {
           return json(
             { ok: false, error: "worker sin CLAVE configurada: crea la variable CLAVE en el worker" },
@@ -1316,7 +1553,9 @@ export default {
 
     // ----------------------------------------------------------- DELETE
     if (metodo === "DELETE") {
-      if (!claveOk(url, request, env)) {
+      const okD = claveOk(url, request, env);
+      if (okD === null) return json({ ok: false, error: "rate" }, 429);
+      if (!okD) {
         return json({ ok: false, error: "clave requerida" }, 403);
       }
       await init(env);
@@ -1336,5 +1575,25 @@ export default {
     }
 
     return json({ ok: false, error: "ruta o método desconocido — usa /api/tele" }, 404);
+  },
+
+  // r128 · F2 (auditoría r120): RETENCIÓN AUTOMÁTICA — Cron Trigger diario
+  // (wrangler.toml [triggers]) que purga lo ANTERIOR a 30 días. El borrado
+  // manual ?dias=N ya existía; esto evita que la cuota D1 se agote sola
+  // (el incidente «HTTP 500 error code 1101» documentado en el worklog).
+  // Requiere `wrangler deploy` del dueño para activarse en producción.
+  async scheduled(controller, env, ctx) {
+    ctx.waitUntil((async () => {
+      try {
+        await init(env);
+        const r = await env.DB
+          .prepare("DELETE FROM eventos WHERE rec < ?")
+          .bind(Date.now() - 30 * 86400000)
+          .run();
+        console.log("[tele] cron retención: borrados", r.meta ? r.meta.changes : 0);
+      } catch (e) {
+        console.log("[tele] cron retención falló:", String(e).slice(0, 200));
+      }
+    })());
   },
 };

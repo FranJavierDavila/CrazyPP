@@ -6608,7 +6608,7 @@ class PwSignEO {
       coreo: 'v240',
       halo: true,
       arte: 'fit1833',
-      url: () => this.ctrl._A('superpower.png'),
+      url: () => new URL('../../assets/championships/superpoder.webp', import.meta.url).href,
       dims: () => this.ctrl.D || null,
       onTex: (tex) => { try { this.ctrl._ownTex.add(tex); } catch (e) { /* */ } },
     });
@@ -8589,7 +8589,7 @@ export default {
     // v3: física del núcleo para las PRUEBAS (patrón orbe de magia)
     STEP = window.__PP_CORE.stepPhysics || null;
     // v3.2.0: pistola real del artista para el MURO 2 (ARKANOID II)
-    try { GUN_ART_URL = new URL('./assets/pistol.glb', import.meta.url).href; } catch (e) { /* */ }
+    try { GUN_ART_URL = new URL('../../assets/championships/pistol.glb', import.meta.url).href; } catch (e) { /* */ }
     if (!STEP) console.warn('[estacion_orbital] stepPhysics no disponible: las pruebas de habilidad quedan inoperativas');
     TL = (window.__PP_CORE.lang && window.__PP_CORE.lang() === 'en') ? 'en' : 'es';
     const onLang = () => {

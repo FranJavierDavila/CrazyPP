@@ -62,8 +62,8 @@ const io = new Server(httpServer, {
 const log = (...a) => console.log('[live]', new Date().toISOString().slice(11, 19), ...a);
 
 io.on('connection', (socket) => {
-  let watching = null;   // matchId que este socket mira
-  let hosting = null;    // matchId que este socket publica
+  let watching: string | null = null;   // matchId que este socket mira
+  let hosting: string | null = null;    // matchId que este socket publica
 
   const dropChannel = (reason) => {
     if (!hosting) return;

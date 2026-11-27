@@ -1,0 +1,14 @@
+{
+  "name": "crazypp-peer-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A2 (r129 · ola 3) · PeerServer propio de CrazyPP: registro de salas y retransmisión de señalización WebRTC sin depender del cloud público de PeerJS.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "peer": "^1.5.4"
+  }
+}

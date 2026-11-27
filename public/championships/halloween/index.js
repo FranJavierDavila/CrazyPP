@@ -2235,7 +2235,13 @@ class PlantillaController {
     if (won) { sSet('duelwins', this.duelwins() + 1); this._puntosAdd(250); }
     const fila = { w: won, score, stars: won ? 1 : 0, duel: true, pts: this.puntos() };
     try {
-      const rank = JSON.parse(sGet('rank') || '[]'); rank.push(fila);
+      // r144 · C-F3 (agente de campeonato, 9ª pasada): el parse va SEPARADO
+      // del push — antes un JSON corrupto lanzaba dentro del MISMO try y
+      // descartaba la fila EN SILENCIO (rank congelado); degrada a [] como
+      // locura:2749
+      let rank = [];
+      try { rank = JSON.parse(sGet('rank') || '[]'); } catch { rank = []; }
+      rank.push(fila);
       sSet('rank', JSON.stringify(rank.slice(-10)));
     } catch (e) {}
     telemetria('champ_rank', { champ: this.man.id, prueba: 'duelo', win: won, score, stars: won ? 1 : 0, nv: this.dueloN, duelScore: score });
@@ -2248,7 +2254,15 @@ class PlantillaController {
     if (SFX) SFX.play(won ? 'defeated' : 'victory', 0.7);
     this._finalT = 4.2;
     this.dueloVivo = false;
-    if (won) this._stageClear(this.dueloIdx, true, 'duelo');
+    /* r148 · F-O1 (agente de campeonato, 13ª pasada): _stageClear SIEMPRE —
+     * la derrota de una REJUGADA de duelo no restauraba: el _replay quedaba
+     * pegado y la victoria real siguiente entraba por la rama de rejugada de
+     * _stageClear (avance legítimo perdido — mismo defecto que la v2.131
+     * cazó en estacion_orbital). _finPrueba ya lo llama en las PRUEBAS con
+     * win O derrota; el duelo era el agujero. En derrota sin rejugada
+     * _stageClear retorna sin efectos (if (!gana) return) — conducta
+     * idéntica a la actual en el camino normal. */
+    this._stageClear(this.dueloIdx, won, 'duelo');
     this.sala();
   }
   _stageClear(idx, gana, tipo) {

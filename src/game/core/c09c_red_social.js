@@ -78,6 +78,11 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
     this._pendI = null;
     this._pendPost = null;
     this._byeHecho = false;
+    // r141/r142 · token de latido (anti-suplantación de pid) PERSISTENTE:
+    // en memoria moría con la recarga y DOS PESTAÑAS del mismo Quest (pid
+    // compartido en pp_pid) se 403-eaban en bucle — la 2ª latía sin token
+    // contra una fila ya tokenizada, para siempre mientras la 1ª latiera
+    try { this._tok = localStorage.getItem('pp_tok') || ''; } catch { /* */ }
     this._lastSt = '';          // último estado anunciado (latido inmediato al cambiar)
     this._onHide = () => { this._bye(true); };
     try {
@@ -163,12 +168,19 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
       pid: this.pid, n: this.nombre(), v: (typeof VERSION !== 'undefined') ? VERSION : '',
       st: e.st, code: e.code || '',
       mj: e.mj || 'normal', vis: e.vis || 'pri',   // r74 · FASE 169
+      tok: this._tok || '',                        // r141 · anti-suplantación
     });
     this._pendBeat = true;
     try {
-      await this._fetch('/presencia', {
+      const r = await this._fetch('/presencia', {
         method: 'POST', headers: { 'Content-Type': 'text/plain;charset=UTF-8' }, body,
       }, '_pendBeatCtl', 8000);
+      // r141 · el worker devuelve el token del pid (lo genera en el primer
+      // latido): se guarda y se reenvía en latidos, bye y buzón de invitaciones
+      if (r && r.ok && typeof r.tok === 'string' && r.tok) {
+        this._tok = r.tok;
+        try { localStorage.setItem('pp_tok', this._tok); } catch { /* */ }
+      }
       this.on = this.lastErr === '';
     } finally {
       this._pendBeat = false;
@@ -182,7 +194,7 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
     this._byeHecho = true;
     const base = this.base();
     if (!base) return;
-    const body = JSON.stringify({ pid: this.pid, bye: 1 });
+    const body = JSON.stringify({ pid: this.pid, bye: 1, tok: this._tok || '' });   // r141
     try {
       if (navigator.sendBeacon) {
         navigator.sendBeacon(base + '/presencia',
@@ -223,7 +235,14 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
     try {
       const r = await this._fetch('/presencia?lista=1', null, '_pendNCtl', 7000);
       if (r && r.ok && Array.isArray(r.jugadores)) {
-        this.lista = r.jugadores.filter((j) => j && j.pid && j.pid !== this.pid);
+        // r140 · PRIVACIDAD: el código de una sala PRIVADA no viaja en el
+        // listado público — el diseño r74 dice «PRIVADA vive sólo para
+        // quien tenga el código» y el latido lo publicaba a cualquiera con
+        // sala abierta (basta la pantalla del pulso para copiarlo).
+        this.lista = r.jugadores
+          .filter((j) => j && j.pid && j.pid !== this.pid)
+          .map((j) => (j.st === 'sala' && j.vis !== 'pub')
+            ? { ...j, code: '' } : j);
         const nuevo = Math.max(0, (r.n | 0) - 1);
         if (nuevo !== this.nOnline) { this.nOnline = nuevo; this._avisaUi(); }
         else this.nOnline = nuevo;
@@ -238,8 +257,11 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
     if (this._pendI) return;
     this._pendI = true;
     try {
-      const r = await this._fetch('/invita?pid=' + encodeURIComponent(this.pid),
-        null, '_pendICtl', 7000);
+      const r = await this._fetch('/invita?pid=' + encodeURIComponent(this.pid) +
+        '&tok=' + encodeURIComponent(this._tok || ''),
+        { headers: { 'X-Tok': this._tok || '' } },   // r142 · el token TAMBIÉN
+        '_pendICtl', 7000);   // r141 · el buzón exige el token (ya no viaja
+                              // sólo en la URL: los logs de acceso no lo ven)
       if (r && r.ok && Array.isArray(r.invitas)) {
         const antes = this.invitas.length;
         this.invitas = r.invitas.slice(0, 8);
@@ -278,9 +300,24 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
   async aceptar() {
     const inv = this.invitas[0];
     if (!inv || !inv.code) return false;
-    this._borrarBuzon();
     const g = this.game;
     if (!g || !g.net) return false;
+    // r140 · el buzón se consume SÓLO si el join es viable: antes se
+    // borraba ANTES de intentar y el guard de joinRoom (joining/online)
+    // hacía return silencioso — invitación perdida sin feedback (pulsar
+    // UNIRSE estando ya en partida la destrucción para siempre).
+    if (g.net.online || ['joining', 'online', 'waiting', 'creating']
+        .includes(g.net.status)) return false;
+    // r141 · completan el guard (auditoría lobby): peer disponible y código
+    // con formato válido ANTES de destruir el buzón (un join inviable por
+    // otra causa tampoco debe perder la invitación)
+    if (typeof g.net.available === 'function' && !g.net.available()) return false;
+    if (!/^[A-Z0-9]{5}$/.test(String(inv.code).toUpperCase())) return false;
+    // r142 · la tarjeta local muere AUNQUE el DELETE falle (red caída en
+    // pleno aceptar): sin esto, la invitación consumida se re-pintaba al
+    // salir de la partida y permitía re-entrar a una sala ya ocupada
+    this.invitas = [];
+    this._borrarBuzon();
     try {
       // r74 · FASE 169 · la invitación viaja con SU modalidad
       g._mjMode = (inv.mj === 'duelos') ? 'duelos' : 'normal';
@@ -299,8 +336,12 @@ export class RedSocial {   /* r87 · RED SOCIAL DEL PULSO — presencia + buzón
     try {
       const base = this.base();
       if (!base) return;
-      fetch(base + '/invita?pid=' + encodeURIComponent(this.pid),
-        { method: 'DELETE', mode: 'cors' }).catch(() => { /* */ });
+      // r141 · el DELETE exige el token del latido (como el GET) · r142 ·
+      // también por cabecera X-Tok (los logs de acceso no lo ven)
+      fetch(base + '/invita?pid=' + encodeURIComponent(this.pid) +
+        '&tok=' + encodeURIComponent(this._tok || ''),
+        { method: 'DELETE', mode: 'cors', headers: { 'X-Tok': this._tok || '' } })
+        .catch(() => { /* */ });
     } catch { /* */ }
   }
 

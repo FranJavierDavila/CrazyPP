@@ -1626,10 +1626,17 @@ class ArcadeArkanoid {
 
   /* ---------------- ciclo de vida ---------------- */
 
-  start() {
+  start(varianteForzada) {
     const g = this.game;
     // v2.44: la ETAPA del camino elige la variante (3 = ARKANOID 2)
-    this.variant = (this.ctrl && this.ctrl.stage >= 3) ? 2 : 1;
+    // r145 · C-F1 (agente de campeonato, 10ª pasada): la SEGUNDA OPORTUNIDAD
+    // relanza la MISMA prueba — sin el param, la variante se derivaba de la
+    // etapa YA RESTAURADA (_finish restaura antes de llamar a _afterResult):
+    // un campeón en stage 5 rejugando ARKANOID 1 perdía la rejugada y su
+    // «segunda oportunidad» era ARKANOID 2 (ganarla rebajaba 5→4 y
+    // re-fanfarriña el trofeo).
+    this.variant = varianteForzada ||
+      ((this.ctrl && this.ctrl.stage >= 3) ? 2 : 1);
     this.C = this.variant === 2 ? ARK2_CFG : ARK_CFG;
     this.build();
     if (this.active) return;
@@ -2523,7 +2530,8 @@ class ArcadeArkanoid {
         try { localStorage.setItem('pp_arcade_stage', String(a.stage)); } catch { /* */ }
         a._replay = null;
       } else {
-        a._setStage(4);
+        // r145 · C-F1 · guard: un stage≥4 (campeón) JAMÁS rebaja a 4
+        if (a.stage <= 3) a._setStage(4);
         this._banner = { title: T('ark2_win'), sub: T('ark2_next'), col: '#7fb069' };
         g.audio.announce(T('ark2_next'), true);
       }
@@ -2560,12 +2568,20 @@ class ArcadeArkanoid {
   _afterResult() {
     const g = this.game;
     const a = this.ctrl;
+    // r145 · C-F1: recuerda la variante ACABADA de jugar (antes de stop())
+    // para que la segunda oportunidad relance la MISMA prueba.
+    // r147 · el cálculo era un NO-OP: dentro de ArcadeArkanoid NO existe
+    // this.arkanoid (ese campo lo tiene el CONTROLADOR, línea 2796) →
+    // _lastVariant salía SIEMPRE undefined y start() derivaba de la etapa
+    // restaurada. La instancia ES el arkanoid: su variante es this.variant
+    // (sellada en start(), intacta tras stop()).
+    this._lastVariant = this.variant || undefined;
     this.stop();
     // v3.6.12 (ronda 15): DERROTA → la MISMA prueba se relanza (segunda
     // oportunidad, con su cartel explicativo y botón EMPEZAR); el duelo
     // del camino sólo vuelve tras VICTORIA o fuera de la prueba.
     if (this._lastWin === false) {
-      a.startArkanoid();
+      a.startArkanoid(this._lastVariant);
       return;
     }
     // nueva partida con el CLOWN (el camino sigue en su paso actual):
@@ -3212,9 +3228,16 @@ class ArcadeController {
         // ya campeón: auto-revancha libre (sin camino que recorrer)
       } else if (this.stage === 4) {
         // ¡¡CAMPEÓN!! — TROFEO «Campeonato de la Locura» registrado
-        this.trophy = true;
-        try { localStorage.setItem('pp_arcade_trophy', '1'); } catch { /* */ }
-        this._setStage(5);
+        // r144 · C-F2 (agente de campeonato, 9ª pasada): el stage SE ESCRIBE
+        // ANTES que el trofeo (una escritura cortada a medias dejaba
+        // stage 4 + trophy '1' → re-fanfarria al volver, o campeón SIN
+        // trofeo si la cuota cortaba al revés) y el bloque re-otorgador
+        // queda bajo guard !this.trophy
+        if (!this.trophy) {
+          this._setStage(5);
+          this.trophy = true;
+          try { localStorage.setItem('pp_arcade_trophy', '1'); } catch { /* */ }
+        }
         this.game.rules.stateTimer = 1e9;   // sin auto-revancha: brilla el trofeo
         this.game.rules.message = T('trophy_get');
         this.game.confettiBurst = Math.max(this.game.confettiBurst, 6);
@@ -4450,15 +4473,18 @@ class ArcadeController {
   /** Lanza la prueba ARKANOID (cola automática tras vencer al Clown o
    *  botón «PRUEBA: ARKANOID» del menú CRAZY).
    *  v2.106 · CARTEL EXPLICATIVO antes de entrar (petición global: todas
-   *  las pruebas de todos los campeonatos). Lo pinta el núcleo. */
-  startArkanoid() {
+   *  las pruebas de todos los campeonatos). Lo pinta el núcleo.
+   *  r147 · C-F1 (segunda oportunidad): el param de _afterResult llegaba
+   *  aquí MUERTO — la firma no lo declaraba y arkanoid.start() derivaba de
+   *  la etapa YA RESTAURADA (el bug exacto que r145 creyó cerrado). */
+  startArkanoid(varianteForzada) {
     if (!this.active || !this.data) return;
     const g = GAME;
     if (this._instrK !== 'ark') {
       if (g && g.showInstrucciones) {
         this._instrK = 'ark';
         g.showInstrucciones(T('instr_ark_t'), T('instr_ark'), 7.5,
-          () => { try { this.startArkanoid(); } catch (e) { /* */ } },
+          () => { try { this.startArkanoid(varianteForzada); } catch (e) { /* */ } },
           'locura',   // v2.107: carpa de circo de LA LOCURA
           { empezar: true });   // v2.130: espera al botón EMPEZAR (común)
         return;
@@ -4468,7 +4494,7 @@ class ArcadeController {
     this.arkQueued = false;
     // v2.74: el mapa de la pared sigue presente durante las pruebas
     if (this.map) { this.map.group.visible = true; this.map.refresh(); }
-    this.arkanoid.start();
+    this.arkanoid.start(varianteForzada);
   }
 
   /** ¿Puede disparar la pistola la mano libre? (v2.44: SOLO dentro del
@@ -4831,7 +4857,7 @@ export default {
       const data = Object.assign({}, LOCURA_CFG, cfg || {}, {
         urls,
         sounds: { laugh: A('risas.mp3'), crazy: A('risas.mp3') },
-        powerBannerUrl: A('superpoder.webp'),
+        powerBannerUrl: new URL('../../assets/championships/superpoder.webp', import.meta.url).href,
         musicUrl: A('bso.ogg'),
       });
       window.__PP_ARCADE_DATA = data;   // lo lee el NÚCLEO (BSO + voces)
@@ -4842,7 +4868,7 @@ export default {
       window.__PP_EXTRA_URL = A('extra.webp');
       window.__PP_MAPA_URL = A('mapa.webp');
       window.__PP_TAPA_URL = A('tapa.webp');
-      GUN_ART_URL = A('pistol.glb');   // v2.74: pistola REAL del artista
+      GUN_ART_URL = new URL('../../assets/championships/pistol.glb', import.meta.url).href;   // v2.74: pistola REAL del artista
       CTRL = new ArcadeController(GAME);
       try { window.__PP_LOCURA = { ctrl: () => CTRL, data }; } catch (e) { /* */ }
     };

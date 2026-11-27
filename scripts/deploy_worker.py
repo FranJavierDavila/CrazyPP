@@ -298,6 +298,17 @@ def main():
     exigir(st, j, "subida del worker")
     ok("worker desplegado")
 
+    # ── 7b · CLAVE por el endpoint de secrets: keep_bindings preserva los
+    # secret_text existentes (TURN_API_TOKEN, METERED_*) — y también una
+    # CLAVE vieja, que pisaría la nueva declarada en el bindings. El
+    # endpoint de secrets SOBREESCRIBE sin ambigüedad.
+    paso("7b", "fijando CLAVE por el endpoint de secrets (sobrescribe la vieja)")
+    st, j = req("PUT", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/secrets",
+                token, cuerpo={"name": VAR_CLAVE, "text": clave, "type": "secret_text"})
+    if st >= 400:
+        fallo("fijando la CLAVE (endpoint de secrets)", f"HTTP {st} · {json.dumps(j)[:300]}")
+    ok("CLAVE activa (valor nuevo, sobrescrito por API)")
+
     # ── 8 · subdomain activado
     paso(8, "asegurando workers.dev activado")
     st, j = req("POST", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/subdomain",
@@ -376,6 +387,28 @@ def main():
     if lat2.get("total") != total_antes:
         fallo("el total no se restauró tras la purga", f"{lat} → {lat2}")
     ok(f"latido restaurado (total={lat2.get('total')}) · producción limpia")
+
+    # ── 8 · cron de purga (r128 · F2): el [triggers] de wrangler.toml, por API
+    # (el PUT del script sin schedules puede arrastrarse un cron previo — se
+    # fija explícito y se verifica por GET; si la API cambiara de forma, queda
+    # avisado sin bloquear el despliegue).
+    paso(10, "cron de purga (scheduled() · 04:37 UTC)")
+    cron_expr = "37 4 * * *"
+    st, txt = req("PUT", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/schedules",
+                  token, cuerpo={"cron": [cron_expr]})
+    if st != 200:
+        st2, txt2 = req("PUT", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/schedules",
+                        token, cuerpo=[{"cron": cron_expr}])
+        if st2 != 200:
+            ok(f"cron NO confirmado por API (HTTP {st}/{st2}) — queda el [triggers] de "
+               "wrangler.toml para el dueño con wrangler deploy")
+        else:
+            ok(f"cron activo: {cron_expr}")
+    else:
+        ok(f"cron activo: {cron_expr}")
+    st, txt = req("GET", f"/accounts/{cuenta_id}/workers/scripts/{NOMBRE_SCRIPT}/schedules", token)
+    if st == 200 and cron_expr in txt:
+        ok(f"cron verificado por GET: {cron_expr}")
 
     # ── fin
     print("\n" + "=" * 74)

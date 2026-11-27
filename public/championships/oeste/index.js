@@ -63,7 +63,7 @@
  *      trayecto «En menos de 25 segundos llegaremos a…» [estación]; al
  *      llegar CON el oro «¡Cargamento de oro a buen recaudo!» + panel
  *      recompensa.png; si faltó oro, panel forajido_robo.png + las RISAS
- *      del forajido (risas_forajido.mp3). Frases i18n es/en (claves
+ *      del forajido (risas.mp3). Frases i18n es/en (claves
  *      tren_mega_*) con los NOMBRES de las estaciones interpolados.
  *  v2.138 (módulo v46) · TÚNEL A ESCALA — el dueño: «has reducido las
  *      entradas y las salidas pero no la imagen repetida central del
@@ -1575,7 +1575,7 @@ class ForajidoPowerSign {
     this._impl = createPowerSign(THREE, () => this.game, {
       coreo: 'clasica',
       arte: 'plano',
-      url: () => new URL('./assets/superpoder.webp', import.meta.url).href,
+      url: () => new URL('../../assets/championships/superpoder.webp', import.meta.url).href,
       pintar: (aplicar) => this._pintarRespaldo(aplicar),
       dims: () => ODIMS(),
     });
@@ -8624,7 +8624,7 @@ class TrenAction {
    *  orquestación: precarga al montar la etapa y reintentos hasta que
    *  suena (tiene() marca el «ya sonaron» exactamente como antes). */
   loadRisasForajido() {
-    try { this.__sfxSDK().precarga('risas_forajido.mp3'); } catch (e) { /* */ }
+    try { this.__sfxSDK().precarga('risas.mp3'); } catch (e) { /* */ }
   }
   _playRisasForajido(vol) {
     try {
@@ -8632,11 +8632,11 @@ class TrenAction {
       const actx = g.audio && g.audio.ctx;
       if (!actx || actx.state !== 'running') return;
       const eng = this.__sfxSDK();
-      if (!eng.tiene('risas_forajido.mp3')) {
-        eng.precarga('risas_forajido.mp3');   // aún decodificando: reintento
+      if (!eng.tiene('risas.mp3')) {
+        eng.precarga('risas.mp3');   // aún decodificando: reintento
         return;
       }
-      eng.play('risas_forajido.mp3', vol || 0.9);
+      eng.play('risas.mp3', vol || 0.9);
       this._risaFt = 9;                // ya sonaron: sin reintentos
     } catch (e) { /* */ }
   }
@@ -9663,7 +9663,7 @@ class TrenAction {
     this._hud.set(0, this._prog(), tx('tren_falla'), this._ling(), undefined,
       this.ctrl.puntos);
     /* v2.140 · EL FORAJIDO SE RÍE: panel forajido_robo.png + sus RISAS
-     * (risas_forajido.mp3; si el buffer aún decodifica, el step reintenta). */
+     * (risas.mp3; si el buffer aún decodifica, el step reintenta). */
     this._showPremio('robo');
     this._risaFt = 0;
     this._playRisasForajido();
@@ -11044,7 +11044,7 @@ class HudOeste {
         this._dirty = true;
       };
       ri.onerror = () => { this.relojImg = null; };
-      ri.src = new URL('./assets/reloj.png', import.meta.url).href;
+      ri.src = new URL('../../assets/championships/reloj.png', import.meta.url).href;
     } catch (e) { this.relojImg = null; }
     this.game.rig.add(this.group);
   }
@@ -14016,7 +14016,7 @@ export default {
       // v2.140 · RESULTADO DE LA ESTACIÓN (megafonía + paneles + risas)
       recompensaUrl: A('recompensa.png'),
       roboUrl: A('forajido_robo.png'),
-      risasForajidoUrl: A('risas_forajido.mp3'),
+      risasForajidoUrl: A('risas.mp3'),
     };
     CTRL = new ForajidoStand(GAME, manifest);
     CTRL.stateName = STATE_NAME;

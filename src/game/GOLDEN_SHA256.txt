@@ -1,2 +1,2 @@
 # SHA256 del game.html que produjo esta división (3.6.210-SDK6, fase 188 · OLA 3: C2 separa los recursos del HTML — el artefacto baja de 12,5 MB a 2772605 B)
-92fe686f73cf9023d41c17da4673e23291a922ad89a39ec8c1c786d00bbb8114
+635d93696bfea11405176d97c292dfeb6b661ed29bc8941716d6ac0be96e1441

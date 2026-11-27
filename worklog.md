@@ -9878,3 +9878,9 @@ arrastrarse con el mando como los volúmenes de Sonido.
 - Cloudflare: verify ×2 con JSON crudo — AMBOS tokens ACTIVE (el del
   curl histórico y el del dashboard). golden 9339cd69 bendecido;
   presupuesto +3 KB (< +1%, sin refresh).
+
+CIERRE r157 (post-commit): CLAVE de producción del worker crazypp-tele
+FIJADA vía API CF (token dashboard, success) = la clave del dueño →
+probe resumen=1 HTTP 200 con D1 completa (alarmas/arranques24h/champRank/
+fps/logrosTop…). El 403 histórico queda RESUELTO: panel del dueño lee
+con su clave. verify ×2 con JSON crudo: ambos tokens ACTIVE.

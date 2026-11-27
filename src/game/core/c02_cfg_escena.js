@@ -1074,7 +1074,7 @@ export const CONFIG_SECCIONES = {
     // AJUSTES: rejilla en C+R (como r68) · cada categoría en su C
     opts: ['C', 'R'],
     optsJuego: ['C'], optsSala: ['C'], optsSonido: ['C'], optsVisual: ['C'],
-    optsPerfil: ['C'], optsRendi: ['C'], optsPala: ['C'],
+    optsRendi: ['C'], optsPala: ['C'],
     optsSalaRoom: ['C'], optsSalaMesa: ['C'], optsSalaBola: ['C'],
     optsSalaHall: ['C'],
     salirask: ['C'], hallask: ['C'], tutask: ['C'],
@@ -1107,7 +1107,8 @@ export const CONFIG_SECCIONES = {
     optsSala: { tituloKey: 'cat_sala', icono: 'vestibulo', volver: 'page:opts' },
     optsSonido: { tituloKey: 'cat_sonido', icono: 'audio', volver: 'page:opts' },
     optsVisual: { tituloKey: 'cat_visual', icono: 'ojo', volver: 'page:opts' },
-    optsPerfil: { tituloKey: 'cat_perfil', icono: 'usuario', volver: 'page:opts' },
+    // r157 · optsPerfil RETIRADO de la concha: «PERFIL Y DATOS» se mudó a
+    // MI PERFIL › EDITAR › DATOS (petición del dueño).
     optsRendi: { tituloKey: 'cat_rendi', icono: 'gauge', volver: 'page:opts' },
     optsPala: { tituloKey: 'cat_pala', icono: 'partido', volver: 'page:opts' },
     // r80 · NIVEL 3: VOLVER al menú ANTERIOR (antes caían al principal por
@@ -1145,8 +1146,9 @@ export const CONFIG_SECCIONES = {
           gradiente: ['#7e57c2', '#4527a0'] },
         { id: 'page:optsVisual', icono: 'ojo', etiquetaKey: 'cat_visual',
           gradiente: ['#26a69a', '#00695c'] },
-        { id: 'page:optsPerfil', icono: 'usuario', etiquetaKey: 'cat_perfil',
-          gradiente: ['#ff7043', '#bf360c'] },
+        // r157 · «PERFIL Y DATOS» SALE DE AJUSTES (petición del dueño):
+        // la categoría vive ahora dentro de MI PERFIL › EDITAR › DATOS
+        // (telemetría, borrado de registros y lecturas del perfil).
         { id: 'page:optsRendi', icono: 'gauge', etiquetaKey: 'cat_rendi',
           gradiente: ['#ffa726', '#e65100'] },
         { id: 'page:optsPala', icono: 'partido', etiquetaKey: 'cat_pala',

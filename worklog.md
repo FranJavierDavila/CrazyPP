@@ -9843,3 +9843,38 @@ producción del worker (403 con query y con cabecera; env.CLAVE existe):
 el dueño debe igualarla en el dashboard (Workers → crazypp-tele →
 Variables). Guardada en scripts/worker-tele/.clave-produccion (gitignored)
 junto a .cf-token y .cf-token-dash.
+
+## 54 · PERFIL Y DATOS → MI PERFIL + DESLIZADORES ARRASTRABLES (r157) · 3.6.237-SDK6 (2026-11-27)
+
+Petición del dueño: (1) la categoría «PERFIL Y DATOS» sale de AJUSTES y
+entra en MI PERFIL, donde se cambia el nombre y se escoge el país con
+banderita junto al avatar/marco; (2) TODOS los deslizadores deben
+arrastrarse con el mando como los volúmenes de Sonido.
+
+- PERFIL Y DATOS fuera de AJUSTES: tarjeta retirada de la rejilla DATO
+  (c02), concha/lados/sinPlaca/whitelist/hints limpios y case 'perfil'
+  de drawMenuOptsCat eliminado. Su contenido (telemetría, borrado de
+  registros con arm de dos toques, lecturas de mesa/pala/estilo, pid)
+  vive ahora en la 5ª pestaña «DATOS» de MI PERFIL › EDITAR
+  (petab whitelist + painter; autosave intacto).
+- Ficha: la BANDERITA del país quedó PEGADA al retrato (avatar+marco) —
+  «al lado de la foto del avatar y de su marco» — con nombre/nivel/XP/
+  rango reflowados (r157).
+- DESLIZADORES: inventario completo → volúmenes Sonido (mvolset/fvolset)
+  ya arrastraban (r98); BUG REAL en chmus (Música de campeonatos): el
+  drag se armaba con id 'chmus' pero el rect es 'chmus:set' →
+  _menuDragUpdate no encontraba el rect y soltaba al primer frame. FIX:
+  viaja el id REAL del rect + el motor matchea por prefijo. Y la ALTURA
+  DE MESA había PERDIDO su raíl (case mesa_altoy sin rect: sólo ±1cm):
+  raíl RESTAURADO con el MISMO widget de los volúmenes (tipo barra:
+  raíl clicable + −/+ + %) en SALA › MESA, con drag armado y rama
+  esAlto en _menuDragUpdate (MIN..MAX × frac, 1 cm, sin repintado si no
+  cambia). Todos los sliders quedan: clicables + arrastrables.
+- Tests: qa_perfil 138 OK (+17: mudanza DATOS, locks de cableado real,
+  sección 13 de deslizadores) · arnés r156 69/69 (+11: pestaña DATOS
+  con tele/reset, AJUSTES sin la tarjeta, MOTOR DE DRAG probado en vivo
+  — chmus arcVol→0.70 al 70% del raíl, mesaAltoY→≈0.805 m al 75%).
+- Matriz verde: 31+131+135+17+12+21+11+10/10+14/14+12+16+138+36+69.
+- Cloudflare: verify ×2 con JSON crudo — AMBOS tokens ACTIVE (el del
+  curl histórico y el del dashboard). golden 9339cd69 bendecido;
+  presupuesto +3 KB (< +1%, sin refresh).

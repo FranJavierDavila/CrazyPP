@@ -209,14 +209,61 @@ def main():
             chk(rid in ids, f'JUGAR: falta modalidad {rid}')
         chk(not perr, f'pageerrors jugar: {perr[:3]}')
 
-        # 10 · Ajustes › Perfil SIN el editor de nombre (va en MI PERFIL)
+        # 10 · «PERFIL Y DATOS» SALIÓ de Ajustes (r157): la rejilla ya no
+        # trae la tarjeta y la pestaña DATOS de MI PERFIL la aloja
         nav(page, 'opts')
-        chk(click_id(page, 'page:optsPerfil') == 'ok', 'click categoría Perfil')
-        page.wait_for_timeout(200)
         ids = page.evaluate('() => (window.__game.menuRects || []).map((r2) => r2.id)')
-        chk('pname' not in ids, 'Ajustes › Perfil sin editor de nombre')
+        chk('page:optsPerfil' not in ids, 'AJUSTES sin la tarjeta PERFIL Y DATOS')
+        chk('page:optsRendi' in ids and 'page:optsPala' in ids,
+            'AJUSTES: resto de categorías intacto')
+        nav(page, 'perfil_edit', 'datos')
+        ids = page.evaluate('() => (window.__game.menuRects || []).map((r2) => r2.id)')
+        for rid in ['tele', 'reset', 'pguardar']:
+            chk(rid in ids, f'DATOS: falta control {rid}')
+        chk(not perr, f'pageerrors pestaña DATOS: {perr[:3]}')
+        chk(click_id(page, 'tele') == 'ok', 'click telemetría (toggle vive en DATOS)')
 
-        # 11 · PERSISTENCIA tras reload: país/avatar/xp sobreviven
+        # 11 · TODOS los deslizadores arrastrables (r157): el MOTOR r98
+        # aplica el frac del punto apuntado — chmus (id REAL del rect) y
+        # la altura de mesa (raíl restaurado en SALA)
+        nav(page, 'champs')
+        e = page.evaluate('''() => {
+            const g = window.__game;
+            const r = (g.menuRects || []).find((x) => x && x.id === 'chmus:set');
+            if (!r) return { err: 'sin raíl chmus:set' };
+            g.connected = [true, true];
+            g._menuHitPx = [{ x: r.x + r.w * 0.7, y: r.y + r.h / 2 }, null];
+            g._menuDrag = { hand: 0, id: 'chmus:set' };
+            g._menuDragUpdate();
+            return { vol: g.audio.arcVol, mute: g.audio.arcMute };
+        }''')
+        chk(not e.get('err'), f'chmus: raíl presente ({e.get("err")})')
+        if not e.get('err'):
+            chk(abs(e['vol'] - 0.7) <= 0.06 and not e['mute'],
+                f'chmus ARRASTRA al 70%: arcVol={e["vol"]} mute={e["mute"]}')
+        nav(page, 'opts')
+        chk(click_id(page, 'page:optsSala') == 'ok', 'click categoría Sala')
+        page.wait_for_timeout(150)
+        chk(click_id(page, 'page:optsSalaMesa') == 'ok', 'click subvista MESA')
+        page.wait_for_timeout(150)
+        e = page.evaluate('''() => {
+            const g = window.__game;
+            const r = (g.menuRects || []).find((x) => x && x.id === 'mesa_altoy');
+            if (!r) return { err: 'sin raíl mesa_altoy (RAÍL RESTAURADO r157)' };
+            const y0 = g.mesaAltoY;
+            g.connected = [true, true];
+            g._menuHitPx = [{ x: r.x + r.w * 0.75, y: r.y + r.h / 2 }, null];
+            g._menuDrag = { hand: 0, id: 'mesa_altoy' };
+            g._menuDragUpdate();
+            return { y0, y1: g.mesaAltoY };
+        }''')
+        chk(not e.get('err'), f'altura: raíl presente ({e.get("err")})')
+        if not e.get('err'):
+            # frac 0.75 sobre el rango real 0.70..0.84 → 0.805 ±1 cm
+            chk(abs(e['y1'] - 0.805) <= 0.02,
+                f'altura mesa ARRASTRA al 75% del raíl: {e["y0"]} → {e["y1"]} m (≈0.805)')
+
+        # 12 · PERSISTENCIA tras reload: país/avatar/xp sobreviven
         xp_before = page.evaluate('() => window.__game.stats.data.xp')
         page.reload(wait_until='load')
         page.wait_for_timeout(8_000)

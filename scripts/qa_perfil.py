@@ -78,10 +78,20 @@ chk("jugar: { tituloKey: 'hub_jugar'" in c02 and "perfil: { tituloKey: 'perfil_t
 chk("name: { tituloKey: 'name_title', icono: 'usuario', volver: 'page:perfil_edit' }" in c02,
     'teclado nombre vuelve al EDITAR de Mi Perfil')
 
-# ---- 6 · El nombre sale de Ajustes → Mi Perfil ----
-opts_perfil = c12[c12.find("case 'perfil': {"):c12.find("case 'rendi': {")]
-chk("{ id: 'pname'" not in opts_perfil, 'Ajustes › Perfil SIN fila de nombre')
-chk('perfil_movida' in opts_perfil, 'Ajustes › Perfil apunta a MI PERFIL')
+# ---- 6 · «PERFIL Y DATOS» sale de Ajustes → MI PERFIL › EDITAR › DATOS (r157) ----
+chk("case 'perfil': {" not in c12[c12.find('drawMenuOptsCat(rects, cat) {'):],
+    'drawMenuOptsCat SIN la categoría perfil (retirada de Ajustes)')
+rej_aj = c02[c02.find('ajustes: { columnas'):c02.find('jugar: { columnas')]
+chk('page:optsPerfil' not in rej_aj, 'rejilla AJUSTES sin la tarjeta PERFIL Y DATOS')
+chk("arg === 'optsPerfil'" not in c12 and "'optsPerfil', 'optsRendi'" not in c12
+    and "'page:optsPerfil'" not in c12,
+    'sinPlaca/whitelist/hints sin optsPerfil (cableado real)')
+chk("optsPerfil: { tituloKey" not in c02 and "optsPerfil: ['C']" not in c02,
+    'concha/lados sin optsPerfil')
+chk("['nombre', 'pais', 'avatar', 'marco', 'datos']" in c12, 'petab: 5ª pestaña DATOS')
+chk("} else if (tab === 'datos') {" in c12, 'perfil_edit: pestaña DATOS pintada')
+chk("btn('tele'" in c12 and "btn('reset'" in c12, 'DATOS: telemetría + borrado')
+chk("T('perfil_datos_hint')" in c12 and "T('perfil_pid'" in c12, 'DATOS: hint + pid')
 chk("this._nameVuelta = 'perfil_edit'" in c12, 'pname: retorno vivo a EDITAR')
 chk("this.menuPage = this._nameVuelta || 'main'" in c12, 'nkey ok/cancel vuelven a la ficha')
 
@@ -127,7 +137,8 @@ for k in ['perfil_title', 'perfil_sub', 'hub_jugar', 'jugar_sub', 'perfil_editar
           'perfil_avatar', 'perfil_marco', 'perfil_guardar', 'perfil_guardado',
           'perfil_sin_pais', 'perfil_rank_btn', 'perfil_compra', 'perfil_compra_ok',
           'perfil_falta', 'perfil_lock_logro', 'perfil_lock_elo', 'perfil_equipado',
-          'perfil_xp_txt', 'perfil_nombre', 'perfil_movida']:
+          'perfil_xp_txt', 'perfil_nombre', 'perfil_movida', 'perfil_datos',
+          'perfil_datos_hint']:
     chk(("    " + k + ":") in es, f'i18n ES: {k}')
     chk(("    " + k + ":") in en, f'i18n EN: {k}')
 
@@ -135,7 +146,22 @@ for k in ['perfil_title', 'perfil_sub', 'hub_jugar', 'jugar_sub', 'perfil_editar
 chk('const M = CONFIG_DIFICULTAD.elo;' in c06 and 'M.kModo' in c06, 'ELO M4 intacto (K por modo)')
 chk(c06.count('recordMatch(win, difficulty, info)') == 1, 'recordMatch: misma firma (compatibilidad)')
 
-print(f'\nQA PERFIL r156: {ok} OK · {fails.length if hasattr(fails, "length") else len(fails)} FALLOS')
+# ---- 13 · TODOS los deslizadores arrastrables con el mando (r157) ----
+# motor r98: el drag se ARMA en el menuClick del raíl y _menuDragUpdate lo
+# sigue por id del RECT (los volúmenes de Sonido ya lo hacían — el estándar)
+chk("this._menuDrag = { hand, id: ns };" in c12, 'volumen Sonido: drag armado (mvolset/fvolset — el estándar del dueño)')
+chk("this._menuDrag = { hand, id: r.id };\n          }\n        }\n        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);\n        this.rules.message = T('arc_music_msg'"
+    in c12 or "this._menuDrag = { hand, id: r.id };" in c12, 'chmus: drag armado con el id REAL del rect')
+chk("(d.id || '').indexOf('chmus') === 0" in c12, 'motor drag: chmus por PREFIJO (rect chmus:set)')
+chk("idSet: 'mesa_altoy'" in c12 and "minus: 'mesa_altomen'" in c12,
+    'altura mesa: raíl restaurado (tipo barra = el widget de los volúmenes)')
+chk("this._menuDrag = { hand, id: r.id };   // r157 · arrastra hasta soltar" in c12,
+    'mesa_altoy: drag armado al fijar el punto')
+chk("const esAlto = d.id === 'mesa_altoy';" in c12 and 'MESA_ALTO_MIN + (MESA_ALTO_MAX - MESA_ALTO_MIN)' in c12,
+    'motor drag: rama ALTURA (MIN..MAX × frac, cuantizada 1 cm)')
+chk('slider: true });' in c12, 'barra genérica: rect con slider:true (drag r98)')
+
+print(f'\nQA PERFIL r157: {ok} OK · {len(fails)} FALLOS')
 if fails:
     for f in fails: print('  ✗ ' + f)
     sys.exit(1)

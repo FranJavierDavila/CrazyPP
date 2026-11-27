@@ -1,3 +1,3 @@
-# SHA256 del game.html que produjo esta división (3.6.236-SDK6, fase 190 · PORTADA CLÁSICA EN LA RAÍZ (LANDING) + ENTRADA VR EN UN TOQUE ?vr=1 (r152); sello actualizado
-# por bump_version.py desde 3.6.235-SDK6)
-39b7d9c6e48df4d2dca3a5c7c98e9b86e0e6bc349ca801996e47b0b7333f099f
+# SHA256 del game.html que produjo esta división (3.6.237-SDK6, fase 190 · PORTADA CLÁSICA EN LA RAÍZ (LANDING) + ENTRADA VR EN UN TOQUE ?vr=1 (r152); sello actualizado
+# por bump_version.py desde 3.6.236-SDK6)
+9339cd694375117580b3133931ce2113d70edef5f9579182a62e9540e4ab3d9f

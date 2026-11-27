@@ -3285,7 +3285,9 @@ export class PingPongGame {
         'jugar', 'perfil', 'perfil_edit',   // r156 · MI PERFIL + JUGAR
         'optsJuego', 'optsSala', 'optsSalaRoom', 'optsSalaMesa',
         'optsSalaBola', 'optsSalaHall', 'optsSonido', 'optsVisual',
-        'optsPerfil', 'optsRendi', 'optsPala',
+        // r157 · 'optsPerfil' fuera: la categoría PERFIL Y DATOS se mudó a
+        // MI PERFIL › EDITAR › DATOS
+        'optsRendi', 'optsPala',
         'join', 'name', 'gripname', 'trainext', 'trainarea']
         .includes(this.menuPage);
       // r80 · 'rank' se migra a banda (fuera la placa legada que se pintaba
@@ -5506,8 +5508,8 @@ export class PingPongGame {
     const subVisual = T('btn_trail', { v: yn(this.showTrail) })
       + ' · ' + T('btn_hapt', { v: yn(this.hapticsOn) })
       + ' · ' + T('btn_tips', { v: yn(this.showTips) });
-    const subPerfil = T('opts_name', { v: _pn || T('no_name') })
-      + ' · ' + T('btn_tele', { v: yn(__PP_TELE.on) });
+    // r157 · subPerfil fuera: la categoría PERFIL Y DATOS se mudó a
+    // MI PERFIL › EDITAR › DATOS (el nombre ya no vive en Ajustes)
     // r81 · RENDIMIENTO: casco detectado + FPS en vivo de un vistazo
     // r77 · FASE 173 · + RED en vivo cuando hay enlace (qosTexto de c09)
     const pf = this.perf ? this.perf.status() : null;
@@ -5524,7 +5526,7 @@ export class PingPongGame {
     const subPala = T('pala_actual', { v: this.gripName });
     this._menuRejilla(rects, 'ajustes', {
       optsJuego: subJuego, optsSala: subSala, optsSonido: subSonido,
-      optsVisual: subVisual, optsPerfil: subPerfil, optsRendi: subRendi,
+      optsVisual: subVisual, optsRendi: subRendi,
       optsPala: subPala,
     });
   }
@@ -6048,6 +6050,16 @@ export class PingPongGame {
           items.push({ tipo: 'lectura', et: T('mesa_alto_grab'),
             col: '#8ce99a', f: 18 });
         }
+        // r157 · EL RAÍL DE ALTURA VUELVE (tipo barra = el MISMO widget de
+        // los volúmenes de Sonido): raíl clicable + −/+ de paso fino y
+        // ARRASTRE con el gatillo (_menuDragUpdate › esAlto). El dueño:
+        // «todos los deslizadores deben poder arrastrarse con el mando».
+        items.push({
+          tipo: 'barra', et: T('mesa_alto_lbl'),
+          vol: Math.max(0, Math.min(1,
+            (this.mesaAltoY - MESA_ALTO_MIN) / (MESA_ALTO_MAX - MESA_ALTO_MIN))),
+          idSet: 'mesa_altoy', minus: 'mesa_altomen', plus: 'mesa_altomas',
+        });
         items.push(
           { tipo: 'filaN', wFr: [0.5, 0.5], cells: [
             { id: 'mesa_altomen', et: '−' },
@@ -6219,40 +6231,10 @@ export class PingPongGame {
         );
         break;
       }
-      case 'perfil': {
-        // M7e (r124) · TU PERFIL RECORDADO — lectura VIVA de los registros
-        // que el juego ya mantiene (r78: filas de lectura a banda completa)
-        // r156 · el NOMBRE se edita en MI PERFIL › EDITAR (fuera de Ajustes,
-        // petición del dueño). Aquí queda la telemetría y el borrado.
-        items.push(
-          { id: 'tele', et: T('btn_tele', { v: yn(__PP_TELE.on) }),
-            act: !!__PP_TELE.on, check: !!__PP_TELE.on },
-          { tipo: 'lectura', et: T('perfil_movida'), col: '#98a6b4', f: 18 },
-          { id: 'reset', icono: 'salir',
-            et: this._resetArm ? T('reset_arm') : T('reset_btn'),
-            grad: this._resetArm ? ['#f0873f', '#d05c1f'] : null,
-            col: this._resetArm ? '#ffc09a' : null },
-          { tipo: 'lectura', et: T('tele_hint'), col: '#98a6b4', f: 18 },
-          { tipo: 'titulo', et: T('perfil_titulo'), col: '#ffd257' },
-        );
-        const _sk = this._mesaSkinDef(this.mesaSkin);
-        items.push({ tipo: 'lectura',
-          et: T('perfil_skin', { v: T(_sk.nameKey) }) });
-        let _altoId = 'normal';
-        try { _altoId = localStorage.getItem('pp_mesaalto') || 'normal'; } catch { /* */ }
-        const _alto = MESA_ALTOS.find((a) => a.id === _altoId);
-        items.push({ tipo: 'lectura',
-          et: T('perfil_alto', { v: _alto ? T(_alto.nameKey) : _altoId }) });
-        items.push({ tipo: 'lectura',
-          et: T('perfil_pala', { v: yn(this.palaMejorada) }) });
-        items.push({ tipo: 'lectura',
-          et: T('perfil_estilo', { v: yn(this.rivStyleOn) }) });
-        let _pid = '';
-        try { _pid = (localStorage.getItem('pp_pid') || '').slice(0, 8); } catch { /* */ }
-        if (_pid) items.push({ tipo: 'lectura',
-          et: T('perfil_pid', { v: _pid }), col: '#7e8ea8' });
-        break;
-      }
+      // r157 · case 'perfil' RETIRADO de drawMenuOptsCat: la categoría
+      // «PERFIL Y DATOS» sale de AJUSTES (petición del dueño) y vive en
+      // MI PERFIL › EDITAR › DATOS (pestaña con telemetría, borrado,
+      // lecturas del perfil y pid).
       case 'rendi': {
         // r81 · RENDIMIENTO: el autocalibrador a la vista (r78: lecturas
         // y filas a banda completa; el RED en vivo de la r77 preside)
@@ -7300,8 +7282,25 @@ export class PingPongGame {
     // caía al else y MOVÍA EL VOLUMEN DE FX — la barra se quedaba quieta.
     // Ahora chmus regula arcVol (cuantizado a 1/20 como su clic) y
     // des-silencia al arrastrar, igual que su pulsación.
-    const esChmus = d.id === 'chmus';
+    // r157 · prefijo para chmus (el rect del raíl es 'chmus:set') + rama
+    // ALTURA DE MESA (raíl restaurado: el deslizador volvió a la sala).
+    const esChmus = (d.id || '').indexOf('chmus') === 0;
+    const esAlto = d.id === 'mesa_altoy';
     const esMus = d.id === 'mvolset';
+    if (esAlto) {
+      // altura en vivo: MIN..MAX × frac, cuantizada a 1 cm; sin repintado
+      // si el valor no cambió (el drag corre cada frame del update)
+      if (this.mesaOcupada()) { this._menuDrag = null; return; }
+      const nuevoA = Math.round(frac * 100) / 100;
+      const yN = MESA_ALTO_MIN + (MESA_ALTO_MAX - MESA_ALTO_MIN) * nuevoA;
+      if (d.lastA != null && Math.abs(yN - d.lastA) < 0.005) return;
+      d.lastA = yN;
+      const yAp = this._mesaAplicarY(yN);
+      this.rules.message = T('msg_mesa_altoy', { v: Math.round(yAp * 100) });
+      try { this.audio.playOsc(600 + yN * 300, 720 + yN * 300, 0.05, 'sine', 0.09, 0); } catch (eA1) { /* */ }
+      this.drawMenu();
+      return;
+    }
     const paso = esChmus ? 20 : 10;
     const nuevo = Math.round(frac * paso) / paso;
     const actual = esChmus ? (this.audio.arcMute ? 0 : this.audio.arcVol)
@@ -7346,7 +7345,7 @@ export class PingPongGame {
       'page:main': 'hint_back', 'page:opts': 'hint_back', 'homehall': 'hint_back',
       'page:optsJuego': 'hint_cat_juego', 'page:optsSala': 'hint_cat_sala',
       'page:optsSonido': 'hint_cat_sonido', 'page:optsVisual': 'hint_cat_visual',
-      'page:optsPerfil': 'hint_cat_perfil', 'page:optsRendi': 'hint_cat_rendi',
+      'page:optsRendi': 'hint_cat_rendi',
       'page:optsPala': 'hint_cat_pala',
       'page:optsSalaRoom': 'hint_sala_sala', 'page:optsSalaMesa': 'hint_sala_mesa',
       'page:optsSalaBola': 'hint_sala_bola',
@@ -7578,7 +7577,7 @@ export class PingPongGame {
             arg === 'trainext' || arg === 'carreradiv' || arg === 'dueloask' ||
             arg === 'jugar' || arg === 'perfil' || arg === 'perfil_edit' ||   // r156 · MI PERFIL + JUGAR
             arg === 'optsJuego' || arg === 'optsSala' || arg === 'optsSonido' ||
-            arg === 'optsVisual' || arg === 'optsPerfil' || arg === 'optsRendi' ||
+            arg === 'optsVisual' || arg === 'optsRendi' ||
             arg === 'optsPala' ||
             arg === 'optsSalaRoom' || arg === 'optsSalaMesa' ||
             arg === 'optsSalaBola' || arg === 'optsSalaHall' ||
@@ -8069,8 +8068,9 @@ export class PingPongGame {
         this.drawMenu();
         break;
       case 'petab':
-        // r156 · MI PERFIL › EDITAR: pestaña activa (nombre/pais/avatar/marco)
-        this._peTab = ['nombre', 'pais', 'avatar', 'marco'].indexOf(arg) >= 0 ? arg : 'nombre';
+        // r156/157 · MI PERFIL › EDITAR: pestaña activa (nombre/pais/
+        // avatar/marco/datos — DATOS aloja el antiguo PERFIL Y DATOS)
+        this._peTab = ['nombre', 'pais', 'avatar', 'marco', 'datos'].indexOf(arg) >= 0 ? arg : 'nombre';
         this.drawMenu();
         break;
       case 'ppais':
@@ -8328,11 +8328,15 @@ export class PingPongGame {
           // r79 · barra CLICABLE: fija el volumen al punto apuntado
           // (mismo mecanismo r96/r98 de los volúmenes de SONIDO) y el
           // gatillo sigue arrastrando el valor en vivo.
+          // r157 · FIX ARRASTRE: se armaba con id 'chmus' pero el rect del
+          // raíl es 'chmus:set' — _menuDragUpdate no encontraba el rect y
+          // soltaba el drag al primer frame (el dueño: «hay deslizadores
+          // que no se dejan arrastrar»). Ahora viaja el id REAL del rect.
           const v = this._menuSliderFrac(r, this._menuClickPx);
           if (v != null) {
             AM.setArcVol(Math.round(v * 20) / 20);
             if (AM.arcMute) AM.setArcMute(false);
-            this._menuDrag = { hand, id: 'chmus' };
+            this._menuDrag = { hand, id: r.id };
           }
         }
         this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
@@ -8483,6 +8487,8 @@ export class PingPongGame {
       case 'mesa_altoy': {
         // r96 · DESLIZADOR de altura: la mesa se fija AL PUNTO del raíl que
         // apunta el mando (feedback EN VIVO en la sala de partidos).
+        // r157 · el gatillo SIGUE apretado → ARRASTRE en vivo (r98, como
+        // los volúmenes): el raíl restaurado en SALA alimenta esta case.
         if (this.mesaOcupada()) {
           this.rules.message = T('mesa_no_champ');
           this.audio.playOsc(330, 260, 0.12, 'sine', 0.16, 0);
@@ -8495,6 +8501,7 @@ export class PingPongGame {
           const yAp = this._mesaAplicarY(yN);
           this.rules.message = T('msg_mesa_altoy', { v: Math.round(yAp * 100) });
           this.audio.playOsc(600 + yN * 300, 720 + yN * 300, 0.05, 'sine', 0.09, 0);
+          this._menuDrag = { hand, id: r.id };   // r157 · arrastra hasta soltar
         }
         this.drawMenu();
         break;
@@ -9561,35 +9568,36 @@ export class PingPongGame {
     const fr = Math.max(0, Math.min(1, (xp - a1) / Math.max(1, a2 - a1)));
     const rg = rangoDeElo(d.elo || 1000);
     const y = 300;
-    // avatar + marco
-    this._marcoDibuja(c, x0 + 120, y + 122, 100, pf.marco);
-    this._avatarDibuja(c, x0 + 120, y + 122, 92, pf.avatar);
-    // bandera + nombre
-    this._banderaDibuja(c, x0 + 288, y + 26, 72, 46, pf.pais);
+    // avatar + marco — la BANDERITA del país va PEGADA al retrato
+    // (petición del dueño r157: «aparecerá al lado de la foto del avatar
+    // y de su marco»), con el nombre a su derecha
+    this._marcoDibuja(c, x0 + 130, y + 128, 100, pf.marco);
+    this._avatarDibuja(c, x0 + 130, y + 128, 92, pf.avatar);
+    this._banderaDibuja(c, x0 + 248, y + 100, 68, 46, pf.pais);
     c.fillStyle = '#ffffff'; c.font = '900 50px system-ui, sans-serif';
     c.textAlign = 'left'; c.textBaseline = 'alphabetic';
-    c.fillText(nm, x0 + 384, y + 66);
+    c.fillText(nm, x0 + 334, y + 138);
     // nivel + barra XP (el NIVEL se deriva del XP: cero desincronización)
     c.fillStyle = '#ffd257'; c.font = '800 30px system-ui, sans-serif';
-    c.fillText(T('perfil_nivel') + ' ' + nv, x0 + 288, y + 122);
-    this._vestRR(c, x0 + 288, y + 140, 560, 20, 10);
+    c.fillText(T('perfil_nivel') + ' ' + nv, x0 + 334, y + 188);
+    this._vestRR(c, x0 + 334, y + 206, 560, 20, 10);
     c.fillStyle = 'rgba(255,255,255,0.16)'; c.fill();
     if (fr > 0) {
-      this._vestRR(c, x0 + 288, y + 140, Math.max(10, 560 * fr), 20, 10);
+      this._vestRR(c, x0 + 334, y + 206, Math.max(10, 560 * fr), 20, 10);
       c.fillStyle = '#39ff88'; c.fill();
     }
     c.fillStyle = '#c9d3dd'; c.font = '600 20px system-ui, sans-serif';
-    c.fillText(T('perfil_xp_txt', { a: Math.max(0, xp - a1) | 0, b: a2 - a1 }), x0 + 288, y + 186);
+    c.fillText(T('perfil_xp_txt', { a: Math.max(0, xp - a1) | 0, b: a2 - a1 }), x0 + 334, y + 252);
     // rango con medalla (colores por familia de la escala del dueño)
-    c.fillStyle = rg.col; c.beginPath(); c.arc(x0 + 312, y + 250, 26, 0, Math.PI * 2); c.fill();
-    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(x0 + 312, y + 250, 17, 0, Math.PI * 2); c.fill();
+    c.fillStyle = rg.col; c.beginPath(); c.arc(x0 + 358, y + 316, 26, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#ffffff'; c.beginPath(); c.arc(x0 + 358, y + 316, 17, 0, Math.PI * 2); c.fill();
     c.fillStyle = rg.col; c.font = '800 21px system-ui, sans-serif'; c.textAlign = 'center';
-    c.fillText('★', x0 + 312, y + 251);
+    c.fillText('★', x0 + 358, y + 317);
     c.textAlign = 'left';
     c.fillStyle = '#ffd257'; c.font = '800 28px system-ui, sans-serif';
-    c.fillText(T('perfil_rango') + ': ' + (__ppLang === 'en' ? rg.en : rg.es), x0 + 358, y + 242);
+    c.fillText(T('perfil_rango') + ': ' + (__ppLang === 'en' ? rg.en : rg.es), x0 + 404, y + 308);
     c.fillStyle = '#9aa7b4'; c.font = '600 20px system-ui, sans-serif';
-    c.fillText('ELO ' + Math.round(d.elo || 1000), x0 + 358, y + 272);
+    c.fillText('ELO ' + Math.round(d.elo || 1000), x0 + 404, y + 338);
     // fila de estadísticas (mock: 412 partidos · 72% · 12 racha)
     const st = [
       [T('perfil_partidos'), String((d.won | 0) + (d.lost | 0))],
@@ -9601,28 +9609,28 @@ export class PingPongGame {
     ];
     st.forEach((s, i) => {
       const sx = x0 + i * 446;
-      this._vestRR(c, sx, y + 310, 420, 96, 16);
+      this._vestRR(c, sx, y + 376, 420, 96, 16);
       c.fillStyle = 'rgba(255,255,255,0.08)'; c.fill();
       c.strokeStyle = 'rgba(255,255,255,0.18)'; c.lineWidth = 1.5; c.stroke();
       c.fillStyle = '#9aa7b4'; c.font = '600 20px system-ui, sans-serif'; c.textAlign = 'center';
-      c.fillText(s[0], sx + 210, y + 344);
+      c.fillText(s[0], sx + 210, y + 410);
       c.fillStyle = '#ffffff'; c.font = '900 40px system-ui, sans-serif';
-      c.fillText(s[1], sx + 210, y + 382);
+      c.fillText(s[1], sx + 210, y + 448);
     });
     // monedas (círculo dorado con «m» — sin emoji de moneda)
     c.textAlign = 'left';
-    c.fillStyle = '#f5c842'; c.beginPath(); c.arc(x0 + 16, y + 452, 14, 0, Math.PI * 2); c.fill();
+    c.fillStyle = '#f5c842'; c.beginPath(); c.arc(x0 + 16, y + 518, 14, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#10131a'; c.font = '800 15px system-ui, sans-serif'; c.textAlign = 'center';
-    c.fillText('m', x0 + 16, y + 453);
+    c.fillText('m', x0 + 16, y + 519);
     c.textAlign = 'left';
     c.fillStyle = '#f5c842'; c.font = '800 27px system-ui, sans-serif';
-    c.fillText(T('perfil_monedas') + ': ' + (d.monedas | 0), x0 + 42, y + 455);
+    c.fillText(T('perfil_monedas') + ': ' + (d.monedas | 0), x0 + 42, y + 521);
     // insignias (conseguidas al frente, resto en gris como «próximas»)
     c.fillStyle = '#ffd257'; c.font = '800 25px system-ui, sans-serif';
-    c.fillText(T('perfil_insignias'), x0, y + 510);
+    c.fillText(T('perfil_insignias'), x0, y + 578);
     ACHIEVEMENTS.forEach((a, i) => {
       const bx = x0 + 46 + (i % 8) * 124;
-      const by = y + 566 + Math.floor(i / 8) * 104;
+      const by = y + 636 + Math.floor(i / 8) * 104;
       const ok = !!(d.ach && d.ach[a.key]);
       c.globalAlpha = ok ? 1 : 0.32;
       c.fillStyle = ok ? '#f5c842' : '#3b4654';
@@ -9632,7 +9640,7 @@ export class PingPongGame {
       c.globalAlpha = 1;
     });
     // botones: EDITAR PERFIL (mock) + ranking mundial (el rango sale del ELO)
-    const by2 = y + 566 + Math.ceil(ACHIEVEMENTS.length / 8) * 104 + 26;
+    const by2 = y + 636 + Math.ceil(ACHIEVEMENTS.length / 8) * 104 + 26;
     btn('page:perfil_edit', x0, by2, W, 88, T('perfil_editar'), false, undefined, undefined, 34);
     btn('wrl:open', x0, by2 + 106, W, 66, T('perfil_rank_btn'), false, undefined, undefined, 28);
     c.restore();
@@ -9650,11 +9658,13 @@ export class PingPongGame {
     c.setTransform(1, 0, 0, 1, 0, 0);
     const pf = this._perfil || { pais: '', avatar: 'pinguino', marco: 'bronce' };
     const tab = this._peTab || 'nombre';
+    // r157 · 5ª pestaña DATOS: aquí vive «PERFIL Y DATOS» (salida de AJUSTES)
     [['nombre', T('perfil_nombre')], ['pais', T('perfil_pais')],
      ['avatar', T('perfil_avatar')], ['marco', T('perfil_marco')],
+     ['datos', T('perfil_datos')],
     ].forEach((t, i) => {
-      btn('petab:' + t[0], x0 + i * 334, 300, 310, 58, t[1], tab === t[0],
-        undefined, undefined, 24);
+      btn('petab:' + t[0], x0 + i * 266, 300, 244, 58, t[1], tab === t[0],
+        undefined, undefined, 22);
     });
     let y = 390;
     c.textBaseline = 'alphabetic';
@@ -9664,7 +9674,7 @@ export class PingPongGame {
       y += 116;
       c.fillStyle = '#9aa7b4'; c.font = '600 21px system-ui, sans-serif';
       c.textAlign = 'left';
-      c.fillText(T('perfil_movida'), x0, y);
+      c.fillText(T('perfil_datos_hint'), x0, y);
     } else if (tab === 'pais') {
       // Internacional + 64 países: 10 por fila, 7 filas (65 miniaturas)
       const items = [''].concat(PAISES.map((p) => p.id));
@@ -9696,7 +9706,7 @@ export class PingPongGame {
           : (a.coste != null ? '◉ ' + a.coste : '🔒'), cx + 126, cy + 147);
       });
       y += 172 * Math.ceil(AVATARES.length / 5);
-    } else {
+    } else if (tab === 'marco') {
       MARCOS.forEach((m, i) => {
         const cx = x0 + (i % 5) * 266;
         const cy = y + Math.floor(i / 5) * 172;
@@ -9714,6 +9724,42 @@ export class PingPongGame {
           : (m.coste != null ? '◉ ' + m.coste : '🔒'), cx + 126, cy + 147);
       });
       y += 172 * Math.ceil(MARCOS.length / 5);
+    } else if (tab === 'datos') {
+      // r157 · «PERFIL Y DATOS» SE MUDA AQUÍ (petición del dueño): la
+      // categoría sale de AJUSTES y vive dentro de MI PERFIL › EDITAR —
+      // telemetría, borrado de registros (arm de dos toques) y lecturas.
+      const ynD = (v) => (v ? T('yes') : T('no'));
+      btn('tele', x0, y, W, 80, T('btn_tele', { v: ynD(__PP_TELE.on) }),
+        !!__PP_TELE.on, undefined, undefined, 26);
+      y += 96;
+      btn('reset', x0, y, W, 80,
+        this._resetArm ? T('reset_arm') : T('reset_btn'),
+        false, this._resetArm ? 'surv' : undefined, undefined, 26);
+      y += 112;
+      c.fillStyle = '#9aa7b4'; c.font = '600 20px system-ui, sans-serif';
+      c.textAlign = 'left';
+      c.fillText(T('tele_hint'), x0, y);
+      y += 50;
+      c.fillStyle = '#ffd257'; c.font = '800 24px system-ui, sans-serif';
+      c.fillText(T('perfil_titulo'), x0, y);
+      y += 46;
+      const _skD = this._mesaSkinDef(this.mesaSkin);
+      let _altoIdD = 'normal';
+      try { _altoIdD = localStorage.getItem('pp_mesaalto') || 'normal'; } catch { /* */ }
+      const _altoD = MESA_ALTOS.find((a) => a.id === _altoIdD);
+      let _pidD = '';
+      try { _pidD = (localStorage.getItem('pp_pid') || '').slice(0, 8); } catch { /* */ }
+      const lecturasD = [
+        T('perfil_skin', { v: T(_skD.nameKey) }),
+        T('perfil_alto', { v: _altoD ? T(_altoD.nameKey) : _altoIdD }),
+        T('perfil_pala', { v: ynD(this.palaMejorada) }),
+        T('perfil_estilo', { v: ynD(this.rivStyleOn) }),
+      ];
+      if (_pidD) lecturasD.push(T('perfil_pid', { v: _pidD }));
+      c.fillStyle = '#c9d3dd'; c.font = '600 21px system-ui, sans-serif';
+      lecturasD.forEach((sD) => { c.fillText(sD, x0, y); y += 42; });
+      c.fillStyle = '#98a6b4'; c.font = '600 19px system-ui, sans-serif';
+      c.fillText(T('perfil_datos_hint'), x0, Math.min(y + 14, 1180));
     }
     // confirmación de compra armada (segundo toque sobre el MISMO icono)
     if (this._compraArm) {

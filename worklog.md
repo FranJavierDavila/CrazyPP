@@ -9906,3 +9906,39 @@ El dueño reportó no ver Mi Perfil ni el editor de país. Verificación:
   estaba en una sesión/pestaña cargada ANTES del despliegue → recargar.
 - SELLO para verificar de un vistazo: la concha del menú pinta
   «V3.6.237-SDK6» arriba a la derecha (r67, junto a las palas de idioma).
+
+## 56 · «MI PERFIL ES COSMÉTICO: LOS BOTONES NO RESPONDEN» — CAUSA RAÍZ Y FIX (r158) · 2026-11-27
+
+Reporte del dueño (Quest): la ficha MI PERFIL se ve pero nada responde
+(editar, banderas, ranking). Dos bugs REALES de geometría del menú,
+ambos invisibles para los arneses anteriores (que llamaban menuClick
+por índice y saltaban el hit-test):
+
+- BUG 1 (ficha/editor muertos): drawMenu arma _menuMap={s:H/1536,
+  dx:(W−1024·s)/2} para TODAS las páginas no-main (r68, painters legados
+  1024×1536); los painters migrados a banda deben ANULARLO ellos mismos
+  (idioma ya usado por wrl/trainext/rankini). drawMenuPerfil y
+  drawMenuPerfilEdit NO lo anulaban → sus rects salían por _mapRect
+  ~1.270 px a la derecha del pintado: contenido VISIBLE en la panela C
+  pero hit-test fuera de la panela montada (uv→px/py del mando caía en
+  vacío) → «botones cosméticos». FIX: this._menuMap = null tras
+  drawMenuHeader en ambos (r158).
+- BUG 2 (Supervivencia «eliminada»): la rejilla jugar declara columnas
+  ['C','R'] pero CONFIG_SECCIONES.lados no tenía entrada para 'jugar' →
+  defaultLados ['C'] → la tarjeta survgo (SUPERVIVENCIA) y tut:go
+  pintaban en la columna R de un arco que SOLO montaba C: invisibles e
+  inclicables. FIX: lados.jugar = ['C','R'] (r158). NO se eliminó nada:
+  la tarjeta vive en VESTÍBULO › JUGAR (4ª tarjeta) desde r156.
+- DETECCIÓN: arnés nuevo qa_hittest_vivo.py — mide menuRects TAL COMO
+  LOS DEJA EL BUCLE VIVO (sin drawMenu manual) y replica el hit-test
+  EXACTO del mando (px=paHit.x+uv.x·paHit.w · py=(1−uv.y)·alto ·
+  findIndex primera coincidencia) + chequeo enPanela (un rect cuyo
+  centro cae fuera de TODAS las panelas montadas es inclicable aunque
+  el array sea autoconsistente). Antes del fix: perfil 2/5 muertos,
+  editor 6/10, país 63/74, jugar survgo+tut:go muertos. Después:
+  0 muertos en main/perfil/editor/país/jugar/wrl (65 banderas vivas).
+- BATERÍA: qa_perfil 138/138 · arnés r156 69/69 (drag chmus/mesa
+  incluidos) · qa_version 31/31 · golden c5a1ad8c→92fe686f (3.6.237-SDK6).
+- LECCIÓN: los arneses que llaman menuClick(i,null) verifican ROUTING,
+  no ACCESIBILIDAD. Toda página nueva del menú debe pasar qa_hittest_vivo
+  (estado vivo del bucle + enPanela) antes de desplegar.

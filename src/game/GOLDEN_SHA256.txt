@@ -1,3 +1,2 @@
-# SHA256 del game.html que produjo esta división (3.6.237-SDK6, fase 190 · PORTADA CLÁSICA EN LA RAÍZ (LANDING) + ENTRADA VR EN UN TOQUE ?vr=1 (r152); sello actualizado
-# por bump_version.py desde 3.6.236-SDK6)
-9339cd694375117580b3133931ce2113d70edef5f9579182a62e9540e4ab3d9f
+# SHA256 del game.html que produjo esta división (3.6.210-SDK6, fase 188 · OLA 3: C2 separa los recursos del HTML — el artefacto baja de 12,5 MB a 2772605 B)
+92fe686f73cf9023d41c17da4673e23291a922ad89a39ec8c1c786d00bbb8114

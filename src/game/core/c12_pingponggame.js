@@ -9555,6 +9555,12 @@ export class PingPongGame {
     const c = this.menuCanvas.getContext('2d');
     const btn = this._menuBtn;
     this.drawMenuHeader(rects);
+    // r158 · LA CONCHA RESTAURA EL MAPA LEGADO QUE HUBIERA (mm0) — si una
+    // página legada lo dejó armado, los rects de esta ficha salían por
+    // _mapRect ~1.270 px a la derecha: pintado visible en la panela C pero
+    // hit-test FUERA de la panela montada → «botones cosméticos» (Quest).
+    // Esta página pinta en identidad y vive en el lienzo virtual: sin mapa.
+    this._menuMap = null;
     const pC = CONFIG_MENUS.arco.panelas[1];
     const x0 = pC.x + 80, W = pC.w - 160;
     c.save();
@@ -9652,6 +9658,9 @@ export class PingPongGame {
     const c = this.menuCanvas.getContext('2d');
     const btn = this._menuBtn;
     this.drawMenuHeader(rects);
+    // r158 · mismo rescate que la ficha: el mapa legado rancio desplazaba
+    // pestañas/grid de banderas fuera de la panela C (inclicables en Quest).
+    this._menuMap = null;
     const pC = CONFIG_MENUS.arco.panelas[1];
     const x0 = pC.x + 80, W = pC.w - 160;
     c.save();

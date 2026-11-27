@@ -1071,6 +1071,12 @@ export const CONFIG_SECCIONES = {
     train: ['C', 'R'], trainarea: ['C'], trainext: ['C', 'R'],
     // CARRERA: landing (divisiones) y división abierta en la C
     carrera: ['C'], carreradiv: ['C'],
+    // r158 · JUGAR: su rejilla declara columnas ['C','R'] — sin esta entrada
+    // la página montaba SÓLO la panela C y las tarjetas de la columna R
+    // (SUPERVIVENCIA «survgo» y el tutorial «tut:go») pintaban fuera del
+    // panel montado: invisibles e inclicables en el visor («¿eliminaste
+    // Supervivencia?» — estaba ahí, en una panela que no se montaba).
+    jugar: ['C', 'R'],
     // AJUSTES: rejilla en C+R (como r68) · cada categoría en su C
     opts: ['C', 'R'],
     optsJuego: ['C'], optsSala: ['C'], optsSonido: ['C'], optsVisual: ['C'],

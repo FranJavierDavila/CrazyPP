@@ -5564,6 +5564,12 @@ const CONFIG_SECCIONES = {
     train: ['C', 'R'], trainarea: ['C'], trainext: ['C', 'R'],
     // CARRERA: landing (divisiones) y división abierta en la C
     carrera: ['C'], carreradiv: ['C'],
+    // r158 · JUGAR: su rejilla declara columnas ['C','R'] — sin esta entrada
+    // la página montaba SÓLO la panela C y las tarjetas de la columna R
+    // (SUPERVIVENCIA «survgo» y el tutorial «tut:go») pintaban fuera del
+    // panel montado: invisibles e inclicables en el visor («¿eliminaste
+    // Supervivencia?» — estaba ahí, en una panela que no se montaba).
+    jugar: ['C', 'R'],
     // AJUSTES: rejilla en C+R (como r68) · cada categoría en su C
     opts: ['C', 'R'],
     optsJuego: ['C'], optsSala: ['C'], optsSonido: ['C'], optsVisual: ['C'],
@@ -32096,6 +32102,12 @@ class PingPongGame {
     const c = this.menuCanvas.getContext('2d');
     const btn = this._menuBtn;
     this.drawMenuHeader(rects);
+    // r158 · LA CONCHA RESTAURA EL MAPA LEGADO QUE HUBIERA (mm0) — si una
+    // página legada lo dejó armado, los rects de esta ficha salían por
+    // _mapRect ~1.270 px a la derecha: pintado visible en la panela C pero
+    // hit-test FUERA de la panela montada → «botones cosméticos» (Quest).
+    // Esta página pinta en identidad y vive en el lienzo virtual: sin mapa.
+    this._menuMap = null;
     const pC = CONFIG_MENUS.arco.panelas[1];
     const x0 = pC.x + 80, W = pC.w - 160;
     c.save();
@@ -32193,6 +32205,9 @@ class PingPongGame {
     const c = this.menuCanvas.getContext('2d');
     const btn = this._menuBtn;
     this.drawMenuHeader(rects);
+    // r158 · mismo rescate que la ficha: el mapa legado rancio desplazaba
+    // pestañas/grid de banderas fuera de la panela C (inclicables en Quest).
+    this._menuMap = null;
     const pC = CONFIG_MENUS.arco.panelas[1];
     const x0 = pC.x + 80, W = pC.w - 160;
     c.save();

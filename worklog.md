@@ -9884,3 +9884,25 @@ FIJADA vía API CF (token dashboard, success) = la clave del dueño →
 probe resumen=1 HTTP 200 con D1 completa (alarmas/arranques24h/champRank/
 fps/logrosTop…). El 403 histórico queda RESUELTO: panel del dueño lee
 con su clave. verify ×2 con JSON crudo: ambos tokens ACTIVE.
+
+## 55 · «NO VEO LOS CAMBIOS EN PERFIL» — DIAGNÓSTICO Y EVIDENCIA (r157) · 2026-11-27
+
+El dueño reportó no ver Mi Perfil ni el editor de país. Verificación:
+- REPO: el reciclaje del sandbox REBOBINÓ .git a la era r113 (849704e)
+  con un árbol mixto (fuentes r157 + scripts r15x ausentes). Restaurado
+  con git fetch + reset --hard a origin/main = 12b7bfb (cero inserciones
+  locales: nada único perdido). rama proyecto realineada.
+- PRODUCCIÓN: el game.html servido por Pages contiene TODOS los
+  marcadores (vestíbulo page:perfil, drawMenuPerfilEdit, case ppais,
+  pestaña datos, bandera x0+248, idSet mesa_altoy) y PAGES-VERSION=3.6.237-SDK6.
+- ARNÉS EN VIVO NUEVO (scripts/test_r157_live_pages.py): 25/25 OK
+  contra producción — tarjeta MI PERFIL responde, EDITAR abre, 5
+  pestañas, 65 países clicables (FR), nombre, DATOS con tele/reset,
+  AJUSTES sin la tarjeta retirada, raíl de altura presente, 0 pageerrors.
+- CANALES descartados: sw.js es RED-PRIMERO para game.html (límite 4 s,
+  nunca sirve viejo con red) y el sello CACHE ya es v3.6.237-SDK6; la
+  página de descargas no tiene zips en public/ (no hay canal zip activo)
+  y enlaza a la misma URL de Pages. Conclusión: el cliente del dueño
+  estaba en una sesión/pestaña cargada ANTES del despliegue → recargar.
+- SELLO para verificar de un vistazo: la concha del menú pinta
+  «V3.6.237-SDK6» arriba a la derecha (r67, junto a las palas de idioma).

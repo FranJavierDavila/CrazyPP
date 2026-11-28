@@ -10052,3 +10052,52 @@ por índice y saltaban el hit-test):
   solicitud sin pageerror · qa_version 31/31 · golden d115689e
   (3.6.242-SDK6 · deploy verificado: PAGES-VERSION 242 · fuente_commit
   dd6b8c7 · portada y game.html frescos en la CDN).
+
+## 61 · r163 · 2026-11-28 — CARTELA JUGAR + 5 MEJORAS (informe del dueño)
+- ARTE NUEVO: Jugar.zip del dueño → assets/ui/UI_Default/Jugar/ (5 botones
+  ×2 estados 512×128 + 5 recursos de modo 1024×512; la base es la cartela
+  COMÚN — Main/fondo.png — como pidió el dueño).
+- «EL MENÚ NO SE ABRE AL PRINCIPIO, SIGUE ESTANDO ANTIGUO» (causa raíz con
+  el probe): el congelado r161f se decidía en el 1.er drawMenu (a veces con
+  el menú aún cerrado y sin arte — precarga a 5 s) y NUNCA se reseteaba →
+  vestíbulo legado SIEMPRE al arrancar. FIX: precarga temprana (900 ms) +
+  _uiModo POR CARTELA + _uiArteLlego re-decide cuando el arte llega sin
+  nadie apuntando + menuFxInicia('in') resetea AL ABRIR («se decide al
+  abrir» queda literal). El swap jamás muda rects bajo la mano.
+- CARTELA JUGAR (encargo): título de sección T() dorado arriba · recurso
+  DINÁMICO del modo seleccionado con crossfade ágil (240 ms) y vaivén,
+  ocupa el espacio izquierdo · 5 botones en la misma colocación que Main
+  (columna 898·520·130): start (máquina, POR DEFECTO al abrir),
+  traingo, survgo, escalera:soon (aviso honesto — su cartela propia llega
+  en la siguiente ronda) y tut:go. Claves del recurso = IDS DE ACCIÓN
+  (r163d: btn_maquina no casaba con start — el fade no se movía).
+- TRES DEFECTOS REALES DESTAPADOS POR EL PROBE r163:
+  1) la CONCHA r68 pintaba DETRÁS de la cartela (jugar tiene entrada en
+     shell): sus rects (page:main/lang) desplazaban los índices del hover
+     y su cristal se transparentaba — GATE: con cartela no hay concha ni
+     mapa legado (r163c);
+  2) el ATRÁS que llevaba la concha → chip propio de la cartela
+     (medallón-icono 'atras', sin texto — directiva r68);
+  3) los rótulos desbordaban el borde (medición viva: 565 px a 30 pt con
+     fuente ancha; el for de r161d salía por el suelo SIN fijar la fuente)
+     → while con fuente pintada = medida, suelo 14 px, tx 150 (libra el
+     icono del arte, llega a ~145) y rótulo NAVY sobre el dorado _on.
+- MAIN: banderitas es/en pintadas a canvas en la ESQUINA SUPERIOR DERECHA
+  (ids lang:xx del despachador v2.27 — activa en dorado) · palas SUBEN al
+  centro del hueco (y 772→630) con VAIVÉN ligero y cartela estática ·
+  rótulos arrancan en min(f, 40) (no solapan el arte).
+- SONIDO DE SELECCIÓN: blip común en TODA pulsación (menuClick) + tick de
+  foco más perceptible (1180→1420, 45 ms); quitados los blips redundantes
+  por-caso (lang/dock/sec).
+- i18n: jug_maquina/jug_entrena/jug_escalera/escalera_soon en c00 (¡el
+  diccionario vive en c00_pre_three.js — game.html se ENSAMBLA desde las
+  piezas en cada build: las claves puestas en game.html se las llevó el
+  rebuild!).
+- MOTOR: _menuAnimCartela repinta a ~16 fps SOLO mientras la página tenga
+  vida (vaivén/fade) — se autodetiene al cerrar o cambiar de página.
+- QA: probe_r163 limpio (cartela al arranque, banderas, Jugar completa,
+  fade vivo que termina y limpia, escalera honesta) · capturas del lienzo:
+  main con banderitas y palas centradas · jugar con título/ATRÁS/recurso y
+  rótulos cabiendo (ningún desborde) · fade cruzado visible con _on dorado
+  · probe_r156 exit 0 · hittest vivo limpio · qa_version 31/31 · golden
+  c4bedbea (3.6.243-SDK6).

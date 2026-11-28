@@ -2087,8 +2087,15 @@ export class PingPongGame {
     this._uiCv = {};
     this._uiFalla = {};
     this._uiPidendo = {};
-    this._uiModoMainVal = null;   // r161f: congelado al abrir el menú
-    setTimeout(() => { try { this._uiPrecarga(); } catch (eUIPC) { /* */ } }, 5000);
+    // r163 · congelado POR CARTELA (Main/Jugar) + vida de la cartela
+    // JUGAR (selección de modo + crossfade del recurso).
+    this._uiModoVals = {};
+    this._uiJugarSel = null;      // null → el defecto del manifiesto
+    this._uiJugarFade = null;     // { de, a, t0 } del crossfade
+    // r163 · precarga TEMPRANA (antes 5 s): el menú abre al arrancar y el
+    // arte debía estar camino YA (informe del dueño: «el menú no se abre
+    // al principio, sigue estando antiguo»).
+    setTimeout(() => { try { this._uiPrecarga(); } catch (eUIPC) { /* */ } }, 900);
     this.menuTex = null;   // r68 · la textura «central» se crea en el bucle
     /* r70 · ASPECTO EXACTO (causa raíz de los círculos elípticos): r69
      * estrechó los anchos físicos de las panelas sin tocar el lienzo — la
@@ -3274,10 +3281,23 @@ export class PingPongGame {
     // el vestíbulo legado conserva sus L·C·R tal cual.
     const ladosPag = (CONFIG_SECCIONES.lados &&
       CONFIG_SECCIONES.lados[this.menuPage]) || CONFIG_SECCIONES.defaultLados;
-    const uiMain = this.menuPage === 'main' ? this._uiCartelaDef('Main') : null;
-    this._menuArco(uiMain && this._uiModoMain()
-      ? (uiMain.lados || ['C']) : ladosPag);
+    // r163 · la cartela manda el montaje en main Y jugar (panela C
+    // única); sin arte, los lados legado de CONFIG_SECCIONES.
+    const _uiNom = this.menuPage === 'main' ? 'Main'
+      : this.menuPage === 'jugar' ? 'Jugar' : null;
+    const uiCart = _uiNom ? this._uiCartelaDef(_uiNom) : null;
+    this._menuArco(uiCart && this._uiModo(_uiNom)
+      ? (uiCart.lados || ['C']) : ladosPag);
     if (LEG) {
+      // r163c · CON CARTELA, SIN CONCHA: la cartela pinta SU panela
+      // completa (el cristal de la concha se transparentaba mal bajo el
+      // fondo semi-opaco) y SIN el mapa legado ni SUS rects — el
+      // page:main/lang:es/lang:en de la concha desplazaban los índices de
+      // los botones de la cartela (el hover caía en la pieza equivocada).
+      // Sin arte, la concha legado sigue tal cual (fallback progresivo).
+      if (_uiNom && this._uiModo(_uiNom)) {
+        this._menuMap = null;
+      } else {
       // r68 · CONCHA de secciones (cristal + ATRÁS + título, de
       // CONFIG_SECCIONES) y luego el contenido legado 1024×1536 centrado
       // (escala 0,911) sobre una placa serena. Los rects de todos los
@@ -3314,6 +3334,7 @@ export class PingPongGame {
         c.lineWidth = 3;
         c.stroke();
       }
+      }   // r163c · fin del else «sin cartela»
     } else {
       this._menuMap = null;
     }
@@ -3425,7 +3446,7 @@ export class PingPongGame {
       // tema está en caché pinta la cartela única (fondo + logo + palas +
       // botones con estado _on al apuntar); si falta UNA pieza, el
       // vestíbulo legado sigue sin cambios (fallback progresivo).
-      if (this._uiModoMain() && this._uiCartela('Main', rects)) {
+      if (this._uiModo('Main') && this._uiCartela('Main', rects)) {
         this.menuRects = rects;
         this._menuState = this.rules.state;
         this._menuTipDraw(c, rects);   // tooltip del control apuntado
@@ -3520,6 +3541,16 @@ export class PingPongGame {
     }
     // r156 · JUGAR: subpágina con TODAS las modalidades (rejilla DATO)
     if (this.menuPage === 'jugar') {
+      // r163 · CARTELA JUGAR: si el arte completo del tema llegó, cartela
+      // única (título + recurso con fade + 5 botones); si falta UNA pieza
+      // la rejilla legado sigue sin cambios (fallback progresivo).
+      if (this._uiModo('Jugar') && this._uiCartela('Jugar', rects)) {
+        this.menuRects = rects;
+        this._menuState = this.rules.state;
+        this._menuTipDraw(c, rects);   // tooltip del control apuntado
+        this._menuTexSube();
+        return;
+      }
       this._menuRejilla(rects, 'jugar', this._jugarSubs());
       this.menuRects = rects;
       this._menuState = this.rules.state;
@@ -4632,12 +4663,7 @@ export class PingPongGame {
         im.onload = () => {
           delete this._uiPidendo[clave];
           this._uiCv[clave] = im;
-          // el arte completo acaba de llegar → repinta si el menú está
-          // abierto en una página que usa cartela (Main)
-          if (this.menuOpen && this.menuPage === 'main' &&
-              this._uiCartelaLista('Main')) {
-            try { this.drawMenu(); } catch (eUIR) { /* */ }
-          }
+          try { this._uiArteLlego(); } catch (eUIR) { /* */ }
         };
         im.onerror = () => siguiente(i + 1);
         im.src = candidatos[i];
@@ -4656,6 +4682,7 @@ export class PingPongGame {
     const urls = [def.fondo]
       .concat((def.capas || []).map((l) => l.img))
       .concat((def.botones || []).map((b) => b.img))
+      .concat(def.recurso ? Object.values(def.recurso.imgs || {}) : [])
       .map((u) => this._uiK(u));
     return urls.every((u) => !!this._uiCv[base + u]);
   }
@@ -4663,11 +4690,39 @@ export class PingPongGame {
   /** r161f · ¿cartela o legado en esta apertura? Se decide al abrir (el
    *  primer drawMenu tras toggleMenu congela) y NO cambia hasta cerrar:
    *  los rects jamás mudan bajo la mano (clicks por índice estables). */
-  _uiModoMain() {
-    if (this._uiModoMainVal === null) {
-      this._uiModoMainVal = this._uiCartelaLista('Main');
+  /** r163 · ¿cartela o legado en esta apertura? CONGELADO POR CARTELA:
+   *  se decide al abrir (primer drawMenu de la página) y NO cambia hasta
+   *  que el arte llegue SIN NADIE APUNTANDO (swap del arranque, abajo) —
+   *  los rects jamás mudan bajo la mano (clicks por índice estables,
+   *  r161f). */
+  _uiModo(nombre) {
+    if (this._uiModoVals[nombre] === undefined ||
+        this._uiModoVals[nombre] === null) {
+      this._uiModoVals[nombre] = this._uiCartelaLista(nombre);
     }
-    return this._uiModoMainVal;
+    return this._uiModoVals[nombre];
+  }
+
+  /** r163 · una pieza del arte acabó de llegar: si la página abierta es
+   *  una de cartela, el arte ya está COMPLETO y NADIE está apuntando un
+   *  botón, el congelado se re-decide (el vestíbulo del ARRANQUE muda a
+   *  cartela sola — informe del dueño: «el menú no se abre al principio,
+   *  sigue estando antiguo»; además el congelado de r161f no se reseteaba
+   *  al cerrar: false pegado para siempre). Con una mano encima, espera. */
+  _uiArteLlego() {
+    if (!this.menuOpen) return;
+    const pag = this.menuPage === 'main' ? 'Main'
+      : this.menuPage === 'jugar' ? 'Jugar' : null;
+    if (!pag) return;
+    if (this._uiCartelaLista(pag)) {
+      if (this._uiModoVals[pag] === false &&
+          !this.menuHover.some((h) => h >= 0)) {
+        this._uiModoVals[pag] = true;
+      }
+      if (this._uiModoVals[pag] === true) {
+        try { this.drawMenu(); } catch (eUIR) { /* */ }
+      }
+    }
   }
 
   /** Precarga en reposo: TODAS las cartelas del tema activo (base y _on). */
@@ -4680,6 +4735,12 @@ export class PingPongGame {
       this._uiPide(base, def.fondo, false);
       for (const l of def.capas || []) this._uiPide(base, l.img, false);
       for (const b of def.botones || []) this._uiPide(base, b.img, true);
+      // r163 · los recursos dinámicos de la cartela (fade del modo)
+      if (def.recurso) {
+        for (const uR of Object.values(def.recurso.imgs || {})) {
+          this._uiPide(base, uR, false);
+        }
+      }
     }
   }
 
@@ -4704,9 +4765,49 @@ export class PingPongGame {
     const im = (k) => this._uiCv[base + k];
     // fondo a rodaja completa (el alfa del PNG deja entrever el hall)
     c.drawImage(im(kf), ox, 0, pa.w, CONFIG_MENUS.lienzo.alto);
-    // capas pre-compuestas (logo, palas — el arte del dueño a su rect)
+    // r163 · TÍTULO DE SECCIÓN (cartela Jugar: «JUGAR» arriba en dorado —
+    // el arte no hornea texto: el rótulo lo pinta T() como en los botones)
+    if (def.tituloKey) {
+      const tit = T(def.tituloKey);
+      c.font = '900 72px system-ui, sans-serif';
+      c.textAlign = 'center';
+      c.textBaseline = 'middle';
+      c.fillStyle = 'rgba(255,210,87,0.98)';
+      c.shadowColor = 'rgba(6,20,44,0.65)';
+      c.shadowBlur = 10;
+      c.fillText(tit, ox + pa.w / 2, 104);
+      c.shadowBlur = 0;
+      c.strokeStyle = 'rgba(255,210,87,0.5)';
+      c.lineWidth = 3;
+      const tw = Math.min(c.measureText(tit).width, pa.w - 200);
+      c.beginPath();
+      c.moveTo(ox + pa.w / 2 - tw / 2, 152);
+      c.lineTo(ox + pa.w / 2 + tw / 2, 152);
+      c.stroke();
+      c.textAlign = 'left';
+      c.font = '800 34px system-ui, sans-serif';
+    }
+    // capas pre-compuestas (logo, palas — el arte del dueño a su rect);
+    // r163 · VAIVÉN: una capa puede respirar (amplitud px) con la cartela
+    // estática — la petición del dueño para las palas de Main.
     for (const L of def.capas || []) {
-      c.drawImage(im(this._uiK(L.img)), ox + L.x, L.y, L.w, L.h);
+      const vx = L.vaiven ? Math.sin(performance.now() / 950) * L.vaiven : 0;
+      c.drawImage(im(this._uiK(L.img)), ox + L.x + vx, L.y, L.w, L.h);
+    }
+    // r163 · BANDERAS es/en (cartela Main, esquina superior derecha —
+    // petición del dueño): pintadas a canvas (sin asset); los ids
+    // lang:es / lang:en ya existían en el despachador desde v2.27.
+    if (def.banderas) {
+      const B2 = def.banderas;
+      const activo = this._uiLang();
+      for (let i2 = 0; i2 < 2; i2++) {
+        const iso = i2 === 0 ? 'es' : 'en';
+        const bx = ox + B2.x + i2 * (B2.w + 14);
+        const hovB = this.menuHover.includes(rects.length);
+        this._uiBandera(c, iso, bx, B2.y, B2.w, B2.h, hovB, iso === activo);
+        rects.push(this._mapRect({ x: bx, y: B2.y, w: B2.w, h: B2.h,
+          id: 'lang:' + iso }));
+      }
     }
     // botones: estado _on al apuntar (misma nomenclatura + _on) y
     // RÓTULO vivo (r161c · el arte del tema no hornea texto — T() manda)
@@ -4719,15 +4820,26 @@ export class PingPongGame {
       if (lbl) {
         // r161d · AUTOAJUSTE: la fuente baja hasta que el rótulo cabe en
         // el botón (tx..borde-26) — cualquier idioma, cualquier tema
-        let fUI = b.f || 48;
-        const txMax = b.w - (b.tx || 150) - 26;
+        // r163 · TAPA MÁS BAJA: los rótulos solapaban partes del arte del
+        // botón (informe del dueño) — la fuente arranca en min(f, 40).
+        // r163e · A PRUEBA DE FUENTES: la medición viva dio 565 px a 30 pt
+        // con la fuente ancha del entorno y el for salía por el suelo SIN
+        // fijar la fuente (pintaba con la anterior → desborde). Ahora el
+        // while garantiza fuente pintada = fuente medida y el suelo baja a
+        // 14 px: cualquier idioma cabe. tx 150 libra el icono del arte.
+        let fUI = Math.min(b.f || 48, 40);
+        const txMax = b.w - (b.tx || 150) - 18;
         c.textAlign = 'left';
         c.textBaseline = 'middle';
-        for (; fUI > 22; fUI -= 2) {
+        c.font = '800 ' + fUI + 'px system-ui, sans-serif';
+        while (fUI > 14 && c.measureText(lbl).width > txMax) {
+          fUI -= 2;
           c.font = '800 ' + fUI + 'px system-ui, sans-serif';
-          if (c.measureText(lbl).width <= txMax) break;
         }
-        c.fillStyle = 'rgba(255,255,255,0.98)';
+        // r163e · rótulo NAVY sobre el dorado _on (blanco sobre oro se
+        // lavaba — la misma idea de los botones activos del legado)
+        c.fillStyle = hov ? 'rgba(16,19,26,0.95)'
+          : 'rgba(255,255,255,0.98)';
         c.shadowColor = 'rgba(6,20,44,0.6)';
         c.shadowBlur = 8;
         c.fillText(lbl, ox + b.x + (b.tx || 150), b.y + b.h / 2 + 2);
@@ -4736,7 +4848,122 @@ export class PingPongGame {
       }
       rects.push(this._mapRect({ x: ox + b.x, y: b.y, w: b.w, h: b.h, id: b.id }));
     }
+    // r163c · ATRÁS de la cartela (medallón-icono 'atras' — sin texto,
+    // directiva r68 del dueño): id page:main del despachador.
+    if (def.atras) {
+      const A = def.atras;
+      const hovA = this.menuHover.includes(rects.length);
+      if (hovA) {
+        c.save();
+        c.shadowColor = 'rgba(255,210,87,0.85)';
+        c.shadowBlur = 16;
+      }
+      this._vestMedallion(c, ox + A.x + A.d / 2, A.y + A.d / 2, A.d / 2,
+        'atras');
+      if (hovA) c.restore();
+      rects.push(this._mapRect({ x: ox + A.x, y: A.y, w: A.d, h: A.d,
+        id: 'page:main' }));
+    }
+    // r163c · RECURSO DINÁMICO (cartela Jugar): el arte del modo SELECCIO-
+    // NADO con crossfade ágil (240 ms). Selección POR ID del rect apuntado
+    // (a prueba de rects extra: concha, atras, banderas…); sin apuntado
+    // permanece el último («siempre esté en pantalla el recurso relativo
+    // al botón seleccionado» — dueño). Al abrir: el defecto
+    // (btn_maquina → jugar.png). Pinta al final: sin solape con botones.
+    if (def.recurso) {
+      const R = def.recurso;
+      const hi = this.menuHover.find((h) => h >= 0);
+      const rid = (hi !== undefined && hi >= 0 && hi < rects.length)
+        ? rects[hi].id : null;
+      if (rid && R.imgs[rid] && rid !== this._uiJugarSel) {
+        this._uiJugarFade = { de: this._uiJugarSel || R.defecto,
+          a: rid, t0: performance.now() };
+        this._uiJugarSel = rid;
+      }
+      if (!this._uiJugarSel) this._uiJugarSel = R.defecto;
+      const pro = this._uiJugarFade
+        ? Math.min(1, (performance.now() - this._uiJugarFade.t0) / 240) : 1;
+      const pintar = (clave, alfa) => {
+        const uR = R.imgs[clave];
+        const imR = uR && this._uiCv[base + this._uiK(uR)];
+        if (!imR) return;
+        c.save();
+        c.globalAlpha = Math.max(0, Math.min(1, alfa));
+        const vx = R.vaiven ? Math.sin(performance.now() / 900) * R.vaiven : 0;
+        c.drawImage(imR, ox + R.x + vx, R.y, R.w, R.h);
+        c.restore();
+      };
+      if (this._uiJugarFade && pro < 1 && this._uiJugarFade.de &&
+          this._uiJugarFade.de !== this._uiJugarSel) {
+        pintar(this._uiJugarFade.de, 1 - pro);
+      }
+      pintar(this._uiJugarSel, this._uiJugarFade ? pro : 1);
+      if (this._uiJugarFade && pro >= 1) this._uiJugarFade = null;
+    }
+    // r163 · vida viva: vaivén/fade piden el siguiente repintado
+    this._menuAnimCartela();
     return true;
+  }
+
+  /** r163 · BANDERA MINI a canvas (clip redondeado manual — roundRect()
+   *  no existe en todas las versiones del navegador del casco). ES:
+   *  tricolor roja-amarilla; EN: union jack simplificado. Activa → borde
+   *  dorado; apuntada → halo. */
+  _uiBandera(c, iso, x, y, w, h, hov, activo) {
+    const rr = (px, py, pw, ph, r2) => {
+      c.beginPath();
+      c.moveTo(px + r2, py);
+      c.arcTo(px + pw, py, px + pw, py + ph, r2);
+      c.arcTo(px + pw, py + ph, px, py + ph, r2);
+      c.arcTo(px, py + ph, px, py, r2);
+      c.arcTo(px, py, px + pw, py, r2);
+      c.closePath();
+    };
+    c.save();
+    rr(x, y, w, h, 10);
+    c.clip();
+    if (iso === 'es') {
+      c.fillStyle = '#c60b1e';
+      c.fillRect(x, y, w, h);
+      c.fillStyle = '#ffc400';
+      c.fillRect(x, y + h * 0.25, w, h * 0.5);
+    } else {
+      c.fillStyle = '#012169';
+      c.fillRect(x, y, w, h);
+      c.strokeStyle = '#ffffff';
+      c.lineWidth = h * 0.22;
+      c.beginPath();
+      c.moveTo(x, y); c.lineTo(x + w, y + h);
+      c.moveTo(x + w, y); c.lineTo(x, y + h);
+      c.stroke();
+      c.strokeStyle = '#c8102e';
+      c.lineWidth = h * 0.09;
+      c.beginPath();
+      c.moveTo(x, y); c.lineTo(x + w, y + h);
+      c.moveTo(x + w, y); c.lineTo(x, y + h);
+      c.stroke();
+      c.fillStyle = '#ffffff';
+      c.fillRect(x + w * 0.36, y, w * 0.28, h);
+      c.fillRect(x, y + h * 0.36, w, h * 0.28);
+      c.fillStyle = '#c8102e';
+      c.fillRect(x + w * 0.41, y, w * 0.18, h);
+      c.fillRect(x, y + h * 0.41, w, h * 0.18);
+    }
+    c.restore();
+    rr(x, y, w, h, 10);
+    if (activo) {
+      c.strokeStyle = 'rgba(255,210,87,0.95)';
+      c.lineWidth = 4;
+    } else {
+      c.strokeStyle = 'rgba(255,255,255,0.4)';
+      c.lineWidth = 2.5;
+    }
+    if (hov) {
+      c.shadowColor = 'rgba(255,210,87,0.85)';
+      c.shadowBlur = 14;
+    }
+    c.stroke();
+    c.shadowBlur = 0;
   }
 
   drawMenuVestibulo(rects) {
@@ -5288,6 +5515,26 @@ export class PingPongGame {
       if (!this.menuOpen || this.menuPage !== 'carrera') return;
       this.drawMenu();
     }, ms || 130);
+  }
+
+  /** r163 · repintado VIVO de las cartelas (vaivén de la pala + crossfade
+   *  del recurso): encadena repintados a ~16 fps SOLO mientras la página
+   *  abierta tenga vida en el tema activo — se autodetiene al cerrar o al
+   *  cambiar de página (sin bucles huérfanos, como r79). */
+  _menuAnimCartela(ms) {
+    clearTimeout(this._menuAnimT);
+    this._menuAnimT = setTimeout(() => {
+      if (!this.menuOpen) return;
+      const pag = this.menuPage === 'main' ? 'Main'
+        : this.menuPage === 'jugar' ? 'Jugar' : null;
+      if (!pag || !this._uiModoVals[pag]) return;
+      const def = this._uiCartelaDef(pag);
+      if (!def) return;
+      const vida = (def.capas || []).some((l) => l.vaiven) || !!def.recurso ||
+        !!this._uiJugarFade;
+      if (!vida) return;
+      this.drawMenu();
+    }, ms || 62);
   }
 
   drawMenuCarrera(rects) {
@@ -6704,6 +6951,12 @@ export class PingPongGame {
     if (!this.menuGroup) return;
     const ahora = performance.now();
     if (dir === 'in') {
+      // r163b · «SE DECIDE AL ABRIR» hecho literal: cada apertura re-decide
+      // cartela ⇄ legado (el congelado de r161f no se reseteaba nunca y el
+      // vestíbulo antiguo salía SIEMPRE al arrancar — informe del dueño).
+      // El hover nace vacío en la apertura: el swap jamás muda rects bajo
+      // la mano; dentro de la sesión sigue congelado (r161f intacto).
+      this._uiModoVals = {};
       this.menuGroup.visible = true;
       this._menuFxOut = 0;
       this._menuFxPulso = 0;
@@ -7150,7 +7403,9 @@ export class PingPongGame {
         // r81 · FASE 177 · FOCO VIVO: tick sonoro + haptic al ganar el
         // foco una fila (la competencia navega «con vida»).
         if (idx >= 0) {
-          try { this.audio.playOsc(1180, 1180, 0.028, 'sine', 0.05, 0); } catch (eFoco) { /* */ }
+          // r163 · más perceptible (era casi inaudible — el dueño pide
+          // oír la selección al apuntar cada botón)
+          try { this.audio.playOsc(1180, 1420, 0.045, 'sine', 0.075, 0); } catch (eFoco) { /* */ }
           if (this.renderer.xr && this.renderer.xr.isPresenting) {
             this.haptic(h, 0.15, 18);
           }
@@ -7617,6 +7872,11 @@ export class PingPongGame {
     // último punto conocido de cualquier mando)
     const mh = this._menuHitPx || [null, null];
     this._menuClickPx = mh[hand] || mh[0] || mh[1] || null;
+    // r163 · SONIDO DE SELECCIÓN en TODA pulsación (petición del dueño:
+    // «que siempre que se seleccione un botón suene un sonido») — blip
+    // corto y consistente antes del despacho; los sonidos especiales
+    // (acorde crazy, convocatoria social) suenan ENCIMA de este.
+    try { this.audio.playOsc(640, 880, 0.05, 'sine', 0.11, 0); } catch (eBlip) { /* */ }
     // r87 · INVITACIÓN DIRECTA (mjsoc:inv:<pid>): el anfitrión con sala
     // abierta convoca a un jugador online de la lista — fetch al buzón del
     // worker; el destinatario lo ve en ≤20 s como tarjeta con UNIRSE.
@@ -7644,7 +7904,7 @@ export class PingPongGame {
             if (!this.disposed) this.audio.playOsc(1100, 1660, 0.12, 'triangle', 0.12, 0);
           }, 110);
         } else {
-          this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+          // r163 · el blip común de menuClick cubre la selección
         }
         // v2.67: al abrir RANKING MUNDIAL se revalida el top 10 (silencioso)
         if (arg === 'rank' && this.menuSec === 'rank') {
@@ -7671,6 +7931,9 @@ export class PingPongGame {
             arg === 'optsSalaBola' || arg === 'optsSalaHall' ||
             arg === 'hallpick') {   // r96 · submenús SALA/MESA · r21 · BOLA · r23 · HALL
           this.menuPage = arg;
+          // r163 · entrar en JUGAR: la selección vuelve al defecto
+          // (btn_maquina — jugar.png en pantalla al abrir la cartela)
+          if (arg === 'jugar') { this._uiJugarSel = null; this._uiJugarFade = null; }
           // r79 · FIX «ESCOGER HALL NO HACE NADA»: 'hallpick' faltaba en la
           // lista del despacho page: la tarjeta de MI CASA era un id muerto.
           // r78 · SALA PÚBLICA EN ESPERA: ATRÁS desde MULTIJUGADOR con la
@@ -7878,8 +8141,14 @@ export class PingPongGame {
           setLang(arg, this);
           this.rules.message = '';
           this.syncDom();
-          this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+          // r163 · el blip común de menuClick cubre la selección
         }
+        this.drawMenu();
+        break;
+      case 'escalera':
+        // r163 · ESCALERA DE CAMPEONATO: su cartela propia llega en la
+        // siguiente ronda (encargo del dueño) — por ahora, aviso honesto.
+        this.rules.message = T('escalera_soon');
         this.drawMenu();
         break;
       case 'docktv':
@@ -7891,7 +8160,7 @@ export class PingPongGame {
         // única implementación de cada flujo, cero duplicación.
         const elId = { docktv: 'tvlink', dockintro: 'introbtn',
           dockpwa: 'pwabtn', dockkofi: 'kofibtn' }[ns];
-        this.audio.playOsc(720, 900, 0.05, 'sine', 0.1, 0);
+        // r163 · el blip común de menuClick cubre la selección
         this.closeMenu();
         const elDock = document.getElementById(elId);
         if (elDock) elDock.click();

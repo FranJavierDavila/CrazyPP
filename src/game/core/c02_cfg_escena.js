@@ -1071,9 +1071,16 @@ export const CONFIG_UI_TEMAS = {
           panela: 'C',
           lados: ['C'],
           fondo: 'Main/fondo.png',
+          // r163 · BANDERAS es/en en la ESQUINA SUPERIOR DERECHA (petición
+          // del dueño) — pintadas a canvas, ids lang:xx del despachador.
+          banderas: { x: 1240, y: 34, w: 86, h: 58 },
           capas: [
             { img: 'Main/Logo.png', x: 210, y: 53, w: 862, h: 481 },
-            { img: 'Main/Palas.png', x: 0, y: 772, w: 1100, h: 615 },
+            // r163 · las palas SUBEN al centro de su hueco (informe del
+            // dueño: «muy abajo») y respiran con un VAIVÉN ligero; la
+            // cartela permanece estática por comodidad.
+            { img: 'Main/Palas.png', x: 0, y: 630, w: 1100, h: 615,
+              vaiven: 16 },
           ],
           // r161c · ROTULADO: el arte trae barra+icono SIN texto — la
           // etiqueta la pinta el juego con T() (claves EXISTENTES del
@@ -1081,17 +1088,63 @@ export const CONFIG_UI_TEMAS = {
           // tx = x del texto dentro del botón · f = tamaño de fuente.
           botones: [
             { id: 'page:jugar', img: 'Main/btn_Play', x: 898, y: 490, w: 520, h: 130,
-              etiquetaKey: 'hub_jugar', tx: 150, f: 48 },
+              etiquetaKey: 'hub_jugar', tx: 150, f: 40 },   // r163 rótulo menor
             { id: 'tab:multi', img: 'Main/btn_multijugador', x: 898, y: 638, w: 520, h: 130,
-              etiquetaKey: 'hub_multi', tx: 118, f: 48 },
+              etiquetaKey: 'hub_multi', tx: 118, f: 40 },   // r163 rótulo menor
             { id: 'page:champs', img: 'Main/btn_campeonatos', x: 898, y: 786, w: 520, h: 130,
-              etiquetaKey: 'sec_crazy', tx: 118, f: 48 },
+              etiquetaKey: 'sec_crazy', tx: 118, f: 40 },   // r163 rótulo menor
             { id: 'page:perfil', img: 'Main/btn_Perfil', x: 898, y: 934, w: 520, h: 130,
-              etiquetaKey: 'perfil_title', tx: 118, f: 48 },
+              etiquetaKey: 'perfil_title', tx: 118, f: 40 },   // r163 rótulo menor
             { id: 'page:opts', img: 'Main/btn_Ajustes', x: 898, y: 1082, w: 520, h: 130,
-              etiquetaKey: 'opts_title', tx: 118, f: 48 },
+              etiquetaKey: 'opts_title', tx: 118, f: 40 },   // r163 rótulo menor
             { id: 'salirweb', img: 'Main/btn_Salir', x: 898, y: 1230, w: 520, h: 130,
-              etiquetaKey: 'dock_salir', tx: 118, f: 48 },
+              etiquetaKey: 'dock_salir', tx: 118, f: 40 },   // r163 rótulo menor
+          ],
+        },
+        // r163 · CARTELA JUGAR (encargo del dueño): cartela COMÚN (la
+        // misma base de cristal de Main) sobre la que se superponen el
+        // título de sección, el RECURSO del modo seleccionado (fade ágil)
+        // y los 5 botones del zip. Botones en la MISMA colocación que
+        // Main (columna derecha 898·520·130, misma línea de arranque).
+        // El arte no hornea texto: título y rótulos los pinta T().
+        Jugar: {
+          panela: 'C',
+          lados: ['C'],
+          fondo: 'Main/fondo.png',
+          tituloKey: 'hub_jugar',
+          // r163c · ATRÁS icono (la concha lo llevaba — al saltarla, la
+          // cartela pinta su propio medallón 'atras' con id page:main)
+          atras: { x: 44, y: 40, d: 66 },
+          recurso: {
+            // el recurso ocupa la mayor parte del espacio IZQUIERDO
+            x: 36, y: 560, w: 830, h: 415, vaiven: 14,
+            // claves = ids de acción del despachador (el hover resuelve
+            // rects[hi].id y mira AQUÍ): start=máquina · traingo=
+            // entrenamiento · survgo=supervivencia · escalera:soon ·
+            // tut:go=tutorial
+            defecto: 'start',
+            imgs: {
+              start: 'Jugar/jugar.png',
+              traingo: 'Jugar/entrenamiento.png',
+              survgo: 'Jugar/supervivencia.png',
+              'escalera:soon': 'Jugar/escalera.png',
+              'tut:go': 'Jugar/tutorial.png',
+            },
+          },
+          botones: [
+            // «Todos lanzarán el modo de juego correspondiente salvo el
+            // modo escalera» (dueño) — escalera: aviso honesto, su
+            // cartela propia llega en la siguiente ronda.
+            { id: 'start', img: 'Jugar/btn_maquina', x: 898, y: 490, w: 520, h: 130,
+              etiquetaKey: 'jug_maquina', tx: 150, f: 40 },
+            { id: 'traingo', img: 'Jugar/btn_entrenamiento', x: 898, y: 638, w: 520, h: 130,
+              etiquetaKey: 'jug_entrena', tx: 150, f: 40 },
+            { id: 'survgo', img: 'Jugar/btn_supervivencia', x: 898, y: 786, w: 520, h: 130,
+              etiquetaKey: 'sec_surv', tx: 150, f: 40 },
+            { id: 'escalera:soon', img: 'Jugar/btn_escalera', x: 898, y: 934, w: 520, h: 130,
+              etiquetaKey: 'jug_escalera', tx: 150, f: 40 },
+            { id: 'tut:go', img: 'Jugar/btn_tutorial', x: 898, y: 1082, w: 520, h: 130,
+              etiquetaKey: 'tut_hub', tx: 150, f: 40 },
           ],
         },
       },

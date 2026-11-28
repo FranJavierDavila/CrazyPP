@@ -386,7 +386,7 @@
       <span class="dot">·</span>
       <a id="tvlink" class="footlink" href="/tv.html" target="_blank" rel="noreferrer" data-i18n-title="ov_tv" title="Mira las partidas en vivo sin visor">📺 TV en vivo</a>
       <span class="dot">·</span>
-      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.240-SDK6</span>
+      <span id="verBadge" style="font-size:12px;font-weight:700;letter-spacing:.08em;color:#ffd257;">V3.6.241-SDK6</span>
     </div>
   </main>
 
@@ -3852,7 +3852,7 @@ const __PP_TELE = (() => {
   // v3.5.0-ESC1.
   // v3.5.0-ESC1 · ETAPA 4 NUEVA «ESCUDO DE PALA · DEFENSA DEL CASCO» (mecánica reactiva del dueño): pala-escudo que devuelve ORBES DE PLASMA (estándar/pesado/inestable/rotor) con la física de siempre + GOLPE LIMPIO (zona dulce 3,5 cm + ≥4 m/s) que carga la SOBRECARGA (+20 %) hasta el ORBE PERFORANTE · 3 FASES: 3 drones artilleros → 4 drones + CENTINELA de rally (5 rebotes exponen su núcleo) → NAVE ABORDADORA con 3 cañones (uno activo cada 8 s) · INTEGRIDAD DEL CASCO (100, +30 por interludio, alerta ≤30) · BARRERA DE CASCO trasera con onda de impacto (los orbes jamás tocan al jugador) · sala propia de 14×10×6 m con arte propio v3.5.0 (escudo_pala/) · PRESSIÓN creciente tras 90 s · pantalla del techo + NOVA · derrota con astro_laughing y regreso · REORDEN del dueño: el REACTOR DE IMPULSO sube a la ETAPA 2 (el reactor NUC1 sale del camino, clase conservada) · FIX Hall: al volver de un campeonato el hall nace en saque limpio (la bola ya no rueda sobre la mesa invisible) · FIX entrenamiento: A/X cambia la pala de mano también en el PRO TRAINING (zurdos) · hereda íntegro v3.4.1-RIV1
   // v3.4.1-RIV1 · ASTRO RECOLOCADO (etapa 1 del orbital): el rival v3.2.1 (x 1,62 · z −4,5) se leía DENTRO de la pared frontal — ahora convención EXACTA de rivales bien colocados (REGLA FIJA de duelos locura/magia v2.71): x = borde derecho de la mesa + 0,50 = 1,26 · z = −3,82 (misma profundidad que CLOWN y WIZARD, 1,73 m libre de la pared) · hereda íntegro v3.4.0-IMP1
-  const VERSION = '3.6.240-SDK6';
+  const VERSION = '3.6.241-SDK6';
   // v3.4.0-IMP1 · REACTOR DE IMPULSO (IMP1): NUEVA ETAPA 4 del campeonato Estación Orbital (mecánica del dueño) — sala propia de 6 imágenes del dueño SIN mesa (BASE FLOTANTE base.png como punto de reposición de la pelota) · núcleo del reactor ESTABLE azul / INESTABLE rojo con rotación caótica, alarma y expulsión de CUBOS CUÁNTICOS (3/5/7 · oleadas de 120 s independientes) · destrucción por golpeo REAL de la pelota (integración por subpasos + barrido del segmento prev→cur, bumper con la velocidad de la pala, patrón REACTOR) con fragmentación en cubitos visuales · PISTOLA LÁSER (pistol.glb, pegamento del muro reutilizado; FIX: el export del módulo nunca exponía gunArmed/fireGun y el gatillo no llegaba) contra DIANAS cuánticas (diana_quantica.png, ciclo 1 s visible / 1 s de espera) que desatan PERTURBACIONES: Gravedad 0 / Atractor (un golpe destruye TODOS los cubos agrupados) / Supergravedad, con cambio automático cada 30 s INDEPENDIENTE del disparo · ventanas laterales con viaje a velocidad lumínica (estrellas con estelas del centro afuera, el mismo efecto en ambas) · PANTALLA suspendida del techo (pantallainfo.png + capa de texto): oleada, tiempo, cubos restantes, estado del reactor y perturbación activa · derrota = astro_laughing frente al jugador y regreso a la sala (etapa 1) · hereda íntegro v3.3.0-NUC1 (Reactor de energía inestable en la etapa 2) · (la CCD SDF de v3.1.2-CCD1 queda intacta) · física del núcleo sin cambios
   // v3.0.1 · sello de versión visible: la portada 2D (#verBadge) y el menú VR
   // (drawMenuHeader) leen de aquí — UNA sola fuente de verdad para verificar
@@ -5528,6 +5528,64 @@ const CONFIG_MENUS = {
           gradiente: ['#5f7183', '#3a4754'], fino: true },
       ] },
   ],
+};
+
+/* =====================================================================
+ *  r161 · CONFIG_UI_TEMAS — ARTE DE LOS MENÚS DATA-DRIVEN
+ *  ---------------------------------------------------------------------
+ *  «…todo el arte dentro de una carpeta UI_Default, por si los menús se
+ *  pueden tematizar por temporadas (Halloween, Navidad, San Valentín…),
+ *  misma estructura y nomenclatura, todo data-driven» (dueño). Cada tema
+ *  vive en assets/ui/<tema>/ y declara SUS cartelas: fondo, capas (arte
+ *  pre-compuesto a lienzo 1376×768) y botones (imagen base + su variante
+ *  _on por nomenclatura + id de acción EXACTO del despachador). Las
+ *  coordenadas son RELATIVAS a la rodaja de la panela indicada (C:
+ *  1472×1400 del lienzo panorámico 3696×1400) — un tema nuevo copia la
+ *  estructura, cambia el arte y el manifiesto apunta a su carpeta. El
+ *  cargador prueba <img>_<idioma>.png antes que la base (pp_lang) y si
+ *  falta UNA sola pieza la cartela no se pinta: el vestíbulo legado
+ *  sigue tal cual (fallback progresivo, cero riesgo).
+ *  ===================================================================== */
+const CONFIG_UI_TEMAS = {
+  version: 1,
+  activo: 'UI_Default',        // pp_uitema puede sustituirlo en vivo
+  temas: {
+    UI_Default: {
+      base: 'assets/ui/UI_Default/',
+      cartelas: {
+        // r161 · CARTELA MAIN (menú inicial del dueño): UNA panela (la C,
+        // mismo tamaño y distancia del arco) con el logo, las palas y los
+        // 6 botones del mock (Jugar resalta en dorado al apuntar — _on).
+        Main: {
+          panela: 'C',
+          lados: ['C'],
+          fondo: 'Main/fondo.png',
+          capas: [
+            { img: 'Main/Logo.png', x: 210, y: 53, w: 862, h: 481 },
+            { img: 'Main/Palas.png', x: 0, y: 772, w: 1100, h: 615 },
+          ],
+          // r161c · ROTULADO: el arte trae barra+icono SIN texto — la
+          // etiqueta la pinta el juego con T() (claves EXISTENTES del
+          // vestíbulo → continuidad visual y es/en sin claves nuevas).
+          // tx = x del texto dentro del botón · f = tamaño de fuente.
+          botones: [
+            { id: 'page:jugar', img: 'Main/btn_Play', x: 898, y: 490, w: 520, h: 130,
+              etiquetaKey: 'hub_jugar', tx: 150, f: 48 },
+            { id: 'tab:multi', img: 'Main/btn_multijugador', x: 898, y: 638, w: 520, h: 130,
+              etiquetaKey: 'hub_multi', tx: 118, f: 48 },
+            { id: 'page:champs', img: 'Main/btn_campeonatos', x: 898, y: 786, w: 520, h: 130,
+              etiquetaKey: 'sec_crazy', tx: 118, f: 48 },
+            { id: 'page:perfil', img: 'Main/btn_Perfil', x: 898, y: 934, w: 520, h: 130,
+              etiquetaKey: 'perfil_title', tx: 118, f: 48 },
+            { id: 'page:opts', img: 'Main/btn_Ajustes', x: 898, y: 1082, w: 520, h: 130,
+              etiquetaKey: 'opts_title', tx: 118, f: 48 },
+            { id: 'salirweb', img: 'Main/btn_Salir', x: 898, y: 1230, w: 520, h: 130,
+              etiquetaKey: 'dock_salir', tx: 118, f: 48 },
+          ],
+        },
+      },
+    },
+  },
 };
 
 /* =====================================================================
@@ -24623,6 +24681,14 @@ class PingPongGame {
     this.menuCanvas = document.createElement('canvas');   // LIENZO VIRTUAL
     this.menuCanvas.width = CONFIG_MENUS.lienzo.ancho;
     this.menuCanvas.height = CONFIG_MENUS.lienzo.alto;
+    // r161 · ARTE DATA-DRIVEN (CONFIG_UI_TEMAS): caché de imágenes del
+    // tema activo, fallos recordados (el fallback legado decide en el
+    // acto) y precarga en reposo tras el arranque.
+    this._uiCv = {};
+    this._uiFalla = {};
+    this._uiPidendo = {};
+    this._uiModoMainVal = null;   // r161f: congelado al abrir el menú
+    setTimeout(() => { try { this._uiPrecarga(); } catch (eUIPC) { /* */ } }, 5000);
     this.menuTex = null;   // r68 · la textura «central» se crea en el bucle
     /* r70 · ASPECTO EXACTO (causa raíz de los círculos elípticos): r69
      * estrechó los anchos físicos de las panelas sin tocar el lienzo — la
@@ -25803,8 +25869,14 @@ class PingPongGame {
     // montan SÓLO las panelas con contenido (CONFIG_SECCIONES.lados) y el
     // arco se recalcula para 1/2/3 con la fórmula r69. La concha pinta su
     // cristal en la MISMA lista (this._menuLados): sin bloques vacíos.
-    this._menuArco((CONFIG_SECCIONES.lados &&
-      CONFIG_SECCIONES.lados[this.menuPage]) || CONFIG_SECCIONES.defaultLados);
+    // r161 · CARTELA ÚNICA: la cartela del tema monta SÓLO su panela
+    // (Main → la C, tamaño y distancia del arco actual); sin arte cargado
+    // el vestíbulo legado conserva sus L·C·R tal cual.
+    const ladosPag = (CONFIG_SECCIONES.lados &&
+      CONFIG_SECCIONES.lados[this.menuPage]) || CONFIG_SECCIONES.defaultLados;
+    const uiMain = this.menuPage === 'main' ? this._uiCartelaDef('Main') : null;
+    this._menuArco(uiMain && this._uiModoMain()
+      ? (uiMain.lados || ['C']) : ladosPag);
     if (LEG) {
       // r68 · CONCHA de secciones (cristal + ATRÁS + título, de
       // CONFIG_SECCIONES) y luego el contenido legado 1024×1536 centrado
@@ -25949,6 +26021,17 @@ class PingPongGame {
     // r67 · FASE 161 · EL VESTÍBULO: la página principal se compone a
     // canvas completo desde CONFIG_MENUS (cabecera + 3 paneles + dock).
     if (this.menuPage === 'main') {
+      // r161 · CARTELA ARTÍSTICA del tema (Main): si el arte COMPLETO del
+      // tema está en caché pinta la cartela única (fondo + logo + palas +
+      // botones con estado _on al apuntar); si falta UNA pieza, el
+      // vestíbulo legado sigue sin cambios (fallback progresivo).
+      if (this._uiModoMain() && this._uiCartela('Main', rects)) {
+        this.menuRects = rects;
+        this._menuState = this.rules.state;
+        this._menuTipDraw(c, rects);   // tooltip del control apuntado
+        this._menuTexSube();
+        return;
+      }
       this.drawMenuVestibulo(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
@@ -27091,6 +27174,171 @@ class PingPongGame {
    * del resto, dock ELIMINADO y «SALIR A LA WEB» como tarjeta fina al pie
    * de TU CASA. Todo sale de CONFIG_MENUS v2 — ids del despachador
    * intactos; los subtítulos vivos siguen en _vestSubPorId. */
+  /* ===== r161 · CARTELAS DATA-DRIVEN (CONFIG_UI_TEMAS) ================
+   *  El arte del tema (PNG en assets/ui/<tema>/) viste las cartelas del
+   *  menú: fondo, capas pre-compuestas y botones con estado _on al
+   *  apuntar. Todo declarado en c02 — añadir una temporada es crear la
+   *  carpeta con la MISMA nomenclatura y registrarla en temas. El
+   *  cargador prueba la variante de idioma (<img>_<lang>.png) y cae a la
+   *  base; si falta una sola pieza la cartela no se pinta.
+   *  ===================================================================== */
+  _uiTema() {
+    try {
+      const t = localStorage.getItem('pp_uitema');
+      if (t && CONFIG_UI_TEMAS.temas[t]) return t;
+    } catch (eUIT) { /* */ }
+    return CONFIG_UI_TEMAS.activo;
+  }
+
+  _uiCartelaDef(nombre) {
+    const tema = CONFIG_UI_TEMAS.temas[this._uiTema()];
+    return (tema && tema.cartelas && tema.cartelas[nombre]) || null;
+  }
+
+  /** Clave de caché SIN extensión: el manifiesto puede traer
+   *  «Main/Logo.png» o «Main/Logo» — ambos acaban en la misma clave. */
+  _uiK(u) {
+    return String(u).replace(/\.png$/i, '');
+  }
+
+  _uiLang() {
+    try {
+      const l = String(localStorage.getItem('pp_lang') || 'es').toLowerCase();
+      return l === 'en' ? 'en' : 'es';
+    } catch (eUIL) { return 'es'; }
+  }
+
+  /** Pide una imagen del tema (con variante de idioma si procede y su
+   *  gemela _on si es un botón). La clave de caché es el nombre SIN
+   *  extensión del manifiesto; los fallos se recuerdan (sin re-intentos). */
+  _uiPide(base, nombre, conOn) {
+    const nombre2 = this._uiK(nombre);
+    const claves = conOn ? [nombre2, nombre2 + '_on'] : [nombre2];
+    for (const k of claves) {
+      const clave = base + k;
+      if (this._uiCv[clave] || this._uiFalla[clave] || this._uiPidendo[clave]) continue;
+      this._uiPidendo[clave] = true;
+      const lang = this._uiLang();
+      const candidatos = (lang && lang !== 'es')
+        ? [base + k + '_' + lang + '.png', base + k + '.png']
+        : [base + k + '.png'];
+      const siguiente = (i) => {
+        if (i >= candidatos.length) {
+          this._uiFalla[clave] = true;
+          delete this._uiPidendo[clave];
+          return;
+        }
+        const im = new Image();
+        im.onload = () => {
+          delete this._uiPidendo[clave];
+          this._uiCv[clave] = im;
+          // el arte completo acaba de llegar → repinta si el menú está
+          // abierto en una página que usa cartela (Main)
+          if (this.menuOpen && this.menuPage === 'main' &&
+              this._uiCartelaLista('Main')) {
+            try { this.drawMenu(); } catch (eUIR) { /* */ }
+          }
+        };
+        im.onerror = () => siguiente(i + 1);
+        im.src = candidatos[i];
+      };
+      siguiente(0);
+    }
+  }
+
+  /** ¿Está el arte COMPLETO de la cartela en caché? (fondo + capas +
+   *  botones base — las _on son opcionales: el apuntado cae a la base). */
+  _uiCartelaLista(nombre) {
+    const tema = CONFIG_UI_TEMAS.temas[this._uiTema()];
+    const def = tema && tema.cartelas && tema.cartelas[nombre];
+    if (!def) return false;
+    const base = tema.base;
+    const urls = [def.fondo]
+      .concat((def.capas || []).map((l) => l.img))
+      .concat((def.botones || []).map((b) => b.img))
+      .map((u) => this._uiK(u));
+    return urls.every((u) => !!this._uiCv[base + u]);
+  }
+
+  /** r161f · ¿cartela o legado en esta apertura? Se decide al abrir (el
+   *  primer drawMenu tras toggleMenu congela) y NO cambia hasta cerrar:
+   *  los rects jamás mudan bajo la mano (clicks por índice estables). */
+  _uiModoMain() {
+    if (this._uiModoMainVal === null) {
+      this._uiModoMainVal = this._uiCartelaLista('Main');
+    }
+    return this._uiModoMainVal;
+  }
+
+  /** Precarga en reposo: TODAS las cartelas del tema activo (base y _on). */
+  _uiPrecarga() {
+    const tema = CONFIG_UI_TEMAS.temas[this._uiTema()];
+    if (!tema) return;
+    const base = tema.base;
+    for (const nombre of Object.keys(tema.cartelas || {})) {
+      const def = tema.cartelas[nombre];
+      this._uiPide(base, def.fondo, false);
+      for (const l of def.capas || []) this._uiPide(base, l.img, false);
+      for (const b of def.botones || []) this._uiPide(base, b.img, true);
+    }
+  }
+
+  /** Pinta la cartela (fondo + capas + botones) en la rodaja de SU
+   *  panela y pusha los rects de los botones (ids EXACTOS del
+   *  despachador). Devuelve false si falta arte → painter legado. */
+  _uiCartela(nombre, rects) {
+    const tema = CONFIG_UI_TEMAS.temas[this._uiTema()];
+    const def = tema && tema.cartelas && tema.cartelas[nombre];
+    if (!def) return false;
+    const base = tema.base;
+    const pa = CONFIG_MENUS.arco.panelas.find(
+      (p2) => p2.id === (def.panela || 'C'));
+    if (!pa) return false;
+    const kf = this._uiK(def.fondo);
+    const urls = [kf]
+      .concat((def.capas || []).map((l) => this._uiK(l.img)))
+      .concat((def.botones || []).map((b) => this._uiK(b.img)));
+    if (!urls.every((u) => !!this._uiCv[base + u])) return false;
+    const c = this.menuCanvas.getContext('2d');
+    const ox = pa.x;
+    const im = (k) => this._uiCv[base + k];
+    // fondo a rodaja completa (el alfa del PNG deja entrever el hall)
+    c.drawImage(im(kf), ox, 0, pa.w, CONFIG_MENUS.lienzo.alto);
+    // capas pre-compuestas (logo, palas — el arte del dueño a su rect)
+    for (const L of def.capas || []) {
+      c.drawImage(im(this._uiK(L.img)), ox + L.x, L.y, L.w, L.h);
+    }
+    // botones: estado _on al apuntar (misma nomenclatura + _on) y
+    // RÓTULO vivo (r161c · el arte del tema no hornea texto — T() manda)
+    for (const b of def.botones || []) {
+      const bi = this._uiK(b.img);
+      const hov = this.menuHover.includes(rects.length);
+      const img = (hov && im(bi + '_on')) || im(bi);
+      if (img) c.drawImage(img, ox + b.x, b.y, b.w, b.h);
+      const lbl = b.etiquetaKey ? T(b.etiquetaKey) : (b.etiqueta || '');
+      if (lbl) {
+        // r161d · AUTOAJUSTE: la fuente baja hasta que el rótulo cabe en
+        // el botón (tx..borde-26) — cualquier idioma, cualquier tema
+        let fUI = b.f || 48;
+        const txMax = b.w - (b.tx || 150) - 26;
+        c.textAlign = 'left';
+        c.textBaseline = 'middle';
+        for (; fUI > 22; fUI -= 2) {
+          c.font = '800 ' + fUI + 'px system-ui, sans-serif';
+          if (c.measureText(lbl).width <= txMax) break;
+        }
+        c.fillStyle = 'rgba(255,255,255,0.98)';
+        c.shadowColor = 'rgba(6,20,44,0.6)';
+        c.shadowBlur = 8;
+        c.fillText(lbl, ox + b.x + (b.tx || 150), b.y + b.h / 2 + 2);
+        c.shadowBlur = 0;
+        c.font = '800 34px system-ui, sans-serif';   // restaura la del resto
+      }
+      rects.push(this._mapRect({ x: ox + b.x, y: b.y, w: b.w, h: b.h, id: b.id }));
+    }
+    return true;
+  }
+
   drawMenuVestibulo(rects) {
     const c = this.menuCanvas.getContext('2d');
     const CM = CONFIG_MENUS;
@@ -28897,6 +29145,10 @@ class PingPongGame {
     // el menú quedaba INCIERRABLE durante el ajuste. El paraguas del
     // entrenamiento clásico sigue bloqueado (allí manda su panel propio).
     if (this.calib && !this.calibPala) return;
+    // r161f · el modo de la cartela (arte cargado o vestíbulo legado) se
+    // RE-DEcide SOLO aquí, al abrir: congelado durante toda la apertura,
+    // el menú jamás muta bajo la mano del dueño
+    this._uiModoMainVal = null;
     this.menuOpen = !this.menuOpen;
     for (const l of this.menuLines) l.visible = false;
     for (const d of this.menuDots) d.visible = false;

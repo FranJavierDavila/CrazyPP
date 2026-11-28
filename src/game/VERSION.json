@@ -1,10 +1,10 @@
 {
-  "version": "3.6.240-SDK6",
+  "version": "3.6.241-SDK6",
   "fase": 188,
   "faseNombre": "PORTADA CLÁSICA EN LA RAÍZ (LANDING) + ENTRADA VR EN UN TOQUE ?vr=1 (r152)",
   "sdk": "1.6.0",
   "fecha": "2026-11-28",
-  "hub": "v36240-sdk6",
+  "hub": "v36241-sdk6",
   "manifests": {
     "oeste": 56,
     "magia": 32,
@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r128 · correcciones de la auditoría r120 (ola 1+2): A1 claims verificados, A3 código crypto, B1 res.ok en el PUT, D1 puertas al repo vivo, E1 watchdog + three vendado, E2 cuota, E6 valle_neon, F1 clave en lecturas locales, F2 throttle+cron worker, F3 manifest validado, F4 Caddy, D3 TS live-service",
-  "tamano": 2768208,
-  "golden": "630c8e35d4e7ace5f8310b1774b70c1bc3b8229389a27d7334aff567db80044a"
+  "tamano": 2779726,
+  "golden": "0b161f5c007fed06ee459b0eb5264d8d02d40430c5af3c87dea0e10750008ff7"
 }

@@ -1042,6 +1042,64 @@ export const CONFIG_MENUS = {
 };
 
 /* =====================================================================
+ *  r161 · CONFIG_UI_TEMAS — ARTE DE LOS MENÚS DATA-DRIVEN
+ *  ---------------------------------------------------------------------
+ *  «…todo el arte dentro de una carpeta UI_Default, por si los menús se
+ *  pueden tematizar por temporadas (Halloween, Navidad, San Valentín…),
+ *  misma estructura y nomenclatura, todo data-driven» (dueño). Cada tema
+ *  vive en assets/ui/<tema>/ y declara SUS cartelas: fondo, capas (arte
+ *  pre-compuesto a lienzo 1376×768) y botones (imagen base + su variante
+ *  _on por nomenclatura + id de acción EXACTO del despachador). Las
+ *  coordenadas son RELATIVAS a la rodaja de la panela indicada (C:
+ *  1472×1400 del lienzo panorámico 3696×1400) — un tema nuevo copia la
+ *  estructura, cambia el arte y el manifiesto apunta a su carpeta. El
+ *  cargador prueba <img>_<idioma>.png antes que la base (pp_lang) y si
+ *  falta UNA sola pieza la cartela no se pinta: el vestíbulo legado
+ *  sigue tal cual (fallback progresivo, cero riesgo).
+ *  ===================================================================== */
+export const CONFIG_UI_TEMAS = {
+  version: 1,
+  activo: 'UI_Default',        // pp_uitema puede sustituirlo en vivo
+  temas: {
+    UI_Default: {
+      base: 'assets/ui/UI_Default/',
+      cartelas: {
+        // r161 · CARTELA MAIN (menú inicial del dueño): UNA panela (la C,
+        // mismo tamaño y distancia del arco) con el logo, las palas y los
+        // 6 botones del mock (Jugar resalta en dorado al apuntar — _on).
+        Main: {
+          panela: 'C',
+          lados: ['C'],
+          fondo: 'Main/fondo.png',
+          capas: [
+            { img: 'Main/Logo.png', x: 210, y: 53, w: 862, h: 481 },
+            { img: 'Main/Palas.png', x: 0, y: 772, w: 1100, h: 615 },
+          ],
+          // r161c · ROTULADO: el arte trae barra+icono SIN texto — la
+          // etiqueta la pinta el juego con T() (claves EXISTENTES del
+          // vestíbulo → continuidad visual y es/en sin claves nuevas).
+          // tx = x del texto dentro del botón · f = tamaño de fuente.
+          botones: [
+            { id: 'page:jugar', img: 'Main/btn_Play', x: 898, y: 490, w: 520, h: 130,
+              etiquetaKey: 'hub_jugar', tx: 150, f: 48 },
+            { id: 'tab:multi', img: 'Main/btn_multijugador', x: 898, y: 638, w: 520, h: 130,
+              etiquetaKey: 'hub_multi', tx: 118, f: 48 },
+            { id: 'page:champs', img: 'Main/btn_campeonatos', x: 898, y: 786, w: 520, h: 130,
+              etiquetaKey: 'sec_crazy', tx: 118, f: 48 },
+            { id: 'page:perfil', img: 'Main/btn_Perfil', x: 898, y: 934, w: 520, h: 130,
+              etiquetaKey: 'perfil_title', tx: 118, f: 48 },
+            { id: 'page:opts', img: 'Main/btn_Ajustes', x: 898, y: 1082, w: 520, h: 130,
+              etiquetaKey: 'opts_title', tx: 118, f: 48 },
+            { id: 'salirweb', img: 'Main/btn_Salir', x: 898, y: 1230, w: 520, h: 130,
+              etiquetaKey: 'dock_salir', tx: 118, f: 48 },
+          ],
+        },
+      },
+    },
+  },
+};
+
+/* =====================================================================
  *  r68 · FASE 162 · CONFIG_SECCIONES — CONCHA DE LOS SUBAPARTADOS
  *  ---------------------------------------------------------------------
  *  «Rediseño de todos los apartados y submenús interiores… reorganizados

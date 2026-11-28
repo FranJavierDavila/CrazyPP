@@ -2067,6 +2067,14 @@ export class PingPongGame {
     this.menuCanvas = document.createElement('canvas');   // LIENZO VIRTUAL
     this.menuCanvas.width = CONFIG_MENUS.lienzo.ancho;
     this.menuCanvas.height = CONFIG_MENUS.lienzo.alto;
+    // r161 · ARTE DATA-DRIVEN (CONFIG_UI_TEMAS): caché de imágenes del
+    // tema activo, fallos recordados (el fallback legado decide en el
+    // acto) y precarga en reposo tras el arranque.
+    this._uiCv = {};
+    this._uiFalla = {};
+    this._uiPidendo = {};
+    this._uiModoMainVal = null;   // r161f: congelado al abrir el menú
+    setTimeout(() => { try { this._uiPrecarga(); } catch (eUIPC) { /* */ } }, 5000);
     this.menuTex = null;   // r68 · la textura «central» se crea en el bucle
     /* r70 · ASPECTO EXACTO (causa raíz de los círculos elípticos): r69
      * estrechó los anchos físicos de las panelas sin tocar el lienzo — la
@@ -3247,8 +3255,14 @@ export class PingPongGame {
     // montan SÓLO las panelas con contenido (CONFIG_SECCIONES.lados) y el
     // arco se recalcula para 1/2/3 con la fórmula r69. La concha pinta su
     // cristal en la MISMA lista (this._menuLados): sin bloques vacíos.
-    this._menuArco((CONFIG_SECCIONES.lados &&
-      CONFIG_SECCIONES.lados[this.menuPage]) || CONFIG_SECCIONES.defaultLados);
+    // r161 · CARTELA ÚNICA: la cartela del tema monta SÓLO su panela
+    // (Main → la C, tamaño y distancia del arco actual); sin arte cargado
+    // el vestíbulo legado conserva sus L·C·R tal cual.
+    const ladosPag = (CONFIG_SECCIONES.lados &&
+      CONFIG_SECCIONES.lados[this.menuPage]) || CONFIG_SECCIONES.defaultLados;
+    const uiMain = this.menuPage === 'main' ? this._uiCartelaDef('Main') : null;
+    this._menuArco(uiMain && this._uiModoMain()
+      ? (uiMain.lados || ['C']) : ladosPag);
     if (LEG) {
       // r68 · CONCHA de secciones (cristal + ATRÁS + título, de
       // CONFIG_SECCIONES) y luego el contenido legado 1024×1536 centrado
@@ -3393,6 +3407,17 @@ export class PingPongGame {
     // r67 · FASE 161 · EL VESTÍBULO: la página principal se compone a
     // canvas completo desde CONFIG_MENUS (cabecera + 3 paneles + dock).
     if (this.menuPage === 'main') {
+      // r161 · CARTELA ARTÍSTICA del tema (Main): si el arte COMPLETO del
+      // tema está en caché pinta la cartela única (fondo + logo + palas +
+      // botones con estado _on al apuntar); si falta UNA pieza, el
+      // vestíbulo legado sigue sin cambios (fallback progresivo).
+      if (this._uiModoMain() && this._uiCartela('Main', rects)) {
+        this.menuRects = rects;
+        this._menuState = this.rules.state;
+        this._menuTipDraw(c, rects);   // tooltip del control apuntado
+        this._menuTexSube();
+        return;
+      }
       this.drawMenuVestibulo(rects);
       this.menuRects = rects;
       this._menuState = this.rules.state;
@@ -4535,6 +4560,171 @@ export class PingPongGame {
    * del resto, dock ELIMINADO y «SALIR A LA WEB» como tarjeta fina al pie
    * de TU CASA. Todo sale de CONFIG_MENUS v2 — ids del despachador
    * intactos; los subtítulos vivos siguen en _vestSubPorId. */
+  /* ===== r161 · CARTELAS DATA-DRIVEN (CONFIG_UI_TEMAS) ================
+   *  El arte del tema (PNG en assets/ui/<tema>/) viste las cartelas del
+   *  menú: fondo, capas pre-compuestas y botones con estado _on al
+   *  apuntar. Todo declarado en c02 — añadir una temporada es crear la
+   *  carpeta con la MISMA nomenclatura y registrarla en temas. El
+   *  cargador prueba la variante de idioma (<img>_<lang>.png) y cae a la
+   *  base; si falta una sola pieza la cartela no se pinta.
+   *  ===================================================================== */
+  _uiTema() {
+    try {
+      const t = localStorage.getItem('pp_uitema');
+      if (t && CONFIG_UI_TEMAS.temas[t]) return t;
+    } catch (eUIT) { /* */ }
+    return CONFIG_UI_TEMAS.activo;
+  }
+
+  _uiCartelaDef(nombre) {
+    const tema = CONFIG_UI_TEMAS.temas[this._uiTema()];
+    return (tema && tema.cartelas && tema.cartelas[nombre]) || null;
+  }
+
+  /** Clave de caché SIN extensión: el manifiesto puede traer
+   *  «Main/Logo.png» o «Main/Logo» — ambos acaban en la misma clave. */
+  _uiK(u) {
+    return String(u).replace(/\.png$/i, '');
+  }
+
+  _uiLang() {
+    try {
+      const l = String(localStorage.getItem('pp_lang') || 'es').toLowerCase();
+      return l === 'en' ? 'en' : 'es';
+    } catch (eUIL) { return 'es'; }
+  }
+
+  /** Pide una imagen del tema (con variante de idioma si procede y su
+   *  gemela _on si es un botón). La clave de caché es el nombre SIN
+   *  extensión del manifiesto; los fallos se recuerdan (sin re-intentos). */
+  _uiPide(base, nombre, conOn) {
+    const nombre2 = this._uiK(nombre);
+    const claves = conOn ? [nombre2, nombre2 + '_on'] : [nombre2];
+    for (const k of claves) {
+      const clave = base + k;
+      if (this._uiCv[clave] || this._uiFalla[clave] || this._uiPidendo[clave]) continue;
+      this._uiPidendo[clave] = true;
+      const lang = this._uiLang();
+      const candidatos = (lang && lang !== 'es')
+        ? [base + k + '_' + lang + '.png', base + k + '.png']
+        : [base + k + '.png'];
+      const siguiente = (i) => {
+        if (i >= candidatos.length) {
+          this._uiFalla[clave] = true;
+          delete this._uiPidendo[clave];
+          return;
+        }
+        const im = new Image();
+        im.onload = () => {
+          delete this._uiPidendo[clave];
+          this._uiCv[clave] = im;
+          // el arte completo acaba de llegar → repinta si el menú está
+          // abierto en una página que usa cartela (Main)
+          if (this.menuOpen && this.menuPage === 'main' &&
+              this._uiCartelaLista('Main')) {
+            try { this.drawMenu(); } catch (eUIR) { /* */ }
+          }
+        };
+        im.onerror = () => siguiente(i + 1);
+        im.src = candidatos[i];
+      };
+      siguiente(0);
+    }
+  }
+
+  /** ¿Está el arte COMPLETO de la cartela en caché? (fondo + capas +
+   *  botones base — las _on son opcionales: el apuntado cae a la base). */
+  _uiCartelaLista(nombre) {
+    const tema = CONFIG_UI_TEMAS.temas[this._uiTema()];
+    const def = tema && tema.cartelas && tema.cartelas[nombre];
+    if (!def) return false;
+    const base = tema.base;
+    const urls = [def.fondo]
+      .concat((def.capas || []).map((l) => l.img))
+      .concat((def.botones || []).map((b) => b.img))
+      .map((u) => this._uiK(u));
+    return urls.every((u) => !!this._uiCv[base + u]);
+  }
+
+  /** r161f · ¿cartela o legado en esta apertura? Se decide al abrir (el
+   *  primer drawMenu tras toggleMenu congela) y NO cambia hasta cerrar:
+   *  los rects jamás mudan bajo la mano (clicks por índice estables). */
+  _uiModoMain() {
+    if (this._uiModoMainVal === null) {
+      this._uiModoMainVal = this._uiCartelaLista('Main');
+    }
+    return this._uiModoMainVal;
+  }
+
+  /** Precarga en reposo: TODAS las cartelas del tema activo (base y _on). */
+  _uiPrecarga() {
+    const tema = CONFIG_UI_TEMAS.temas[this._uiTema()];
+    if (!tema) return;
+    const base = tema.base;
+    for (const nombre of Object.keys(tema.cartelas || {})) {
+      const def = tema.cartelas[nombre];
+      this._uiPide(base, def.fondo, false);
+      for (const l of def.capas || []) this._uiPide(base, l.img, false);
+      for (const b of def.botones || []) this._uiPide(base, b.img, true);
+    }
+  }
+
+  /** Pinta la cartela (fondo + capas + botones) en la rodaja de SU
+   *  panela y pusha los rects de los botones (ids EXACTOS del
+   *  despachador). Devuelve false si falta arte → painter legado. */
+  _uiCartela(nombre, rects) {
+    const tema = CONFIG_UI_TEMAS.temas[this._uiTema()];
+    const def = tema && tema.cartelas && tema.cartelas[nombre];
+    if (!def) return false;
+    const base = tema.base;
+    const pa = CONFIG_MENUS.arco.panelas.find(
+      (p2) => p2.id === (def.panela || 'C'));
+    if (!pa) return false;
+    const kf = this._uiK(def.fondo);
+    const urls = [kf]
+      .concat((def.capas || []).map((l) => this._uiK(l.img)))
+      .concat((def.botones || []).map((b) => this._uiK(b.img)));
+    if (!urls.every((u) => !!this._uiCv[base + u])) return false;
+    const c = this.menuCanvas.getContext('2d');
+    const ox = pa.x;
+    const im = (k) => this._uiCv[base + k];
+    // fondo a rodaja completa (el alfa del PNG deja entrever el hall)
+    c.drawImage(im(kf), ox, 0, pa.w, CONFIG_MENUS.lienzo.alto);
+    // capas pre-compuestas (logo, palas — el arte del dueño a su rect)
+    for (const L of def.capas || []) {
+      c.drawImage(im(this._uiK(L.img)), ox + L.x, L.y, L.w, L.h);
+    }
+    // botones: estado _on al apuntar (misma nomenclatura + _on) y
+    // RÓTULO vivo (r161c · el arte del tema no hornea texto — T() manda)
+    for (const b of def.botones || []) {
+      const bi = this._uiK(b.img);
+      const hov = this.menuHover.includes(rects.length);
+      const img = (hov && im(bi + '_on')) || im(bi);
+      if (img) c.drawImage(img, ox + b.x, b.y, b.w, b.h);
+      const lbl = b.etiquetaKey ? T(b.etiquetaKey) : (b.etiqueta || '');
+      if (lbl) {
+        // r161d · AUTOAJUSTE: la fuente baja hasta que el rótulo cabe en
+        // el botón (tx..borde-26) — cualquier idioma, cualquier tema
+        let fUI = b.f || 48;
+        const txMax = b.w - (b.tx || 150) - 26;
+        c.textAlign = 'left';
+        c.textBaseline = 'middle';
+        for (; fUI > 22; fUI -= 2) {
+          c.font = '800 ' + fUI + 'px system-ui, sans-serif';
+          if (c.measureText(lbl).width <= txMax) break;
+        }
+        c.fillStyle = 'rgba(255,255,255,0.98)';
+        c.shadowColor = 'rgba(6,20,44,0.6)';
+        c.shadowBlur = 8;
+        c.fillText(lbl, ox + b.x + (b.tx || 150), b.y + b.h / 2 + 2);
+        c.shadowBlur = 0;
+        c.font = '800 34px system-ui, sans-serif';   // restaura la del resto
+      }
+      rects.push(this._mapRect({ x: ox + b.x, y: b.y, w: b.w, h: b.h, id: b.id }));
+    }
+    return true;
+  }
+
   drawMenuVestibulo(rects) {
     const c = this.menuCanvas.getContext('2d');
     const CM = CONFIG_MENUS;
@@ -6341,6 +6531,10 @@ export class PingPongGame {
     // el menú quedaba INCIERRABLE durante el ajuste. El paraguas del
     // entrenamiento clásico sigue bloqueado (allí manda su panel propio).
     if (this.calib && !this.calibPala) return;
+    // r161f · el modo de la cartela (arte cargado o vestíbulo legado) se
+    // RE-DEcide SOLO aquí, al abrir: congelado durante toda la apertura,
+    // el menú jamás muta bajo la mano del dueño
+    this._uiModoMainVal = null;
     this.menuOpen = !this.menuOpen;
     for (const l of this.menuLines) l.visible = false;
     for (const d of this.menuDots) d.visible = false;

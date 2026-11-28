@@ -9989,3 +9989,38 @@ por índice y saltaban el hit-test):
   («música del salón lista 161.9 s») · flujo normal intacto · hittest vivo
   0 muertos · qa_perfil 138/138 · probe_r156 exit 0 · qa_version 31/31 ·
   golden 1d3e90b7→630c8e35 (3.6.240-SDK6).
+
+## 59 · r161 · 2026-11-28 — CARTELA MAIN · EL REDISEÑO DE MENÚS EMPIEZA
+- ENCARGO DEL DUEÑO: reorganizar/rediseñar los menús empezando por el Menú
+  inicial; cartelas ÚNICAS al tamaño y distancia del menú actual; arte del
+  mock (logo, palas, 6 botones con estado _on) en carpetas por tema
+  (UI_Default hoy; Halloween/Navidad/San Valentín mañana) con la MISMA
+  estructura y nomenclatura, TODO data-driven; fondo azul con gradiente de
+  transparencia y bordes curvos.
+- ARQUITECTURA: assets/ui/<tema>/<cartela>/ (Main: 14 PNG del dueño +
+  fondo.png generado 1472×1400, radio 42 px = radioEsquinaM físico, alfa
+  242→196). c02 CONFIG_UI_TEMAS (manifiesto: base, panela C única, fondo,
+  capas pre-compuestas, botones con id EXACTO del despachador +
+  etiquetaKey i18n EXISTENTE + tx/f del rótulo). c12 motor: caché _uiCv
+  (clave sin extensión — _uiK normaliza «Main/Logo.png» y «Main/Logo»),
+  variantes <img>_<lang>.png con caída a la base, _on por nomenclatura,
+  precarga en reposo (5 s tras boot), fallback TOTAL al vestíbulo legado
+  si falta UNA pieza (progresivo, cero riesgo).
+- LA CARTELA: UNA panela (la C del arco — 1,26×1,20 m a 2,00 m, esquinas
+  físicas curvas) via CONFIG_SECCIONES.lados dinámico; rótulos vivos T()
+  con AUTOAJUSTE al ancho del botón (CHAMPIONSHIPS cabía a la fuerza);
+  estado _on dorado al apuntar; i18n es/en gratis (claves del vestíbulo).
+- BUG REAL CAZADO POR EL QA (r161f): si el arte cargaba CON el menú
+  abierto, la repintada mutaba vestíbulo→cartela EN MEDIO de la
+  interacción y los rects mudaban bajo la mano (clicks por índice caían
+  en otro botón — el test acababa en salirask). FIX: modo CONGELADO al
+  abrir (toggleMenu re-decide; _uiModoMain() consulta el congelado) — el
+  menú jamás muta durante una apertura.
+- LECCIONES: el cargador no debe asumir nomenclatura (extensión opcional
+  en el manifiesto) · los estados visuales se congelan por apertura, no
+  se reevalúan en cada repintada.
+- QA: arte 15/15 cargado, 0 fallos · ciclo REAL main→tab:multi→ATRÁS→main
+  con la cartela estable · hover dorado verificado en captura · hittest
+  vivo limpio (MAIN/PERFIL/EDITOR/PAÍS/JUGAR/WRL · 0 muertos) ·
+  qa_perfil 138/138 · probe_r156 exit 0 · qa_version 31/31 · golden
+  0b161f5c (3.6.241-SDK6 · +68 KB por el paquete de arte enlazado).

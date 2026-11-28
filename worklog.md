@@ -9942,3 +9942,24 @@ por índice y saltaban el hit-test):
 - LECCIÓN: los arneses que llaman menuClick(i,null) verifican ROUTING,
   no ACCESIBILIDAD. Toda página nueva del menú debe pasar qa_hittest_vivo
   (estado vivo del bucle + enPanela) antes de desplegar.
+
+## 57 · r159 · 2026-11-28 — MENÚ MÁS LEJOS Y MÁS GRANDE + CHINCHETA FUERA
+- PETICIÓN DEL DUEÑO: «el menú como 1 metro más alejado, y algo más
+  grande. La chincheta superior ya no tiene sentido, se puede eliminar».
+- GEOMETRÍA: CONFIG_MENUS.arco.panelas dist 1,00→2,00 m y altoM
+  0,95→1,20 m (+26 %). La fórmula r69 recalcula tangencias y yaws sola;
+  el hit-test vive en el lienzo (uv) y no depende de la distancia.
+- CHINCHETA: fuera malla+icono+toggle+hover -2+raycast+FX de opacidad+
+  i18n (4 claves) y la llamada del sitio r85 (salir de AJUSTES›PALA).
+  El ANCLA conserva el comportamiento por defecto r68: cada apertura
+  firma el ancla en la cabeza y el arco queda FIJO (menuPin=true interno
+  en init + 3 aperturas; los arneses r72-75 que lo fijan siguen válidos).
+- BUG MÍO PILLADO EN GATE: al reescribir la línea del láser dejé un ')'
+  huérfano (Unexpected token ')' — window.__game=False). La sonda
+  r159_sonda_boot lo cazó antes de batería; fix 1 línea + revalidación
+  contra HEAD. LECCIÓN: new Function/regex trunca bloques; la sonda de
+  arranque real (pageerror) es el gate que manda.
+- BATERÍA: hittest vivo 0 muertos en 6 páginas (MAIN 10 · PERFIL 5 ·
+  EDITOR 10 · PAÍS 74/65 banderas · JUGAR 8 survigo=True · WRL 11) ·
+  qa_perfil 138/138 · probe_r156 exit 0 sin pageerror · qa_version
+  31/31 · golden 635d9369→34931004 (3.6.239-SDK6).

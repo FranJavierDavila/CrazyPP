@@ -1878,10 +1878,24 @@ export class PingPongGame {
     // la portada, ppxr_pending_ar).
     let arOK = false;
     try { arOK = !!(await xr.isSessionSupported('immersive-ar')); } catch (eXR) { /* */ }
-    const session = await xr.requestSession(
-      arOK ? 'immersive-ar' : 'immersive-vr',
-      { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking', 'dom-overlay'] },
-    );
+    // v3.6.242 · ENTRADA A PRUEBA DE CAPRICHOS: si la AR cantó DESPUÉS del
+    // isSessionSupported (permiso de passthrough denegado/caducado, visor
+    // reacio), el MISMO gesto reintenta con VR inmersivo — la entrada
+    // directa de la portada nunca se queda a medias (el dueño no vuelve a
+    // pulsar VR dentro del juego porque el primer pulso ya no puede morir).
+    const rasgosXR = { optionalFeatures: ['local-floor', 'bounded-floor',
+      'hand-tracking', 'dom-overlay'] };
+    let session = null;
+    if (arOK) {
+      try {
+        session = await xr.requestSession('immersive-ar', rasgosXR);
+      } catch (eAR) {
+        session = await xr.requestSession('immersive-vr', rasgosXR);
+        this.pendingAR = false;   // la sesión real es VR: sin passthrough
+      }
+    } else {
+      session = await xr.requestSession('immersive-vr', rasgosXR);
+    }
     await this.renderer.xr.setSession(session);
     // v2.31 · RE-VÍNCULO DENTRO DEL GESTO (capa principal del rescate de
     // audio en VR): requestSession+setSession resuelven todavía dentro de la

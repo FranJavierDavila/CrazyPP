@@ -4137,7 +4137,12 @@ loadPaddleModel().then((paddleModel) => {
       setStatusKey('status_no_vr');
       return;
     }
-    if (!xrOK) { setStatusKey('status_no_vr'); return; }
+    // v3.6.242 · EL GESTO MANDA: se intenta SIEMPRE (aunque
+    // isSessionSupported haya dicho «no» — permiso XR denegado en otra
+    // época, visor caprichoso). requestSession es la única verdad: si el
+    // casco puede, entra (y re-pregunta el permiso si hacía falta); si
+    // no, el mensaje honesto del catch. Bloquear aquí dejaba el botón
+    // MUERTO y obligaba a pulsar VR desde dentro del juego.
     setStatusKey('status_starting_vr');
     // v3.6.42 · el conmutador de passthrough (AJUSTES en VR) persiste —
     // por defecto DESACTIVADO; JUGAR respeta lo que el dueño dejó fijado.

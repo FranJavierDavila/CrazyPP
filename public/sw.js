@@ -23,7 +23,7 @@
  *    instalación no duplica el peso.
  * ===================================================================== */
 
-const CACHE = 'crazypp-v3.6.241-SDK6';   // ← SELLO: bump_version.py lo parchea
+const CACHE = 'crazypp-v3.6.242-SDK6';   // ← SELLO: bump_version.py lo parchea
 
 const SHELL = [
   './game.html',
@@ -127,7 +127,15 @@ self.addEventListener('fetch', (event) => {
   try { url = new URL(req.url); } catch (e) { return; }
   if (url.origin !== self.location.origin) return;   // worker telemetría · PeerJS · Ko-fi
   if (url.pathname.endsWith('/game.html')) {
-    event.respondWith(redPrimero(req, 4000));
+    event.respondWith(redPrimero(req, 8000));
+    return;
+  }
+  // v3.6.242 · la PORTADA también red-primero: cache-first la servía vieja
+  // PARA SIEMPRE (el salto ?v apuntaba a builds anteriores — informe del
+  // dueño: «no veo la nueva versión»). Es un fichero minúsculo: la red
+  // siempre llega, y con redPrimero el ?v que trae manda fresco.
+  if (url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')) {
+    event.respondWith(redPrimero(req, 3000));
     return;
   }
   if (VIVAS.some((re) => re.test(url.pathname))) {

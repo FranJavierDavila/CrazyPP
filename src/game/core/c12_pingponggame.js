@@ -10127,7 +10127,10 @@ export class PingPongGame {
       }
       this.arcaneGroup.visible = true;
       this._arconoRepinta(false);   // r41 · el hint habla primero…
-      try { this.audio.setHallWanted(true, 'assets/hall/arcano.mp3'); } catch (eArcM1) { /* */ }
+      // r160 · melodía PROPIA exenta del mute del salón (informe del
+      // dueño: «no se escucha la melodía propia de esta sala»): el 3.er
+      // parámetro la pasa aunque el icono de la pared tenga el salón mudo.
+      try { this.audio.setHallWanted(true, 'assets/hall/arcano.mp3', true); } catch (eArcM1) { /* */ }
       try { this.audio.announce(T('arcono_hint'), true); } catch (eA1) { /* */ }
       // r41+r47 · …y la VOZ SOLEMNE presenta el poder cuando el holograma
       // ya se está condensando (UNA voz viva: jamás dos a la vez).
@@ -20777,6 +20780,7 @@ export class PingPongGame {
    *  llama una sola vez (primer pointerdown/keydown) y es idempotente. */
   rearmHallAudio() {
     try {
+      if (this._arconoOn) return;   // r160: dentro del Arcano manda SU pista
       this.audio.ensure();
       const hv = this._hallVarDef();
       const mus = hv && hv.musica;

@@ -209,6 +209,7 @@ export class GameAudio {
     this.hallPlaying = false;
     this.hallMute = false;     // icono de la pared (persistente)
     try { this.hallMute = localStorage.getItem('pp_hallmus') === '1'; } catch { /* */ }
+    this._hallSinMute = false; // r160: la sala ARCANO suena aunque el salón esté mudo
     this._hallUrl = null;      // pista ACTIVA (cambia al cambiar de salón)
     this._hallBufs = {};       // caché de buffers por URL (máx. 3 salones)
     // v3.6.142 · FASE 144 · orden LRU de la caché (la expulsión era una
@@ -672,14 +673,20 @@ export class GameAudio {
    * pp_hallmus): silenciado el salón, si el menú quería sonar VUELVE. */
 
   /** El juego marca la pista que debe sonar ahora (salón abierto). Con
-   *  url=null (museo/CABAÑA o salida del salón) se apaga y nada nace. */
-  setHallWanted(wanted, url) {
+   *  url=null (museo/CABAÑA o salida del salón) se apaga y nada nace.
+   *  r160 · ignoraMute: la sala ARCANO pide SU melodía propia exenta del
+   *  mute del salón (informe del dueño: «no se escucha la melodía propia
+   *  de esta sala» — el icono de la pared la silenciaba sin avisar y con
+   *  la variante anfitrion era el único lugar donde se notaba). El icono
+   *  sigue gobernando las PISTAS DEL SALÓN; la estancia propia manda. */
+  setHallWanted(wanted, url, ignoraMute) {
     const w = !!wanted && typeof url === 'string' && !!url;
     const cambioUrl = w && url !== this._hallUrl;
     this._hallUrl = w ? url : this._hallUrl;
     this.hallWanted = w;
-    if (!w) { this._menuReq = false; this.stopHallMusic(); return; }   // r149 · F-A1: fuera del salón la recuerda expira
-    if (this.hallMute) { this.stopHallMusic(); return; }   // icono: apagada
+    this._hallSinMute = !!ignoraMute && w;
+    if (!w) { this._menuReq = false; this._hallSinMute = false; this.stopHallMusic(); return; }   // r149 · F-A1: fuera del salón la recuerda expira
+    if (this.hallMute && !this._hallSinMute) { this.stopHallMusic(); return; }   // icono: apagada (r160: la sala exenta pasa)
     if (this.hallPlaying && !cambioUrl) return;            // ya suena la suya
     if (this.hallPlaying && cambioUrl) this.stopHallMusic();  // salón nuevo
     this.startHallMusic();
@@ -728,7 +735,8 @@ export class GameAudio {
       }
       console.info('[Audio] música del salón lista (' +
         (buf.duration || 0).toFixed(1) + ' s · ' + url + ')');
-      if (this.ctx && this.hallWanted && !this.hallMute &&
+      if (this.ctx && this.hallWanted &&
+          !(this.hallMute && !this._hallSinMute) &&
           this._hallUrl === url) this.startHallMusic();
     }).catch(() => { /* sin pista: nunca rompe el juego */ })
       .finally(() => { if (this._hallLoading === url) this._hallLoading = null; });
@@ -739,7 +747,8 @@ export class GameAudio {
   startHallMusic() {
     try {
       this.kick();
-      if (!this.ctx || !this.master || !this.hallWanted || this.hallMute) return;
+      if (!this.ctx || !this.master || !this.hallWanted ||
+          (this.hallMute && !this._hallSinMute)) return;
       if (this.hallPlaying) return;
       // INVARIANTE UNA MELODÍA (sentido SALÓN→menú): la pista del salón
       // manda — la del menú se retira ELLA (mismo patrón BSO v2.124).

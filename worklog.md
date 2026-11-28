@@ -9971,3 +9971,21 @@ por índice y saltaban el hit-test):
   bump si toca versión (guardas incluidas), build_game --escribir,
   c2_sellar, batería, deploy. r159_menu_geometria.py v2 ya opera sobre
   las fuentes reales (c02 geometría · c12 juego · c00 i18n).
+## 58 · r160 · 2026-11-28 — LA MELODÍA DEL ARCANO VUELVE
+- INFORME DEL DUEÑO: «no se escucha la melodía propia de la sala de Arcano».
+- CAUSA REPRODUCIDA (sonda r160_sonda_arcano*.py, espías de audio): hallMute
+  persistido (pp_hallmus=1, el ICONO DE LA PARED del salón) frena
+  setHallWanted ANTES de cargar arcano.mp3 — sin melodía y sin aviso. El
+  icono se puede tocar de paso (láser+gatillo en el salón) y con la
+  variante por defecto «anfitrion» (sin música) el Arcano era el ÚNICO
+  sitio donde el mute se notaba. La maquinaria estaba sana: en el flujo
+  normal la pista carga, suena y sobrevive al menú abierto/cerrado dentro.
+- FIX: la sala ARCANO queda EXENTA del mute del salón — c03 setHallWanted
+  gana ignoraMute (3.er parámetro + _hallSinMute en los 3 guards:
+  setHallWanted/startHallMusic/.then de carga); c12 _arconoEntrar pide con
+  exención y rearmHallAudio ya no pisa la sala (_arconoOn guard). El icono
+  sigue gobernando las PISTAS DEL SALÓN; la MELODÍA PROPIA suena siempre.
+- VERIFICADO: sonda (C) pp_hallmus=1 → hallPlaying=true + buf cargado
+  («música del salón lista 161.9 s») · flujo normal intacto · hittest vivo
+  0 muertos · qa_perfil 138/138 · probe_r156 exit 0 · qa_version 31/31 ·
+  golden 1d3e90b7→630c8e35 (3.6.240-SDK6).

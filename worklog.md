@@ -10024,3 +10024,31 @@ por índice y saltaban el hit-test):
   vivo limpio (MAIN/PERFIL/EDITOR/PAÍS/JUGAR/WRL · 0 muertos) ·
   qa_perfil 138/138 · probe_r156 exit 0 · qa_version 31/31 · golden
   0b161f5c (3.6.241-SDK6 · +68 KB por el paquete de arte enlazado).
+
+## 60 · r162 · 2026-11-28 — ENTRADA VR DIRECTA · PORTADA Y SW SIEMPRE FRESCOS
+- INFORME DEL DUEÑO: «no veo la V3.6.241 en producción» + «¿no podríamos
+  entrar directamente en VR sin pulsar VR otra vez en game.html?».
+- DIAGNÓSTICO (con evidencia): el servidor SÍ servía la 241 (curl sin
+  caché: PAGES-VERSION 3.6.241 · fuente_commit 1cb15d8 · CONFIG_UI_TEMAS
+  en el game.html servido) — era caché del casco. Dos trampas: el SW
+  servía game.html red-primero con límite 4 s (wifi del casco lenta →
+  caía al cache viejo) y index.html iba cache-first (se servía vieja PARA
+  SIEMPRE). FIX: límite 8 s + index.html red-primero + ?v fresco.
+- LA ENTRADA DIRECTA YA EXISTÍA (v2.28: vrbtn → enterVR en el gesto) pero
+  podía MORIR A MEDIAS: (1) enterVR pedía siempre immersive-ar (v3.6.43)
+  y si requestSession('immersive-ar') fallaba (permiso passthrough
+  denegado/caducado) se caía SIN reintento → segundo pulso desde dentro
+  del juego; (2) la portada bloqueaba el intento si isSessionSupported
+  ('immersive-vr') había dicho «no» (permiso XR denegado en otra época) —
+  botón muerto que ni siquiera re-pregunta el permiso. FIX: fallback
+  AR→VR en el MISMO gesto (pendingAR=false si la sesión real es VR) +
+  la portada intenta SIEMPRE (requestSession es la única verdad).
+- REGLA DE WEBXR (imposible de esquivar): la activación del clic NO cruza
+  una navegación — desde la portada clásica (raíz) siempre habrá UN toque
+  en game.html?vr=1 («TOCA EN CUALQUIER PARTE»). El UN-click real existe
+  abriendo game.html directamente (PWA instalada / marcador): PLAY IN VR
+  → sesión en el mismo gesto.
+- QA: probe_r156 exit 0 · hittest vivo limpio · vrbtn sin XR arranca la
+  solicitud sin pageerror · qa_version 31/31 · golden d115689e
+  (3.6.242-SDK6 · deploy verificado: PAGES-VERSION 242 · fuente_commit
+  dd6b8c7 · portada y game.html frescos en la CDN).

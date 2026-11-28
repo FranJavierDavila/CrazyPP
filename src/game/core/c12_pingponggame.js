@@ -2175,12 +2175,12 @@ export class PingPongGame {
     // de tamaño físico sin tocar una sola coordenada de página.
 
 
-    /* r113 · LA CHINCHETA DEL MENÚ. r68 · FASE 162 · ON POR DEFECTO
-     * (petición del dueño: «por defecto el menú aparecerá anclado en el
-     * centro (chincheta pulsada) a una distancia que permita su lectura
-     * cómoda, incluso los textos más pequeños»): cada APERTURA ancla el
-     * arco EN LA CABEZA (anchorMenu) y el pin lo deja FIJO sin flotación.
-     * Soltarla devuelve el modo flotante r113 (sigue a la cabeza 1,8 s). */
+    /* r159 · LA CHINCHETA SE RETIRA (petición del dueño: «la chincheta
+     * superior ya no tiene sentido, se puede eliminar»). Fuera malla,
+     * icono, toggle y hover: el ANCLA conserva desde dentro el
+     * comportamiento que la chincheta puesta daba por defecto desde r68 —
+     * cada APERTURA firma el ancla EN LA CABEZA (anchorMenu) y el arco
+     * queda FIJO sin flotación (menuPin=true interno, sin UI). */
     // r81 · FASE 177 · estado del FX de entrada/salida/pulso del arco
     this._menuFxCascada = null;
     this._menuFxOut = 0;
@@ -2196,23 +2196,6 @@ export class PingPongGame {
     this.menuPin = true;              // r68: ON por defecto (petición expresa)
     this._menuAnchorEst = '';         // r114: estancia donde nació el ancla
     this._menuAnchorRigZ = 0;         // r114: z del rig al firmar el ancla
-    this._menuPinCv = document.createElement('canvas');
-    this._menuPinCv.width = 128;
-    this._menuPinCv.height = 128;
-    this._menuPinTex = new THREE.CanvasTexture(this._menuPinCv);
-    this._menuPinTex.colorSpace = THREE.SRGBColorSpace;
-    this._menuPinMesh = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.085, 0.085),
-      new THREE.MeshBasicMaterial({ map: this._menuPinTex, transparent: true, depthTest: false }),
-    );
-    // centro superior del panel 0,90×1,35: borde arriba en y=+0,675 — la
-    // chincheta cabalga el borde (+0,032 hacia arriba) como un pin real
-    // r68 · el pin cabalga el borde superior de la PANELA CENTRAL del arco
-    this._menuPinMesh.position.set(0,
-      CONFIG_MENUS.arco.yCentro + 0.475 + 0.032, 0.006);
-    this._menuPinMesh.renderOrder = 9998;
-    this.menuGroup.add(this._menuPinMesh);
-    this._menuPinDraw();
 
     this.menuGroup.visible = false;
     this.scene.add(this.menuGroup);   // espacio MUNDO: inmune al recentrado
@@ -6364,12 +6347,12 @@ export class PingPongGame {
     this.menuHover = [-1, -1];
     if (this.menuOpen) {
       this.menuFxInicia('in');   // r81 · FASE 177: entra en escena (cascada+rebote)
-      // r68 · cada apertura nace EN LA CABEZA y CON LA CHINCHETA PUESTA
-      // (petición del dueño): el arco aparece centrado, equidistante y fijo.
-      // La honestidad r114 sigue garantizada: el ancla se re-firma aquí
-      // (estancia + rig z) y el heal r114 re-ancla si la escena viaja.
+      // r68 · cada apertura nace EN LA CABEZA y FIJA (r159: sin chincheta,
+      // el ancla interior es la misma que la chincheta puesta): el arco
+      // aparece centrado, equidistante y fijo. La honestidad r114 sigue
+      // garantizada: el ancla se re-firma aquí (estancia + rig z) y el
+      // heal r114 re-ancla si la escena viaja.
       this.menuPin = true;
-      this._menuPinDraw();
       // r85 · en el AJUSTE DE PALA el menú manda: su ventana de información
       // se aparta mientras se lee el menú (vuelve al cerrarlo).
       if (this.calibPala && this.calibPanel) {
@@ -6415,9 +6398,8 @@ export class PingPongGame {
     this.menuOpen = true;
     this.menuFxInicia('in');   // r81 · nace EN ESCENA (cascada+rebote)
     this.menuHover = [-1, -1];
-    // r68 · el prompt B también nace en la cabeza con la chincheta puesta
+    // r68 · el prompt B también nace en la cabeza y fijo (r159: sin pin)
     this.menuPin = true;
-    this._menuPinDraw();
     this.anchorMenu(true);
     this.rules.message = '';
     this.drawMenu();
@@ -6564,7 +6546,6 @@ export class PingPongGame {
         m.position.y = m.userData.fxY0 + 0.035 * e;
         m.material.opacity = 1 - e;
       }
-      if (this._menuPinMesh) this._menuPinMesh.material.opacity = 1 - e;
       if (p >= 1) {
         this.menuGroup.visible = false;
         this._menuFxOut = 0;
@@ -6574,7 +6555,6 @@ export class PingPongGame {
           m.material.opacity = 1;
           m.material.color.setRGB(1, 1, 1);
         }
-        if (this._menuPinMesh) this._menuPinMesh.material.opacity = 1;
       }
       return;
     }
@@ -6592,11 +6572,6 @@ export class PingPongGame {
         if (p < 1) fin = false;
         m.position.y = y0 + 0.09 * (1 - eOB(p));
         m.material.opacity = Math.min(1, p * 1.6);
-      }
-      if (this._menuPinMesh) {
-        const pC = Math.min(1, Math.max(0,
-          (ahora - this._menuFxCascada.C) / 320));
-        this._menuPinMesh.material.opacity = Math.min(1, pC * 1.6);
       }
       if (fin) {
         this._menuFxCascada = null;
@@ -6840,87 +6815,6 @@ export class PingPongGame {
     this.anchorMenu(true);
   }
 
-  /* r113 · CHINCHETA DEL MENÚ — dibujo del icono (128², estilo de la casa):
-   * badge circular oscuro + chincheta de silueta. OFF: pin PLATEADO con
-   * puntas fuera (menú libre, sigue a la cabeza). ON: pin DORADO clavado
-   * con aro de anclaje (menú fijo en el espacio). */
-  _menuPinDraw() {
-    const c = this._menuPinCv.getContext('2d');
-    c.clearRect(0, 0, 128, 128);
-    // badge de fondo (target de pulso legible sobre cualquier arte)
-    c.beginPath();
-    c.arc(64, 64, 56, 0, Math.PI * 2);
-    c.fillStyle = 'rgba(13,16,23,0.82)';
-    c.fill();
-    c.lineWidth = 4;
-    c.strokeStyle = this.menuPin ? 'rgba(232,180,90,0.95)' : 'rgba(255,255,255,0.35)';
-    c.stroke();
-    // chincheta (vista lateral): cabeza + cuello + aguja
-    const oro = this.menuPin;
-    c.lineCap = 'round';
-    c.lineJoin = 'round';
-    // aguja (clavada hacia abajo-derecha si ON; recta si OFF)
-    c.strokeStyle = oro ? '#ffe9a8' : '#aeb9c4';
-    c.lineWidth = 7;
-    c.beginPath();
-    c.moveTo(64, 62);
-    if (oro) { c.lineTo(84, 96); }
-    else { c.lineTo(64, 100); }
-    c.stroke();
-    // punta
-    c.lineWidth = 2.5;
-    c.beginPath();
-    c.arc(oro ? 84 : 64, oro ? 96 : 100, 2.5, 0, Math.PI * 2);
-    c.fillStyle = oro ? '#ffe9a8' : '#aeb9c4';
-    c.fill();
-    // cabeza del pin (domo)
-    c.beginPath();
-    c.arc(64, 48, 19, 0, Math.PI * 2);
-    const g = c.createLinearGradient(45, 29, 83, 67);
-    if (oro) { g.addColorStop(0, '#fff3cf'); g.addColorStop(0.55, '#e8b45a'); g.addColorStop(1, '#8f6a24'); }
-    else { g.addColorStop(0, '#e8eef4'); g.addColorStop(0.55, '#93a1ae'); g.addColorStop(1, '#525d68'); }
-    c.fillStyle = g;
-    c.fill();
-    c.lineWidth = 3;
-    c.strokeStyle = oro ? 'rgba(255,233,168,0.9)' : 'rgba(255,255,255,0.45)';
-    c.stroke();
-    // brillo del domo
-    c.beginPath();
-    c.ellipse(57, 42, 6, 4, -0.5, 0, Math.PI * 2);
-    c.fillStyle = 'rgba(255,255,255,0.55)';
-    c.fill();
-    // con el pin puesto: aro de ANCLAJO alrededor (estado inequívoco)
-    if (oro) {
-      c.beginPath();
-      c.arc(64, 64, 47, 0, Math.PI * 2);
-      c.setLineDash([9, 7]);
-      c.lineWidth = 4;
-      c.strokeStyle = 'rgba(232,180,90,0.8)';
-      c.stroke();
-      c.setLineDash([]);
-    }
-    if (this._menuPinTex) this._menuPinTex.needsUpdate = true;
-  }
-
-  /* r113 · pulso de la chincheta: ancla el menú en su punto del espacio /
-   * lo suelta (vuelve a anclarse delante de la cabeza). Feedback: arpegio,
-   * háptica por la mano que pulsa y rótulo breve en el mensaje del HUD. */
-  _menuPinToggle(hand) {
-    this.menuPin = !this.menuPin;
-    this._menuPinDraw();
-    try { this.audio.playOsc(this.menuPin ? 620 : 470, this.menuPin ? 930 : 340, 0.09, 'sine', 0.14, 0); } catch (ePin1) { /* */ }
-    if (this.renderer.xr.isPresenting) this.haptic(hand, 0.5, 90);
-    try {
-      const mPin = T(this.menuPin ? 'menu_pin_on' : 'menu_pin_off');
-      this.rules.message = mPin;
-      clearTimeout(this._menuPinMsgTo);
-      this._menuPinMsgTo = setTimeout(() => {
-        try { if (this.rules.message === mPin) this.rules.message = ''; } catch (ePM2) { /* */ }
-      }, 2600);
-    } catch (ePin2) { /* */ }
-    // soltar = el panel regresa a la cabeza (la flotación se reanuda sola)
-    if (!this.menuPin) this.anchorMenu();
-  }
 
   /** Coloca el panel (flotación inicial) y hace el hit-test del rayo de
    *  apuntado DE CADA MANDO: la pala también puede seleccionar, cada mano
@@ -6973,12 +6867,6 @@ export class PingPongGame {
         const hit = (this.menuOpen && !this._arconoOn)
           ? (muRaycaster.intersectObjects(this._menuPanelas, false)[0] || null)
           : null;
-        // r113 · CHINCHETA: el rayo también busca el pin (prioridad sobre el
-        // panel: cuelga 6 mm por delante del plano). Sólo con el menú abierto.
-        let pinHit = null;
-        if (this.menuOpen && !this._arconoOn && this._menuPinMesh) {
-          pinHit = muRaycaster.intersectObject(this._menuPinMesh, false)[0] || null;
-        }
         // r98 · MESA AGARRABLE: mano agarrando (el rayo sigue a la mesa
         // aunque cruce el panel) o rayo que NO cae en el panel con la
         // página MESA delante → el propio rayo busca la mesa
@@ -7028,14 +6916,6 @@ export class PingPongGame {
         } else {
           dot.visible = false;
         }
-        // r113 · hover del PIN: el cursor salta a la chincheta y el haz se
-        // engorda como sobre un botón (idx especial -2 — nunca colisiona con
-        // los índices reales de menuRects)
-        if (pinHit) {
-          idx = -2;
-          dot.visible = true;
-          dot.position.copy(this.menuGroup.worldToLocal(pinHit.point.clone()));
-        }
         // r40 · el HAZ vive en el salón y en el Arcano AUNQUE el menú
         // duerma (petición del dueño: «si existen botones repartidos por
         // el hall estos se deben poder pulsar sin necesidad de sacar el
@@ -7043,14 +6923,14 @@ export class PingPongGame {
         // la placa de la música. Largo honesto: hasta el objetivo del
         // menú si lo hay; 3 m de puntero limpio si no lo hay.
         const enEstancia = !!this.inHall || !!this._arconoOn;
-        line.visible = enEstancia || !!hit || !!pinHit;
+        line.visible = enEstancia || !!hit;
         line.position.copy(muGrip);
         line.quaternion.copy(muQ);
         // r98 · el haz alcanza la MESA cuando es ella la que se apunta
         line.scale.z = sobreMesa ? sobreMesa.dist :
-          (pinHit ? pinHit.distance : (hit ? hit.distance : (enEstancia ? 3 : 0.5)));
+          (hit ? hit.distance : (enEstancia ? 3 : 0.5));
         // el haz engorda al pasar sobre un botón (o sobre la mesa — r98)
-        const thick = (idx >= 0 || idx === -2 || sobreMesa) ? 1.7 : 1;
+        const thick = (idx >= 0 || sobreMesa) ? 1.7 : 1;
         line.scale.x = thick;
         line.scale.y = thick;
       } else {
@@ -10893,9 +10773,7 @@ export class PingPongGame {
     // el botón que manda. Cubre menú completo Y prompt del Hall (hallask).
     if (this.menuOpen) {
       const hov = this.menuHover[i];
-      // r113 · CHINCHETA: hover -2 = el gatillo pega/suelta el panel
-      if (hov === -2) this._menuPinToggle(i);
-      else if (hov >= 0) this.menuClick(hov, i);   // r96: mano que pulsa (deslizadores)
+      if (hov >= 0) this.menuClick(hov, i);   // r96: mano que pulsa (deslizadores)
       // r32 · ICONO DE LA MÚSICA del salón: con el menú abierto manda el
       // panel — la placa sólo recibe el gatillo si el rayo NO cayó en
       // ningún botón ni en la chincheta (hov < 0).
@@ -19274,8 +19152,7 @@ export class PingPongGame {
       this.menuPage = 'optsPala';
       this._palaSalirAsk = true;
       this.menuOpen = true;
-      this.menuPin = true;       // r85 · nace CON CHINCHETA (convención de la casa)
-      this._menuPinDraw();
+      this.menuPin = true;       // r85 · nace FIJO (r159: convención sin pin)
       this.menuFxInicia('in');   // r81 · nace EN ESCENA (cascada+rebote)
       this.menuHover = [-1, -1];
       if (this.calibPanel) this.calibPanel.group.visible = false;   // r85 · el menú manda: la ventana se aparta

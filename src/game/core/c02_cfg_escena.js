@@ -998,9 +998,13 @@ export const CONFIG_MENUS = {
       // r84 · F180 · dist 1,15 → 1,00 m (informe del dueño: «se sigue
       // leyendo mal»): el texto del arco gana +15 % angular sin tocar el
       // lienzo; la fórmula r69 recalcula tangencias y yaws sola.
-      { id: 'L', x: 0, w: 1112, altoM: 0.95, dist: 1.00 },
-      { id: 'C', x: 1112, w: 1472, altoM: 0.95, dist: 1.00 },
-      { id: 'R', x: 2584, w: 1112, altoM: 0.95, dist: 1.00 },
+      // r159 · petición del dueño («1 metro más alejado y algo más
+      // grande»): dist 1,00 → 2,00 m y altoM 0,95 → 1,20 m (+26 %). La
+      // fórmula r69 recalcula tangencias y yaws sola; el hit-test vive en
+      // el lienzo (uv) y no depende de la distancia.
+      { id: 'L', x: 0, w: 1112, altoM: 1.20, dist: 2.00 },
+      { id: 'C', x: 1112, w: 1472, altoM: 1.20, dist: 2.00 },
+      { id: 'R', x: 2584, w: 1112, altoM: 1.20, dist: 2.00 },
     ],
   },
   cabecera: { logo: true, idiomas: true, cierre: true, sello: true },

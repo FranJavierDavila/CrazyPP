@@ -9962,4 +9962,12 @@ por índice y saltaban el hit-test):
 - BATERÍA: hittest vivo 0 muertos en 6 páginas (MAIN 10 · PERFIL 5 ·
   EDITOR 10 · PAÍS 74/65 banderas · JUGAR 8 survigo=True · WRL 11) ·
   qa_perfil 138/138 · probe_r156 exit 0 sin pageerror · qa_version
-  31/31 · golden 635d9369→34931004 (3.6.239-SDK6).
+  31/31 · golden 635d9369→1d3e90b7 (3.6.239-SDK6).
+- LECCIÓN r159 (grave): public/game.html es un ARTEFACTO generado por
+  build_game.py desde src/game/ (core/*.js + 03_body). El 1.er intento
+  parcheó el artefacto y bump_version lo machacó al regenerar (deploy
+  con sello 3.6.239 pero contenido viejo, cazado en la verificación en
+  vivo por grep de contenido). CAMINO CORRECTO: parchear src/game/core/,
+  bump si toca versión (guardas incluidas), build_game --escribir,
+  c2_sellar, batería, deploy. r159_menu_geometria.py v2 ya opera sobre
+  las fuentes reales (c02 geometría · c12 juego · c00 i18n).

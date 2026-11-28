@@ -13,6 +13,6 @@
     "halloween": 3
   },
   "nota": "r128 · correcciones de la auditoría r120 (ola 1+2): A1 claims verificados, A3 código crypto, B1 res.ok en el PUT, D1 puertas al repo vivo, E1 watchdog + three vendado, E2 cuota, E6 valle_neon, F1 clave en lecturas locales, F2 throttle+cron worker, F3 manifest validado, F4 Caddy, D3 TS live-service",
-  "tamano": 2772605,
-  "golden": "34931004df9628a1d26ad894fcdede9c9876cc62f4fe3c8e3e169a0c284fb49d"
+  "tamano": 2767229,
+  "golden": "1d3e90b75a09a114b5d4c254562b9eeee58050eafe80a1365672ccfbe021d346"
 }

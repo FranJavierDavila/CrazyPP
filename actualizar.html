@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CrazyPP · Actualizar</title>
+<style>
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: #0b0e14; color: #e8eaf0;
+    font-family: system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center; padding: 24px;
+  }
+  .caja { max-width: 520px; }
+  h1 { font-size: clamp(1.4rem, 6vw, 2rem); margin: 0 0 12px; }
+  p { font-size: clamp(0.95rem, 4vw, 1.1rem); line-height: 1.5; color: #9aa3b2; }
+  #t { font-size: clamp(1.2rem, 5vw, 1.6rem); color: #4caf50; font-weight: bold; }
+  .girando {
+    width: 46px; height: 46px; margin: 18px auto;
+    border: 4px solid #2c3546; border-top-color: #4caf50;
+    border-radius: 50%; animation: girar 0.9s linear infinite;
+  }
+  @keyframes girar { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="caja">
+  <h1>CrazyPP · Actualización</h1>
+  <div class="girando"></div>
+  <div id="t">Borrando la copia vieja del casco…</div>
+  <p>Esta página borra el service worker y las cachés guardadas en este
+     dispositivo y abre de nuevo el juego directamente de la red.</p>
+</div>
+<script>
+(async () => {
+  // r98 · LA PÁGINA NUCLEAR: el canal de actualización falló 4 rondas (r97
+  // conmutó el sw.js y el casco siguió sirviendo 3.6.188 desde su caché).
+  // Borra TODO lo que pueda servir versiones viejas y redirige a game.html
+  // con un cache-buster: sin SW y sin caché, la carga cae SIEMPRE en la red.
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) await r.unregister();
+    }
+  } catch (e) { /* seguimos con lo demás */ }
+  try {
+    const claves = await caches.keys();
+    await Promise.all(claves.map((k) => caches.delete(k)));
+  } catch (e) { /* seguimos con lo demás */ }
+  try {
+    localStorage.setItem('ppxr_actualizado', String(Date.now()));
+    sessionStorage.clear();
+  } catch (e) { /* no es crítico */ }
+  document.getElementById('t').textContent = 'LISTO — abriendo el juego…';
+  setTimeout(() => { location.replace('game.html?r=' + Date.now()); }, 1200);
+})();
+</script>
+</body>
+</html>

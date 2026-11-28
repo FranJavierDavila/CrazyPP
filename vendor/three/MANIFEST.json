@@ -1,0 +1,9 @@
+{
+ "origen": "https://cdn.jsdelivr.net/npm/three@0.170.0",
+ "ficheros": {
+  "addons/environments/RoomEnvironment.js": 3606,
+  "addons/loaders/GLTFLoader.js": 110273,
+  "addons/utils/BufferGeometryUtils.js": 31768,
+  "build/three.module.js": 1314681
+ }
+}

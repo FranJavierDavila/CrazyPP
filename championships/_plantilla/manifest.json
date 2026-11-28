@@ -1,0 +1,324 @@
+{
+  "_comment": "PLANTILLA UNIFICADA DE CAMPEONATO · CRAZY PING PONG · Ronda 25 · Catálogo completo de parámetros con TODO lo que los 5 campeonatos (oeste, locura, magia, estacion_orbital, valle_neon) tienen entre todos. Cada bloque lleva su _comment con el ORIGEN del parámetro. Las claves _comment y _doc son ignoradas por el módulo. Contrato: championship.schema.json (contract 1) + bloques unificados. Guía de fabricación: ../PLANTILLA-GUIA.md",
+
+  "id": "_plantilla",
+  "version": 1,
+  "contract": 1,
+  "estado": "borrador",
+  "_doc_estado": "borrador → validacion → listo → publicado (solo 'publicado' aparece en el menú) → desactivado. El registro final se hace en championships.json (el núcleo solo importa lo listado ahí).",
+
+  "title": {
+    "_comment": "ORIGEN: los 5. Obligatorio 'es'; 'en' recomendado. Máx 40 caracteres.",
+    "es": "Campeonato de la Plantilla",
+    "en": "Template Championship"
+  },
+
+  "description": {
+    "_comment": "ORIGEN: los 5. Descripción corta de tienda, máx 400 caracteres.",
+    "es": "Descripción corta que se muestra en el catálogo del HUB.",
+    "en": "Short shop description shown in the HUB catalog."
+  },
+
+  "tema": "neutro",
+  "_doc_tema": "ORIGEN: estacion_orbital ('espacio'). Etiqueta libre del ambiente; hoy solo documental.",
+
+  "rival": {
+    "_comment": "ORIGEN: los 5. kind es la clase de motor; states son los sprites assets/<estado>.webp (o .png, ver rivalVisual.ext). oppLabel es el nombre del oponente en el marcador del núcleo.",
+    "id": "plantilla_rival",
+    "name": "RIVAL",
+    "kind": "stock",
+    "oppLabel": "rival",
+    "states": ["idle", "duelo", "derrotado", "triunfante"],
+    "_doc_states": "Conjunto recomendado completo (los ricos usan 12): present, idle, focused, surprised, hungry, panic, laughing, crazy, angry, picando, loosing, defeated, victory + derrotado/triunfante (orbital/valle). Sube solo los que uses; el motor de expresiones usa los umbrales de rival.expresiones.",
+    "personalidad": {
+      "_comment": "ORIGEN: valle_neon (Taller V3.0.3). agresividad/precision/constancia 1..5 (3=neutro); alimentan la curva de IA. caracter/celebracion/cerebro son documentales.",
+      "agresividad": 3,
+      "precision": 3,
+      "constancia": 3,
+      "caracter": "frio",
+      "celebracion": "Texto documental del artista",
+      "cerebro": "equilibrado"
+    }
+  },
+
+  "rivalVisual": {
+    "_comment": "ORIGEN unificado: createRival del SDK (orbital modo 'perezoso', valle modo 'precarga'). pos por defecto = la convención forajido/orbital [1.26, alto/2, tableCenterZ-1.7]. Arte recomendado 512x1024, cuerpo entero, pies al borde inferior.",
+    "modo": "precarga",
+    "_doc_modo": "'precarga' (swap de mapas, recomendado) o 'perezoso' (una textura viva con guard).",
+    "base": "rival.webp",
+    "ext": "webp",
+    "alto": 2.15,
+    "anchoFijo": 0,
+    "_doc_anchoFijo": "0 = auto (alto*0.5). valle usa 0.9 con aspecto:true.",
+    "material": "basic",
+    "_doc_material": "'basic' (sprite plano, los 5) o 'standard' (valle, con sombra).",
+    "alphaTest": 0.25,
+    "pos": [1.26, 0, -3.3],
+    "_doc_pos": "[x, y_base, z]. y_base=0 coloca los pies en el suelo (el motor eleva alto/2).",
+    "rotY": 0,
+    "flotacion": { "activo": true, "amplitud": 0.012, "periodo": 1.4 },
+    "aspecto": true
+  },
+
+  "storage": "pp_champ__plantilla_*",
+  "_doc_storage": "ORIGEN: los 5 (locura usa pp_arcade_* por legado; NUEVO campeonato SIEMPRE pp_champ_<id>_). El módulo deriva las claves: stage, champ, fecha, puntos, duelwins, wins, rank, leyenda_1..5, leyenda.",
+
+  "camino": {
+    "_comment": "NUEVO UNIFICADO: única fuente de verdad del camino (hoy en conflicto: manifest.stages vs CFG.etapas de orbital vs taller.retos de valle). Patrón único observado en los 5: duelo → prueba → duelo → prueba → duelo final.",
+    "patron": "duelo_prueba",
+    "_doc_patron": "'duelo_prueba' genera: duelo1, prueba1, duelo2, prueba2, final. Las etapas toman nombres/kinds/rules de 'stages'.",
+    "duelo": { "puntos": 11 },
+    "dificultad": {
+      "modo": "formula",
+      "_doc_modo": "'formula' (valle: difMul*(1+paso*i)+personalidad, final*difFinal) o 'tabla' (oeste: valores exactos por duelo; orbital: aiMul por duelo).",
+      "difMul": 1.0,
+      "paso": 0.15,
+      "difFinal": 1.35,
+      "tabla": [
+        { "_comment": "Solo si modo='tabla'. Ejemplo real del oeste (DUELO_NV).", "aiMul": 1.0, "chance": 0.30, "cooldown": 13.0, "primer": 8.0, "warn": 2.0 },
+        { "aiMul": 1.2, "chance": 0.38, "cooldown": 11.0, "primer": 6.5, "warn": 2.0 },
+        { "aiMul": 1.4, "chance": 0.46, "cooldown": 9.0, "primer": 5.0, "warn": 1.7 }
+      ]
+    },
+    "worldMetric": "duelwins",
+    "_doc_worldMetric": "ORIGEN divergente unificado: locura 'wins', magia/orbital/valle 'duelwins', oeste 'puntos' (submit {n,p,a}). a = '★' al coronar, '🏆' si worldMark trofeo, '✔' en victorias.",
+    "leyenda": {
+      "_comment": "ORIGEN: oeste Ronda 24 (RUTA LEYENDA NG+: siendo campeón, toda rejugada es modo leyenda; 5/5 sellos → medalla). Desactivable para campeonatos tranquilos.",
+      "activa": true,
+      "aiMulMul": 1.15,
+      "chanceSuma": 0.06,
+      "chanceMax": 0.60,
+      "cooldownResta": 1.5,
+      "cooldownMin": 6.0,
+      "primerResta": 1.0,
+      "primerMin": 3.0,
+      "pruebaExtra": 1,
+      "_doc_pruebaExtra": "+1 objetivo/oleada/lingote por prueba (asedio +1 forajido, tren +1 lingote)."
+    }
+  },
+
+  "stages": [
+    {
+      "_comment": "ORIGEN: los 5 declaran 5 etapas. kind ∈ duelo | dianas | arkanoid | objetos | custom (module obligatorio). rules son los parámetros que recibe la prueba.",
+      "id": "duelo1",
+      "name": "Duelo 1",
+      "kind": "duelo"
+    },
+    {
+      "id": "prueba1",
+      "name": "Dianas del taller",
+      "kind": "dianas",
+      "rules": { "modo": "objetivos", "objetivo": 6, "puntos": 2, "premio": "Trofeo de la Plantilla" }
+    },
+    {
+      "id": "duelo2",
+      "name": "Duelo 2",
+      "kind": "duelo"
+    },
+    {
+      "id": "prueba2",
+      "name": "Moscas veloces",
+      "kind": "dianas",
+      "rules": { "modo": "movimiento", "objetivo": 4, "puntos": 3, "premio": "Insignia Mosca" }
+    },
+    {
+      "id": "final",
+      "name": "DUELO FINAL",
+      "kind": "duelo",
+      "rules": { "jefe": true }
+    }
+  ],
+
+  "pruebas": {
+    "_comment": "NUEVO UNIFICADO: parámetros de cada kind de prueba (hoy constantes JS: ARK_CFG de locura, IMP_CFG/ESC_CFG de orbital, LEVEL de magia). La plantilla implementa 'dianas' completa (3 modos de valle generalizados); arkanoid/orbe/impulso/escudo/tren/asedio son puntos de extensión documentados en la GUÍA.",
+    "dianas": {
+      "spawnX": 0.85,
+      "spawnYMin": 0.45,
+      "spawnYMax": 1.30,
+      "spawnZMin": -0.55,
+      "spawnZMax": -1.70,
+      "radio": 0.155,
+      "_doc_radio": "0.155 normal; 0.13 en contrarreloj.",
+      "maxVivas": [2, 4],
+      "hold": { "x": 0.0, "z": -0.5, "T": 1.5, "H": 0.42 },
+      "recambioMs": 900,
+      "deadT": 0.7,
+      "tiempoBase": 20,
+      "tiempoPorObjetivo": 10,
+      "tiempoMax": 90
+    }
+  },
+
+  "powers": [
+    {
+      "_comment": "ORIGEN unificado: valle (activacion rally/puntos+cadaCuantos) + locura (bolsa rotatoria, redball params) + orbital (custom con module). Kinds implementados por la plantilla: confeti, globos, bola. 'custom' exige module (método del controller, ej: 'StockController._meteorStep').",
+      "kind": "confeti",
+      "name": "Confeti de la plantilla",
+      "icon": "assets/power_0.png",
+      "chance": 0.35,
+      "cooldown": 18,
+      "warn": 2,
+      "duration": 6,
+      "activacion": "rally"
+    },
+    {
+      "kind": "globos",
+      "name": "Globos de celebración",
+      "icon": "assets/power_1.png",
+      "cooldown": 20,
+      "warn": 2,
+      "duration": 8,
+      "activacion": "puntos",
+      "cadaCuantos": 3
+    }
+  ],
+
+  "powerTrigger": {
+    "_comment": "ORIGEN unificado: locura powerTrigger {chance 0.32, cooldown 13.0, minRallyHits 1, warn 2.0} = magia WIZ_POWER = oeste OESTE_POWER = orbital (primerCd 6, garantía 22 s, post 10+rand(5)) = valle (garantía 22 s).",
+    "chance": 0.32,
+    "cooldown": 13.0,
+    "minRallyHits": 1,
+    "warn": 2.0,
+    "bolsa": "rotatoria",
+    "_doc_bolsa": "'rotatoria' (locura v2.126: todo sale antes de repetir; lanzamiento garantizado aunque el punto muera) o 'antirepeticion' (magia: filtra solo el último; si el punto muere, cooldown 3 s).",
+    "primerCd": 6,
+    "garantiaS": 22,
+    "postCdMin": 10,
+    "postCdMax": 15
+  },
+
+  "playerPower": {
+    "_comment": "ORIGEN: locura (mega_pala por crazy_combo_rally6, desbloqueo pp_<storage>_powers). Opcional; quitar si no se usa.",
+    "kind": "mega_pala",
+    "reachMul": 1.38,
+    "duration": 8.0,
+    "trigger": "crazy_combo_rally6"
+  },
+
+  "playerGun": {
+    "_comment": "ORIGEN unificado: locura (pistola arkanoid, cadencia 0.16, raycast 6.0 m), magia (pistola mágica capa exterior), orbital (impulso/escudo). GLB estándar del proyecto: pistol.glb. Omitir el bloque = sin pistola (oeste/valle).",
+    "activo": true,
+    "glb": "assets/pistol.glb",
+    "cadencia": 0.16,
+    "alcance": 6.0,
+    "haz": 6738943,
+    "_doc_haz": "color del haz en decimal JSON (6738943 = 0x66d9ff)",
+    "escalado": 0.32
+  },
+
+  "audio": {
+    "_comment": "ORIGEN: los 5 (bso.mp3/ogg/wav). musicOpts = firma createMusic del SDK (oeste/orbital canónica; valle fadeIn 1.2/ancla false/syncMode none/stopFade 0.4).",
+    "music": "assets/bso.mp3",
+    "musicVolume": 0.18,
+    "musicOpts": { "fadeIn": 0.8, "ancla": true, "syncMode": "ramp", "gateStart": true, "gateOn": false, "renace": true, "stopFade": 0 },
+    "sounds": { "_comment": "Mapa nombre→ruta de efectos (ej: laugh: assets/risas.mp3). Se consumen con createSfx.", "laugh": "assets/risas.mp3" }
+  },
+
+  "room": {
+    "_comment": "ORIGEN: los 5 (createChampRoom del núcleo). Medidas canónicas de los planos: suelo/techo 6.10x7.90 m, trasera/frontal 6.10x2.85 m, laterales 7.90x2.85 m.",
+    "floor": "assets/sala_floor.jpg",
+    "ceil": "assets/sala_ceil.jpg",
+    "back": "assets/sala_back.jpg",
+    "front": "assets/sala_front.jpg",
+    "left": "assets/sala_left.jpg",
+    "right": "assets/sala_right.jpg",
+    "variants": { "final": { "tint": 12740693 } },
+    "_doc_variants": "ORIGEN: locura (penumbra roja en JEFE) y magia (violeta). tint en DECIMAL JSON (12740693 = 0xc26a55). El núcleo aplica game.champRoom.useVariant('final') en la etapa final."
+  },
+
+  "decor": {
+    "_comment": "ORIGEN: los 5 (createChampDecor). Troqueles de cartón: PNG con alfa, recorte exacto, sin borde. h en metros (0.1..3).",
+    "pieces": [
+      { "file": "assets/decor1.png", "h": 1.15, "x": -2.5, "z": -2.45, "sway": 0.45 },
+      { "file": "assets/decor2.png", "h": 0.85, "x": 2.15, "z": -2.45, "sway": 0.3 }
+    ]
+  },
+
+  "mapa": {
+    "_comment": "NUEVO UNIFICADO: 'canvas' (valle: dibujado, cero arte) o 'arte' (los otros 4: póster del artista 1380x752 aprox, plano 1.68 m, nodos en píxeles medidos {x,y,r,tapa,tx,ty,ts}). Anillo de rejugada estándar RingGeometry(0.118,0.144,48) dorado 0xf6d34c, hover 0x7ec8ff x1.22.",
+    "modo": "canvas",
+    "arte": "",
+    "planoW": 1.66,
+    "pos": [-1.05, 1.45, -3.58],
+    "rotY": 0.42,
+    "nodos": []
+  },
+
+  "cartel": {
+    "_comment": "ORIGEN: orbital/valle (createCartel del SDK). Cartel de bienvenida de la sala con nombre, etapa y rival.",
+    "cvW": 1024, "cvH": 512, "w": 2.3, "h": 1.15,
+    "pos": [-1.05, 1.62, -3.6], "rot": [0, 0.42, 0]
+  },
+
+  "hud": {
+    "_comment": "ORIGEN: oeste (HudOeste), orbital (pantallainfo.png), valle (HUD canvas). La plantilla pinta un HUD canvas opcional con etapa, objetivo y puntos.",
+    "activo": true,
+    "pos": [0, 2.52, -2.55]
+  },
+
+  "rewards": {
+    "_comment": "ORIGEN: los 5 (documental del artista + claves de progreso).",
+    "wins": "Recompensa por vencer (documental)",
+    "champion": "Recompensa por coronar (documental)"
+  },
+
+  "trophy": {
+    "_comment": "ORIGEN: los 5. El trofeo/insignia 3D se coloca en la sala al coronar (pos/rotY opcionales).",
+    "name": { "es": "Trofeo de la Plantilla", "en": "Template Trophy" },
+    "arte": "assets/insignia.png",
+    "pos": [-1.25, 0, -0.95],
+    "rotY": 0.62
+  },
+
+  "coronacion": {
+    "_comment": "ORIGEN: oeste Ronda 24 (panel épico del núcleo con título propio, estadísticas y fecha registrada) + los 5 (showChampConseguido). stats admitidas: puntos, duelos, fecha.",
+    "titulo": { "es": "¡CAMPEÓN!", "en": "CHAMPION!" },
+    "mensaje": { "es": "Has conquistado el Campeonato de la Plantilla.", "en": "You conquered the Template Championship." },
+    "dur": 14,
+    "stats": ["puntos", "duelos", "fecha"],
+    "insignia": "assets/insignia.png"
+  },
+
+  "procedural": {
+    "_comment": "ORIGEN: locura/magia/oeste. Marcas documentales de arte procedural.",
+    "art": false,
+    "audio": false,
+    "binaryAssets": 0
+  },
+
+  "assets": "Inventario legible (lo parsea valida_activos.py): listar aquí rutas assets/... que deben existir.",
+
+  "i18n": {
+    "_comment": "NUEVO UNIFICADO: el bloque TXT de magia/oeste elevado a manifest. Claves mínimas que consume la plantilla (es/en).",
+    "es": {
+      "bienvenida": "Bienvenido al Campeonato de la Plantilla",
+      "instr_titulo": "Cómo se juega",
+      "instr_lineas": ["Gana el duelo para avanzar de etapa.", "En las pruebas, acierta los objetivos con la bola.", "Apunta al mapa y mantén el gatillo para rejugar etapas superadas."],
+      "duelo_vs": "¡DUELO! VS RIVAL · Ronda {n}",
+      "prueba_vs": "¡PRUEBA! {nombre} · Intento {n}",
+      "sello_leyenda": "Sello de leyenda {n} conseguido",
+      "leyenda_medalla": "LEYENDA COMPLETA: los 5 sellos son tuyos.",
+      "coronacion_titulo": "¡CAMPEÓN DE LA PLANTILLA!",
+      "coronacion_msg": "El trono es tuyo. Bienvenido a la leyenda.",
+      "reset_ok": "Registros eliminados."
+    },
+    "en": {
+      "bienvenida": "Welcome to the Template Championship",
+      "instr_titulo": "How to play",
+      "instr_lineas": ["Win the duel to advance.", "Hit the targets with the ball in trials.", "Point at the map and hold trigger to replay cleared stages."],
+      "duelo_vs": "DUEL! VS RIVAL · Round {n}",
+      "prueba_vs": "TRIAL! {nombre} · Attempt {n}",
+      "sello_leyenda": "Legend seal {n} earned",
+      "leyenda_medalla": "FULL LEGEND: all 5 seals are yours.",
+      "coronacion_titulo": "TEMPLATE CHAMPION!",
+      "coronacion_msg": "The throne is yours. Welcome to legend.",
+      "reset_ok": "Records wiped."
+    }
+  },
+
+  "estructura": "5 etapas: duelo → dianas → duelo → dianas → duelo final (patrón común de los 5 campeonatos)",
+
+  "notes": [
+    "v1 · Plantilla unificada Ronda 25: generada a partir de la auditoría completa de oeste/locura/magia/estacion_orbital/valle_neon + champ_sdk.js v1.4.0. Contrato contract 1 + bloques unificados (camino, rivalVisual, powerTrigger, playerGun, mapa, cartel, hud, coronacion, i18n)."
+  ]
+}
